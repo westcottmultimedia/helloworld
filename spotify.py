@@ -28,14 +28,63 @@ REGIONS = [
     'sk','sv','th','tr','tw','uy'
 ]
 
+# max number of times to retry http requests
+MAX_URL_RETRIES = 10
+
+# seconds to wait between retry attempts
+SECONDS_BETWEEN_RETRIES = 3
+
+def get_page(url, cache=False, count=0, last_request=0, return_full=False):
+    """
+    Request a webpage, retry on failure, cache as desired
+    """
+    if cache and return_full:
+        raise ValueError('Cannot have "cache" set to True while "return_full" is set to True')
+    hashedurl = hashlib.sha256(url.encode('utf-8')).hexdigest()
+    cache_file = "./cache/%s.cache" % hashedurl
+    if cache and os.path.isfile(cache_file):
+        with open(cache_file) as f:
+            return f.read()
+    if count > MAX_URL_RETRIES:
+        print('Failed getting page "%s", retried %i times' % (url, count))
+        return False
+    if last_request > time.time()-1:
+        time.sleep(SECONDS_BETWEEN_RETRIES)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+        'Accept-Encoding': 'none',
+        'Accept-Language': 'en-US,en;q=0.8',
+        'Connection': 'keep-alive'
+    }
+    if cache and not os.path.exists(os.path.dirname(cache_file)):
+        try:
+            os.makedirs(os.path.dirname(cache_file))
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+    try:
+        q = Request(url, None, headers)
+        r = urlopen(q)
+        data = r.read().decode('utf-8')
+        if cache:
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                f.write(data)
+        return r if return_full else data
+    except Exception as e:
+        count += 1
+        print('Failed getting URL "%s", retrying...' % url)
+        return get_page(url, cache, count, time.time())
+
 def get_dates_for_region(region):
     """
     Scrape the available chart dates for a given region
     Returns a list of date strings
     """
     url = 'https://spotifycharts.com/regional/{}/daily/'.format(region)
-    r = urlopen(url)
-    page = html.fromstring(r.read())
+    r = get_page(url)
+    page = html.fromstring(r)
     xpath = '*//div[contains(concat(" ", normalize-space(@data-type), " "), " date ")]/ul/li/text()'
     rows = page.xpath(xpath)
     if not isinstance(rows, list) and not len(rows):
@@ -52,7 +101,7 @@ def load_csv_data(region, date='latest'):
     Returns a list of tracks with region and track ID appended
     """
     url = get_csv_url(region, date)
-    r = urlopen(url)
+    r = get_page(url, return_full=True)
     info = r.info()
     if info.get_content_type() != 'text/csv':
         return False
