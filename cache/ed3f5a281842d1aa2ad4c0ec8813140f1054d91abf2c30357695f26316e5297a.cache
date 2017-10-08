@@ -1,0 +1,1415 @@
+{
+  "artists" : [ {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/23wEWD21D4TPYiJugoXmYb"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 672109
+    },
+    "genres" : [ "latin", "latin pop", "spanish pop", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/23wEWD21D4TPYiJugoXmYb",
+    "id" : "23wEWD21D4TPYiJugoXmYb",
+    "images" : [ {
+      "height" : 945,
+      "url" : "https://i.scdn.co/image/081cc02a3a9365cce3194aedb0ba4bd70c368fe8",
+      "width" : 945
+    }, {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/13ee5366eb9ca1a65e9574b34b048df8873d1e93",
+      "width" : 640
+    }, {
+      "height" : 200,
+      "url" : "https://i.scdn.co/image/a4e45b7961d43b09e420a30583a6296e31c51ffa",
+      "width" : 200
+    }, {
+      "height" : 64,
+      "url" : "https://i.scdn.co/image/7aabd81f62d57d5bdb7d7b46409fcc9d861365a1",
+      "width" : 64
+    } ],
+    "name" : "Thalía",
+    "popularity" : 73,
+    "type" : "artist",
+    "uri" : "spotify:artist:23wEWD21D4TPYiJugoXmYb"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/2qbEtwBVyobgpNP5KcHE9J"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 101563
+    },
+    "genres" : [ "latin", "latin hip hop", "reggaeton", "reggaeton flow", "trap latino", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/2qbEtwBVyobgpNP5KcHE9J",
+    "id" : "2qbEtwBVyobgpNP5KcHE9J",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/d01c910b6fed1915fd4455e85ad358f42bf2e487",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/63f5e63aafdbfe0503ead91f8305469a7d194a81",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/86dca81146ce676abf469c2be7fe46cba82ad7ed",
+      "width" : 160
+    } ],
+    "name" : "Pusho",
+    "popularity" : 72,
+    "type" : "artist",
+    "uri" : "spotify:artist:2qbEtwBVyobgpNP5KcHE9J"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/00XhexlJEXQstHimpZN910"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 114446
+    },
+    "genres" : [ "latin", "reggaeton", "reggaeton flow", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/00XhexlJEXQstHimpZN910",
+    "id" : "00XhexlJEXQstHimpZN910",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/94436c01078551a9ef5ca6c179caed0deee80ddf",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/474953c900317d25a6021d456bfa29f632aa0925",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/a6f63e293847a2d7449e3ab61aecf20547fa2b77",
+      "width" : 160
+    } ],
+    "name" : "Brytiago",
+    "popularity" : 79,
+    "type" : "artist",
+    "uri" : "spotify:artist:00XhexlJEXQstHimpZN910"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/6MDME20pz9RveH9rEXvrOM"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 741900
+    },
+    "genres" : [ "dance pop", "edm", "pop", "tropical house", "uk funky" ],
+    "href" : "https://api.spotify.com/v1/artists/6MDME20pz9RveH9rEXvrOM",
+    "id" : "6MDME20pz9RveH9rEXvrOM",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/4e052e78ad16b5099593194e8a111fb22032186f",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/a66441a099e107f0b1ebaef4b68db131e9274fab",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/1ae6a35726cbff6fb2c5e6cd788b9ee17125fa39",
+      "width" : 160
+    } ],
+    "name" : "Clean Bandit",
+    "popularity" : 85,
+    "type" : "artist",
+    "uri" : "spotify:artist:6MDME20pz9RveH9rEXvrOM"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/3HPOnbuwLP2qlwWQ7cgxYW"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 15691
+    },
+    "genres" : [ "latin", "latin hip hop", "pop reggaeton", "reggaeton", "reggaeton flow", "trap latino", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/3HPOnbuwLP2qlwWQ7cgxYW",
+    "id" : "3HPOnbuwLP2qlwWQ7cgxYW",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/11c97bff611628ef0f72891d31fe56ba696313fc",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/eddffc4703e2e3c72d00604b314fe45329be4509",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/4faf684b1ee5df98cac4200735de9d799e41b7bc",
+      "width" : 160
+    } ],
+    "name" : "Xantos",
+    "popularity" : 70,
+    "type" : "artist",
+    "uri" : "spotify:artist:3HPOnbuwLP2qlwWQ7cgxYW"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/4YBAOrBF9vBB9inOLtpRzp"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 51516
+    },
+    "genres" : [ "cumbia pop", "cumbia villera" ],
+    "href" : "https://api.spotify.com/v1/artists/4YBAOrBF9vBB9inOLtpRzp",
+    "id" : "4YBAOrBF9vBB9inOLtpRzp",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/9d65ebadec16291a3ae13e4280e308f9d9056d8a",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/ffd81c298bfc02d48d722911f3c044e2f34b72c0",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/0b80518bb4f8ef3d9979b758944d60cb01d773f3",
+      "width" : 160
+    } ],
+    "name" : "Mano Arriba",
+    "popularity" : 62,
+    "type" : "artist",
+    "uri" : "spotify:artist:4YBAOrBF9vBB9inOLtpRzp"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/2Eo4Yaukt9d6dnZrY5hQKi"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 133521
+    },
+    "genres" : [ "argentine rock", "cumbia pop", "latin alternative", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/2Eo4Yaukt9d6dnZrY5hQKi",
+    "id" : "2Eo4Yaukt9d6dnZrY5hQKi",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/b4b8e427b9af34134e2ab98c737ae509d2f0e468",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/dbb16573ea37b2c49dd892eb69f4ad307e8054be",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/c56ea7c0b1ced3d2853647250d2c2629318ead82",
+      "width" : 160
+    } ],
+    "name" : "Ciro y los Persas",
+    "popularity" : 64,
+    "type" : "artist",
+    "uri" : "spotify:artist:2Eo4Yaukt9d6dnZrY5hQKi"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/5R3NywPPOyhLfdvutgg0me"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 68348
+    },
+    "genres" : [ "argentine rock", "cumbia pop", "latin alternative", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/5R3NywPPOyhLfdvutgg0me",
+    "id" : "5R3NywPPOyhLfdvutgg0me",
+    "images" : [ {
+      "height" : 634,
+      "url" : "https://i.scdn.co/image/346a6ea10261e63d85a7c514a4954655d92d8b0e",
+      "width" : 640
+    }, {
+      "height" : 297,
+      "url" : "https://i.scdn.co/image/ffdbb21dff0540cc67e63761b6503e86d48649c4",
+      "width" : 300
+    }, {
+      "height" : 63,
+      "url" : "https://i.scdn.co/image/f307431edf3803162fa6e55ed590f98e8c59d985",
+      "width" : 64
+    } ],
+    "name" : "Los Abuelos De La Nada",
+    "popularity" : 61,
+    "type" : "artist",
+    "uri" : "spotify:artist:5R3NywPPOyhLfdvutgg0me"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/1vCWHaC5f2uS3yhpwWbIA6"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 6414962
+    },
+    "genres" : [ "big room", "dance pop", "edm", "pop", "tropical house" ],
+    "href" : "https://api.spotify.com/v1/artists/1vCWHaC5f2uS3yhpwWbIA6",
+    "id" : "1vCWHaC5f2uS3yhpwWbIA6",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/81b19a403109c4fe528ee3972137127b85be9519",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/9c0d8fa969a9f5db6ff860203d6880a125e501d2",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/c55bc6f57b6bb297425c3ae694f92672dcf0e2c2",
+      "width" : 160
+    } ],
+    "name" : "Avicii",
+    "popularity" : 91,
+    "type" : "artist",
+    "uri" : "spotify:artist:1vCWHaC5f2uS3yhpwWbIA6"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/6ZZ2DeepA3GpoGU4KwqSlU"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 129799
+    },
+    "genres" : [ "cumbia pop", "latin", "latin pop" ],
+    "href" : "https://api.spotify.com/v1/artists/6ZZ2DeepA3GpoGU4KwqSlU",
+    "id" : "6ZZ2DeepA3GpoGU4KwqSlU",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/fca1b3e8cdc63f1398e790080f094852d46a8aae",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/d17c8153eb6183b9e1de69aabf4ce638792f908d",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/ea66fd9bf6cf3df631a73fdc39a89f014b8c7976",
+      "width" : 160
+    } ],
+    "name" : "Luciano Pereyra",
+    "popularity" : 68,
+    "type" : "artist",
+    "uri" : "spotify:artist:6ZZ2DeepA3GpoGU4KwqSlU"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/5DUlefCLzVRzNWaNURTFpK"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 583619
+    },
+    "genres" : [ "electro latino", "latin", "latin pop", "pop reggaeton", "reggaeton", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/5DUlefCLzVRzNWaNURTFpK",
+    "id" : "5DUlefCLzVRzNWaNURTFpK",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/3b26af9c0a25bc13df6657efb1fc397275cb39a2",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/3b8f694b9ef424d9fb7906b923bcab4628befbf9",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/0ef417ed39ff69323399d74a98c8a5daafc9ab48",
+      "width" : 160
+    } ],
+    "name" : "Cali Y El Dandee",
+    "popularity" : 81,
+    "type" : "artist",
+    "uri" : "spotify:artist:5DUlefCLzVRzNWaNURTFpK"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/4VMYDCV2IEDYJArk749S6m"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 2696024
+    },
+    "genres" : [ "latin", "latin hip hop", "reggaeton", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/4VMYDCV2IEDYJArk749S6m",
+    "id" : "4VMYDCV2IEDYJArk749S6m",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/2dc5af68f2cd035cb8d5b64f9502cc0c9c2513ed",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/710116f905cb91598174c1812c2a37252cdf654b",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/7a16ce66bb7e4dbc383ad6eaa3aa3247df3da188",
+      "width" : 160
+    } ],
+    "name" : "Daddy Yankee",
+    "popularity" : 94,
+    "type" : "artist",
+    "uri" : "spotify:artist:4VMYDCV2IEDYJArk749S6m"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/4gzpq5DPGxSnKTe4SA8HAU"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 8469757
+    },
+    "genres" : [ "permanent wave", "pop", "pop christmas" ],
+    "href" : "https://api.spotify.com/v1/artists/4gzpq5DPGxSnKTe4SA8HAU",
+    "id" : "4gzpq5DPGxSnKTe4SA8HAU",
+    "images" : [ {
+      "height" : 1000,
+      "url" : "https://i.scdn.co/image/143b0f286f76ece3a711f673d9ba00b8f499b2c0",
+      "width" : 1000
+    }, {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/9815eb48540fa0d1c87ebd22289060729b1ab32a",
+      "width" : 640
+    }, {
+      "height" : 200,
+      "url" : "https://i.scdn.co/image/02c781539fca2176059bdeafd9fa903db5b9a4d0",
+      "width" : 200
+    }, {
+      "height" : 64,
+      "url" : "https://i.scdn.co/image/d82a669c531c06b703c7468a8981424581f14e91",
+      "width" : 64
+    } ],
+    "name" : "Coldplay",
+    "popularity" : 93,
+    "type" : "artist",
+    "uri" : "spotify:artist:4gzpq5DPGxSnKTe4SA8HAU"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/540vIaP2JwjQb9dm3aArA4"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 1646433
+    },
+    "genres" : [ "dance pop", "edm", "electronic trap", "pop", "tropical house" ],
+    "href" : "https://api.spotify.com/v1/artists/540vIaP2JwjQb9dm3aArA4",
+    "id" : "540vIaP2JwjQb9dm3aArA4",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/809272340b413fb9941b4b7c55154a61fc0de821",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/cab9dd3164bc093234482ad203bcee18d850c06a",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/347c3393aa553b3bcd84891e95a492520fe1b7a6",
+      "width" : 160
+    } ],
+    "name" : "DJ Snake",
+    "popularity" : 85,
+    "type" : "artist",
+    "uri" : "spotify:artist:540vIaP2JwjQb9dm3aArA4"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/6sPVGPkxslll1c4pdHvxYh"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 19618
+    },
+    "genres" : [ "cumbia pop", "cumbia villera", "reggaeton flow" ],
+    "href" : "https://api.spotify.com/v1/artists/6sPVGPkxslll1c4pdHvxYh",
+    "id" : "6sPVGPkxslll1c4pdHvxYh",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/46d4b6e439e9fb616aead93a6630ca5fdf09a3cb",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/a3fefa8039779b29a168fc2339cdd3d80020e7b9",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/385ffd67ab3ed0d01f2cb3f2c3e1f1e4e39541fa",
+      "width" : 160
+    } ],
+    "name" : "DJ Yayo",
+    "popularity" : 62,
+    "type" : "artist",
+    "uri" : "spotify:artist:6sPVGPkxslll1c4pdHvxYh"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/1QOmebWGB6FdFtW7Bo3F0W"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 724477
+    },
+    "genres" : [ "argentine rock", "latin alternative", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/1QOmebWGB6FdFtW7Bo3F0W",
+    "id" : "1QOmebWGB6FdFtW7Bo3F0W",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/aab4d60bf719d23ea9da86376081e5b2903bb140",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/59a0dd275e7caeb3569be1afd49d3b470c792b7d",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/af8ca011c8f8d0f8542a8dedd24f49c8d9c78051",
+      "width" : 160
+    } ],
+    "name" : "Gustavo Cerati",
+    "popularity" : 74,
+    "type" : "artist",
+    "uri" : "spotify:artist:1QOmebWGB6FdFtW7Bo3F0W"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/6KImCVD70vtIoJWnq6nGn3"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 1238311
+    },
+    "genres" : [ "pop", "post-teen pop" ],
+    "href" : "https://api.spotify.com/v1/artists/6KImCVD70vtIoJWnq6nGn3",
+    "id" : "6KImCVD70vtIoJWnq6nGn3",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/0d5beba53acf92820f5b7dfb59ce615c99800a13",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/44b81e6293ffec634395dc0c03aaa4099d0395ab",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/b552b7a5f2d31f9367cc98edf2f226654287cf3c",
+      "width" : 160
+    } ],
+    "name" : "Harry Styles",
+    "popularity" : 84,
+    "type" : "artist",
+    "uri" : "spotify:artist:6KImCVD70vtIoJWnq6nGn3"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/059ysTnWcrm4yFwTr0NDjc"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 101446
+    },
+    "genres" : [ "argentine rock", "cumbia pop", "latin alternative", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/059ysTnWcrm4yFwTr0NDjc",
+    "id" : "059ysTnWcrm4yFwTr0NDjc",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/294212b22910d07181fd43673ed8e2d01e775348",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/63c3c59c380f0fe6d39ab5ef479a83ab18c86498",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/04c551428a847b95de8137d335f56997bbe87a63",
+      "width" : 160
+    } ],
+    "name" : "Catupecu Machu",
+    "popularity" : 60,
+    "type" : "artist",
+    "uri" : "spotify:artist:059ysTnWcrm4yFwTr0NDjc"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/0D5U7oXEE4dut2DPyUDLca"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 261868
+    },
+    "genres" : [ "argentine rock", "cumbia pop", "latin alternative", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/0D5U7oXEE4dut2DPyUDLca",
+    "id" : "0D5U7oXEE4dut2DPyUDLca",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/96efe6ac5892bf832da50a23b7548d1e464d337e",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/9f99e5226c944f5b77b53e2168788e309821e24f",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/bd2beea13ac4c285d773896d166ecf1034dfa9a0",
+      "width" : 160
+    } ],
+    "name" : "Las Pastillas del Abuelo",
+    "popularity" : 68,
+    "type" : "artist",
+    "uri" : "spotify:artist:0D5U7oXEE4dut2DPyUDLca"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/3f4OfcNtgL9MLgiyOdIHC7"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 47095
+    },
+    "genres" : [ "latin", "latin hip hop", "latin pop", "pop reggaeton", "reggaeton", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/3f4OfcNtgL9MLgiyOdIHC7",
+    "id" : "3f4OfcNtgL9MLgiyOdIHC7",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/997e5926bb5dc5525f93b3a075e0ed1cf626a617",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/61bfedb8a807778b0a098027ae3e3874c44386d0",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/72cd8104206b4c6d33e74e1dab30360b78d8e0a5",
+      "width" : 160
+    } ],
+    "name" : "Jencarlos",
+    "popularity" : 69,
+    "type" : "artist",
+    "uri" : "spotify:artist:3f4OfcNtgL9MLgiyOdIHC7"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/1r4hJ1h58CWwUQe3MxPuau"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 4379656
+    },
+    "genres" : [ "reggaeton" ],
+    "href" : "https://api.spotify.com/v1/artists/1r4hJ1h58CWwUQe3MxPuau",
+    "id" : "1r4hJ1h58CWwUQe3MxPuau",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/2da95d0d9292f71fb3673f762daf3f37acecd3a0",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/e2ab03b4fb4d72972a2363a0968c1d500d48ef5b",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/8ff7bf103312d1f5faa128b5326bd9c1da4cc2ab",
+      "width" : 160
+    } ],
+    "name" : "Maluma",
+    "popularity" : 91,
+    "type" : "artist",
+    "uri" : "spotify:artist:1r4hJ1h58CWwUQe3MxPuau"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/6ZZ2DeepA3GpoGU4KwqSlU"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 129799
+    },
+    "genres" : [ "cumbia pop", "latin", "latin pop" ],
+    "href" : "https://api.spotify.com/v1/artists/6ZZ2DeepA3GpoGU4KwqSlU",
+    "id" : "6ZZ2DeepA3GpoGU4KwqSlU",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/fca1b3e8cdc63f1398e790080f094852d46a8aae",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/d17c8153eb6183b9e1de69aabf4ce638792f908d",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/ea66fd9bf6cf3df631a73fdc39a89f014b8c7976",
+      "width" : 160
+    } ],
+    "name" : "Luciano Pereyra",
+    "popularity" : 68,
+    "type" : "artist",
+    "uri" : "spotify:artist:6ZZ2DeepA3GpoGU4KwqSlU"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/00me4Ke1LsvMxt5kydlMyU"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 643633
+    },
+    "genres" : [ "latin", "latin hip hop", "reggaeton", "reggaeton flow", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/00me4Ke1LsvMxt5kydlMyU",
+    "id" : "00me4Ke1LsvMxt5kydlMyU",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/082b2f1dc05ba9b174e45f798094a47d0628facf",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/5dfce032d9743e0f8c92cd08e62f03af71e7f731",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/9a36b805406da91c8753917eecbf691926aaa142",
+      "width" : 160
+    } ],
+    "name" : "Cosculluela",
+    "popularity" : 80,
+    "type" : "artist",
+    "uri" : "spotify:artist:00me4Ke1LsvMxt5kydlMyU"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/3tAICgiSR5PfYY4B8qsoAU"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 456313
+    },
+    "genres" : [ "argentine rock", "cantautor", "cumbia pop", "latin alternative", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/3tAICgiSR5PfYY4B8qsoAU",
+    "id" : "3tAICgiSR5PfYY4B8qsoAU",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/a2b50e26dbbc13c04ad05907b58c2e3a0bb52926",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/97d12af7deccffef5cda3521e829f4e09cf74294",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/18cd4b5775ed98d098edfbd65d8582eeb788280c",
+      "width" : 160
+    } ],
+    "name" : "Andrés Calamaro",
+    "popularity" : 73,
+    "type" : "artist",
+    "uri" : "spotify:artist:3tAICgiSR5PfYY4B8qsoAU"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/4GAS1OgXh8D5pEA6s6eBNW"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 1612
+    },
+    "genres" : [ "pop reggaeton" ],
+    "href" : "https://api.spotify.com/v1/artists/4GAS1OgXh8D5pEA6s6eBNW",
+    "id" : "4GAS1OgXh8D5pEA6s6eBNW",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/0e7949bfd527d1ee69c8a4ae3b97719af7415928",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/ece72241984b906ebfd0aaa62bf477fb7b6f2fd3",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/d62cad37e21b7c10e212e2eb48c9003de38a5cf4",
+      "width" : 160
+    } ],
+    "name" : "Valentino",
+    "popularity" : 69,
+    "type" : "artist",
+    "uri" : "spotify:artist:4GAS1OgXh8D5pEA6s6eBNW"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/1HBjj22wzbscIZ9sEb5dyf"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 329171
+    },
+    "genres" : [ "dance pop", "edm", "pop", "tropical house" ],
+    "href" : "https://api.spotify.com/v1/artists/1HBjj22wzbscIZ9sEb5dyf",
+    "id" : "1HBjj22wzbscIZ9sEb5dyf",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/175dd146bd9b2bdf2ac9f04ceb2d40ba5b1225b4",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/574e063c4de74966320bc4db605316bf5f218c57",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/2990ed26fab0409c74e230689c59202240632591",
+      "width" : 160
+    } ],
+    "name" : "Jonas Blue",
+    "popularity" : 87,
+    "type" : "artist",
+    "uri" : "spotify:artist:1HBjj22wzbscIZ9sEb5dyf"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/1Qv4E1VgZOGnOYd99Kp5Bs"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 115730
+    },
+    "genres" : [ "argentine rock", "cumbia pop", "latin alternative", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/1Qv4E1VgZOGnOYd99Kp5Bs",
+    "id" : "1Qv4E1VgZOGnOYd99Kp5Bs",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/381d98e65e7fe731287b0ec64998018ec5ebbafa",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/0fa0fc6a7b50e5bb652fdcee35e99f949e447823",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/def85538faefdf3ef71aba27e4985bb527569dd4",
+      "width" : 160
+    } ],
+    "name" : "Las Pelotas",
+    "popularity" : 63,
+    "type" : "artist",
+    "uri" : "spotify:artist:1Qv4E1VgZOGnOYd99Kp5Bs"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/0Dy32zfSrQ332Bz8wsthKJ"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 308386
+    },
+    "genres" : [ "argentine rock", "cumbia pop", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/0Dy32zfSrQ332Bz8wsthKJ",
+    "id" : "0Dy32zfSrQ332Bz8wsthKJ",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/dc940fba959bc3f831fc585e036407b6dcfa4e6d",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/fbfff8272de73d3dfee62ffefbcce47d41913bd3",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/3b0a5668e4f25268c84999e788a9c9ea689e8acb",
+      "width" : 160
+    } ],
+    "name" : "La Beriso",
+    "popularity" : 69,
+    "type" : "artist",
+    "uri" : "spotify:artist:0Dy32zfSrQ332Bz8wsthKJ"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/2UqRkW2wfEkZmyvKyTTv2W"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 96798
+    },
+    "genres" : [ "cumbia pop", "cumbia villera" ],
+    "href" : "https://api.spotify.com/v1/artists/2UqRkW2wfEkZmyvKyTTv2W",
+    "id" : "2UqRkW2wfEkZmyvKyTTv2W",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/27f7c1c69566b8ae8555f94ee044335bf208ca4b",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/b851a67d28806ff774c2b503a86fd737238b44fb",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/ce4b1df923a4eaeedff37e42add1f82a842fe34f",
+      "width" : 160
+    } ],
+    "name" : "Ulises Bueno",
+    "popularity" : 65,
+    "type" : "artist",
+    "uri" : "spotify:artist:2UqRkW2wfEkZmyvKyTTv2W"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/2cy1zPcrFcXAJTP0APWewL"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 396738
+    },
+    "genres" : [ "cubaton", "latin", "latin hip hop", "latin pop", "reggaeton", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/2cy1zPcrFcXAJTP0APWewL",
+    "id" : "2cy1zPcrFcXAJTP0APWewL",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/5a1883768f2765960d5ef0a342f720ab56992905",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/e53a2fa72adec536ba8fef16fc09274cceefe98f",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/60f90c6ea9d8a14ff268055398725a9d4278b229",
+      "width" : 160
+    } ],
+    "name" : "Gente De Zona",
+    "popularity" : 84,
+    "type" : "artist",
+    "uri" : "spotify:artist:2cy1zPcrFcXAJTP0APWewL"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/14lvrkdaXxggonwjKZpePM"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 17924
+    },
+    "genres" : [ "cumbia pop" ],
+    "href" : "https://api.spotify.com/v1/artists/14lvrkdaXxggonwjKZpePM",
+    "id" : "14lvrkdaXxggonwjKZpePM",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/dc10a53e7e86f55853a25863baa5d7c5a7b719d4",
+      "width" : 640
+    }, {
+      "height" : 300,
+      "url" : "https://i.scdn.co/image/fdd8949fce639dd39699d4b3645ceed9a5303379",
+      "width" : 300
+    }, {
+      "height" : 64,
+      "url" : "https://i.scdn.co/image/d8def6b5dad125956c4b100a5da8bbcb2bcb7c27",
+      "width" : 64
+    } ],
+    "name" : "CHANO",
+    "popularity" : 57,
+    "type" : "artist",
+    "uri" : "spotify:artist:14lvrkdaXxggonwjKZpePM"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/6VuMaDnrHyPL1p4EHjYLi7"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 1997649
+    },
+    "genres" : [ "dance pop", "pop", "post-teen pop", "viral pop" ],
+    "href" : "https://api.spotify.com/v1/artists/6VuMaDnrHyPL1p4EHjYLi7",
+    "id" : "6VuMaDnrHyPL1p4EHjYLi7",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/979805b33ab13d80a56230767e38272bd78c1836",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/245a0fbd52f65b545490c78f3a0ef68d86d134c2",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/804e7f1b44b32d4705f6bd7739a08385e8c57e20",
+      "width" : 160
+    } ],
+    "name" : "Charlie Puth",
+    "popularity" : 90,
+    "type" : "artist",
+    "uri" : "spotify:artist:6VuMaDnrHyPL1p4EHjYLi7"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/6QVEWdYtBkaJcboEtH5FeB"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 13360
+    },
+    "genres" : [ "cumbia pop", "cumbia villera" ],
+    "href" : "https://api.spotify.com/v1/artists/6QVEWdYtBkaJcboEtH5FeB",
+    "id" : "6QVEWdYtBkaJcboEtH5FeB",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/e8e017e0e3e226ad3a93605491146d0ea2d55586",
+      "width" : 640
+    }, {
+      "height" : 300,
+      "url" : "https://i.scdn.co/image/183aa50dd2bb7de832246a085bf552ee3afbf7e5",
+      "width" : 300
+    }, {
+      "height" : 64,
+      "url" : "https://i.scdn.co/image/c89305d6edfd1473f62ea9591728d87117cf6f5b",
+      "width" : 64
+    } ],
+    "name" : "Los Turros",
+    "popularity" : 56,
+    "type" : "artist",
+    "uri" : "spotify:artist:6QVEWdYtBkaJcboEtH5FeB"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/7An4yvF7hDYDolN4m5zKBp"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 1222085
+    },
+    "genres" : [ "argentine rock", "latin alternative", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/7An4yvF7hDYDolN4m5zKBp",
+    "id" : "7An4yvF7hDYDolN4m5zKBp",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/8d67f117c3a9fe0f8dc72fc50efb33d87023f2c7",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/1c45d7d9d86cdb66cb80aa244d2e3a8a75747e29",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/92d950e22ccb1f984dbf743c4638b2c5286a4a3f",
+      "width" : 160
+    } ],
+    "name" : "Soda Stereo",
+    "popularity" : 79,
+    "type" : "artist",
+    "uri" : "spotify:artist:7An4yvF7hDYDolN4m5zKBp"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/0CBKUzrf6yGdTgxAQbUUHS"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 100256
+    },
+    "genres" : [ "cumbia pop", "cumbia villera", "reggaeton", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/0CBKUzrf6yGdTgxAQbUUHS",
+    "id" : "0CBKUzrf6yGdTgxAQbUUHS",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/a7f2d4c8964f703d218fe9ce1ba12ddea28a18f0",
+      "width" : 640
+    }, {
+      "height" : 300,
+      "url" : "https://i.scdn.co/image/de3c2a231be61a1e2df1a08d0ea7bd2d702c7cca",
+      "width" : 300
+    }, {
+      "height" : 64,
+      "url" : "https://i.scdn.co/image/9106b3f57a89746f73a1724fb269f3e2084a2137",
+      "width" : 64
+    } ],
+    "name" : "Rafaga",
+    "popularity" : 64,
+    "type" : "artist",
+    "uri" : "spotify:artist:0CBKUzrf6yGdTgxAQbUUHS"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/0vR2qb8m9WHeZ5ByCbimq2"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 1118685
+    },
+    "genres" : [ "latin", "latin arena pop", "latin pop", "reggaeton", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/0vR2qb8m9WHeZ5ByCbimq2",
+    "id" : "0vR2qb8m9WHeZ5ByCbimq2",
+    "images" : [ {
+      "height" : 1000,
+      "url" : "https://i.scdn.co/image/7f4daae57c3f9ba1539fc4ff9afc2ef1056ce285",
+      "width" : 1000
+    }, {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/6e4ba37aeecb649e5e10a769c9dfa2df7d304ad8",
+      "width" : 640
+    }, {
+      "height" : 200,
+      "url" : "https://i.scdn.co/image/54653eb3cc92684165a6632a901c1cf202eb29cc",
+      "width" : 200
+    }, {
+      "height" : 64,
+      "url" : "https://i.scdn.co/image/0dc17d98a72b5dbb98d0dc1ae71ce5575d5089ab",
+      "width" : 64
+    } ],
+    "name" : "Reik",
+    "popularity" : 80,
+    "type" : "artist",
+    "uri" : "spotify:artist:0vR2qb8m9WHeZ5ByCbimq2"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/4GepMkTgrIZECoCC55vqjW"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 531537
+    },
+    "genres" : [ "cumbia pop", "pop reggaeton", "reggaeton" ],
+    "href" : "https://api.spotify.com/v1/artists/4GepMkTgrIZECoCC55vqjW",
+    "id" : "4GepMkTgrIZECoCC55vqjW",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/ac987442b18c622b2a9cae6aa2a665f73e2186cc",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/11ec67c1e978f45159e72f64c08e36c09fb4bdbf",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/4ab26bde2dee059b7bda5c0aa7837a14c0bb7bd4",
+      "width" : 160
+    } ],
+    "name" : "Marama",
+    "popularity" : 69,
+    "type" : "artist",
+    "uri" : "spotify:artist:4GepMkTgrIZECoCC55vqjW"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/329e4yvIujISKGKz1BZZbO"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 1470550
+    },
+    "genres" : [ "latin", "latin hip hop", "reggaeton", "trap latino" ],
+    "href" : "https://api.spotify.com/v1/artists/329e4yvIujISKGKz1BZZbO",
+    "id" : "329e4yvIujISKGKz1BZZbO",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/fefe65366ff5ee3d62b7ee8e8b468c4c58c52a1d",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/86a82387ed65e293d1c015816293436aa46389a0",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/365ae3605477e6d45c366df73b8fa6b6c336add6",
+      "width" : 160
+    } ],
+    "name" : "Farruko",
+    "popularity" : 92,
+    "type" : "artist",
+    "uri" : "spotify:artist:329e4yvIujISKGKz1BZZbO"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/7An4yvF7hDYDolN4m5zKBp"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 1222085
+    },
+    "genres" : [ "argentine rock", "latin alternative", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/7An4yvF7hDYDolN4m5zKBp",
+    "id" : "7An4yvF7hDYDolN4m5zKBp",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/8d67f117c3a9fe0f8dc72fc50efb33d87023f2c7",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/1c45d7d9d86cdb66cb80aa244d2e3a8a75747e29",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/92d950e22ccb1f984dbf743c4638b2c5286a4a3f",
+      "width" : 160
+    } ],
+    "name" : "Soda Stereo",
+    "popularity" : 79,
+    "type" : "artist",
+    "uri" : "spotify:artist:7An4yvF7hDYDolN4m5zKBp"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/4ZDoy7AWNgQVmX7T0u0B1j"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 354210
+    },
+    "genres" : [ "argentine rock", "cumbia pop", "latin alternative", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/4ZDoy7AWNgQVmX7T0u0B1j",
+    "id" : "4ZDoy7AWNgQVmX7T0u0B1j",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/c249bd6858f228303d6deeb36632509981e9230a",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/90261753f4f4ff48d0b8f2fa3fd9fda377fd32e5",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/3abe0eec2ea773c1dd7c4a03a0c3d825b8efea18",
+      "width" : 160
+    } ],
+    "name" : "No Te Va Gustar",
+    "popularity" : 72,
+    "type" : "artist",
+    "uri" : "spotify:artist:4ZDoy7AWNgQVmX7T0u0B1j"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/3MHaV05u0io8fQbZ2XPtlC"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 1467299
+    },
+    "genres" : [ "bachata", "latin", "latin hip hop", "latin pop", "merengue urbano", "reggaeton", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/3MHaV05u0io8fQbZ2XPtlC",
+    "id" : "3MHaV05u0io8fQbZ2XPtlC",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/7f7157a7b2802a353057081868eaeb9beea4058c",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/5dbf4d14c0c96e60eaa90084ed585e766e1e2da8",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/1b7ce9c9c4cae467a702922d0c197ca490f4ff7e",
+      "width" : 160
+    } ],
+    "name" : "Prince Royce",
+    "popularity" : 80,
+    "type" : "artist",
+    "uri" : "spotify:artist:3MHaV05u0io8fQbZ2XPtlC"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/1MuQ2m2tg7naeRGAOxYZer"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 158029
+    },
+    "genres" : [ "argentine rock", "latin alternative", "nueva cancion", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/1MuQ2m2tg7naeRGAOxYZer",
+    "id" : "1MuQ2m2tg7naeRGAOxYZer",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/fe99157c74ad5d2ac69954ad7f747f7419ab12fd",
+      "width" : 640
+    }, {
+      "height" : 300,
+      "url" : "https://i.scdn.co/image/25d3fff33aa67b34f8704274eac5ac14d5b89185",
+      "width" : 300
+    }, {
+      "height" : 64,
+      "url" : "https://i.scdn.co/image/45a1904a47c09941adc962dd287caa81d1fafd91",
+      "width" : 64
+    } ],
+    "name" : "Luis Alberto Spinetta",
+    "popularity" : 60,
+    "type" : "artist",
+    "uri" : "spotify:artist:1MuQ2m2tg7naeRGAOxYZer"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/2osoVujXgV0PA8lhqDKYFw"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 231030
+    },
+    "genres" : [ "argentine rock", "cumbia pop", "cumbia villera", "latin alternative", "rock en espanol" ],
+    "href" : "https://api.spotify.com/v1/artists/2osoVujXgV0PA8lhqDKYFw",
+    "id" : "2osoVujXgV0PA8lhqDKYFw",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/df7abc845437f86a440eb5d9098f49fbd6917020",
+      "width" : 640
+    }, {
+      "height" : 300,
+      "url" : "https://i.scdn.co/image/0a98c5c3c908851556cbebc797a85c6d2d01e658",
+      "width" : 300
+    }, {
+      "height" : 64,
+      "url" : "https://i.scdn.co/image/260519f81c3d5fc080ce16720d650d652c5d3b84",
+      "width" : 64
+    } ],
+    "name" : "Callejeros",
+    "popularity" : 68,
+    "type" : "artist",
+    "uri" : "spotify:artist:2osoVujXgV0PA8lhqDKYFw"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/7tU1VKOuxiNZwBZC6RHidA"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 599492
+    },
+    "genres" : [ "latin", "latin hip hop", "pop reggaeton", "reggaeton", "reggaeton flow", "trap latino", "tropical" ],
+    "href" : "https://api.spotify.com/v1/artists/7tU1VKOuxiNZwBZC6RHidA",
+    "id" : "7tU1VKOuxiNZwBZC6RHidA",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/f384691ba5926355632f1407857acb2b44a9138c",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/c310e8d6391f8ac48f11a4284a0990de6650b5f5",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/b1f86cfa7eba57537236f5a079d0d8b3054b43fa",
+      "width" : 160
+    } ],
+    "name" : "Alexis & Fido",
+    "popularity" : 76,
+    "type" : "artist",
+    "uri" : "spotify:artist:7tU1VKOuxiNZwBZC6RHidA"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/2wYOpkTJZGByNEOjEnSmoW"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 3656
+    },
+    "genres" : [ "latin hip hop", "reggaeton", "reggaeton flow" ],
+    "href" : "https://api.spotify.com/v1/artists/2wYOpkTJZGByNEOjEnSmoW",
+    "id" : "2wYOpkTJZGByNEOjEnSmoW",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/3e07906608069d35412e3cc0f4596bae9f823cac",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/b2ea2da78f1f95ee77c864a28ae1de58bc46c38a",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/31e65fc3b502bc064334a27f2ac6991cf707ba86",
+      "width" : 160
+    } ],
+    "name" : "Revol",
+    "popularity" : 70,
+    "type" : "artist",
+    "uri" : "spotify:artist:2wYOpkTJZGByNEOjEnSmoW"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/3RtNN1VnooWEn3KQk03DUL"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 206372
+    },
+    "genres" : [ "reggaeton", "reggaeton flow", "trap latino" ],
+    "href" : "https://api.spotify.com/v1/artists/3RtNN1VnooWEn3KQk03DUL",
+    "id" : "3RtNN1VnooWEn3KQk03DUL",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/0ce683fe9e10cbcf6adb5b42584d82a0007783f7",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/3bc4ded9fef7acfb728e5e8f7a02c4d2a44562b0",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/b898a25d621c435cb891e9c288b48dadb2316d5c",
+      "width" : 160
+    } ],
+    "name" : "Noriel",
+    "popularity" : 82,
+    "type" : "artist",
+    "uri" : "spotify:artist:3RtNN1VnooWEn3KQk03DUL"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/22P1OY4TRFRwhP0q29loQ8"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 142070
+    },
+    "genres" : [ "cumbia pop" ],
+    "href" : "https://api.spotify.com/v1/artists/22P1OY4TRFRwhP0q29loQ8",
+    "id" : "22P1OY4TRFRwhP0q29loQ8",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/638ca59abceae95ebb318bf0701f5756e7862587",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/78b6ea036d8038468ba0c96699dc26dc63cbf2b6",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/c6251d5cfb6038b0d562f11aeab5c7c6fff72467",
+      "width" : 160
+    } ],
+    "name" : "Lali",
+    "popularity" : 60,
+    "type" : "artist",
+    "uri" : "spotify:artist:22P1OY4TRFRwhP0q29loQ8"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/2UqRkW2wfEkZmyvKyTTv2W"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 96798
+    },
+    "genres" : [ "cumbia pop", "cumbia villera" ],
+    "href" : "https://api.spotify.com/v1/artists/2UqRkW2wfEkZmyvKyTTv2W",
+    "id" : "2UqRkW2wfEkZmyvKyTTv2W",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/27f7c1c69566b8ae8555f94ee044335bf208ca4b",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/b851a67d28806ff774c2b503a86fd737238b44fb",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/ce4b1df923a4eaeedff37e42add1f82a842fe34f",
+      "width" : 160
+    } ],
+    "name" : "Ulises Bueno",
+    "popularity" : 65,
+    "type" : "artist",
+    "uri" : "spotify:artist:2UqRkW2wfEkZmyvKyTTv2W"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/6vXTefBL93Dj5IqAWq6OTv"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 995863
+    },
+    "genres" : [ "pop rap", "rap", "trap music" ],
+    "href" : "https://api.spotify.com/v1/artists/6vXTefBL93Dj5IqAWq6OTv",
+    "id" : "6vXTefBL93Dj5IqAWq6OTv",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/29fa1dc766fba1ea3058eb6cebc25bf1d31b7161",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/2bc48efdf95f8dea1074e3ebac486de1130ddef4",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/4cd7a907e1f8f923760556247664b41fc508a1e6",
+      "width" : 160
+    } ],
+    "name" : "French Montana",
+    "popularity" : 92,
+    "type" : "artist",
+    "uri" : "spotify:artist:6vXTefBL93Dj5IqAWq6OTv"
+  }, {
+    "external_urls" : {
+      "spotify" : "https://open.spotify.com/artist/0QHgL1lAIqAw0HtD7YldmP"
+    },
+    "followers" : {
+      "href" : null,
+      "total" : 1446710
+    },
+    "genres" : [ "dance pop", "pop", "pop rap", "rap", "trap music" ],
+    "href" : "https://api.spotify.com/v1/artists/0QHgL1lAIqAw0HtD7YldmP",
+    "id" : "0QHgL1lAIqAw0HtD7YldmP",
+    "images" : [ {
+      "height" : 640,
+      "url" : "https://i.scdn.co/image/0530124871056c2458c1ad9f86510b9f7f7aa26f",
+      "width" : 640
+    }, {
+      "height" : 320,
+      "url" : "https://i.scdn.co/image/0a57e05f4311c234755fecfec98a0e062a8d8548",
+      "width" : 320
+    }, {
+      "height" : 160,
+      "url" : "https://i.scdn.co/image/a366187b1a55ba6c15510a2d82875d8b7ebd0d5b",
+      "width" : 160
+    } ],
+    "name" : "DJ Khaled",
+    "popularity" : 91,
+    "type" : "artist",
+    "uri" : "spotify:artist:0QHgL1lAIqAw0HtD7YldmP"
+  } ]
+}
