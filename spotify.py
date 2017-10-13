@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 from lxml import html
 
 # cache http requests?
-CACHE_ENABLED = True
+CACHE_ENABLED = False
 
 # spotify app client ID
 CLIENT_ID = 'e021413b59f5430d9b1b0b46f67c9dec'
@@ -13,12 +13,12 @@ CLIENT_ID = 'e021413b59f5430d9b1b0b46f67c9dec'
 CLIENT_SECRET = '1c155d57d1514944972ea4a6b7ed7554'
 
 # sqlite database filename/path
-DATABASE_FILE = 'Spotify-SQLite.db'
+DATABASE_FILE = '../Spotify-SQLite.db'
 
 # the daily regional CSV download link
 CSV_URL = 'https://spotifycharts.com/regional/{}/daily/{}/download'
 
-# the regions to download
+# the regions to downloada
 REGIONS = [
     'global','gb','ad','ar','at','au','be','bg','bo','br',
     'ca','ch','cl','co','cr','cy','cz','de','dk','do','ec',
@@ -34,22 +34,48 @@ MAX_URL_RETRIES = 10
 # seconds to wait between retry attempts
 SECONDS_BETWEEN_RETRIES = 3
 
-def get_page(url, count=0, last_request=0, return_full=False):
+def get_page(url, cache=False, count=0, last_request=0, return_full=False):
     """
     Request a webpage, retry on failure, cache as desired
     """
+    if cache and return_full:
+        raise ValueError('Cannot have "cache" set to True while "return_full" is set to True')
+    hashedurl = hashlib.sha256(url.encode('utf-8')).hexdigest()
+    cache_file = "./cache/%s.cache" % hashedurl
+    if cache and os.path.isfile(cache_file):
+        with open(cache_file) as f:
+            return f.read()
     if count > MAX_URL_RETRIES:
         print('Failed getting page "%s", retried %i times' % (url, count))
         return False
     if last_request > time.time()-1:
         time.sleep(SECONDS_BETWEEN_RETRIES)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+        'Accept-Encoding': 'none',
+        'Accept-Language': 'en-US,en;q=0.8',
+        'Connection': 'keep-alive'
+    }
+    if cache and not os.path.exists(os.path.dirname(cache_file)):
+        try:
+            os.makedirs(os.path.dirname(cache_file))
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
     try:
-        r = urlopen(url)
-        return r if return_full else r.read().decode('utf-8')
+        q = Request(url, None, headers)
+        r = urlopen(q)
+        data = r.read().decode('utf-8')
+        if cache:
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                f.write(data)
+        return r if return_full else data
     except Exception as e:
         count += 1
         print('Failed getting URL "%s", retrying...' % url)
-        return get_page(url, count, time.time(), return_full)
+        return get_page(url, cache, count, time.time())
 
 def get_dates_for_region(region):
     """
