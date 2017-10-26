@@ -1,4 +1,4 @@
-import sqlite3, csv, codecs, re, json, os, base64, time, hashlib, ssl
+import sqlite3, csv, codecs, re, json, os, base64, time, hashlib
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from lxml import html
@@ -34,9 +34,6 @@ MAX_URL_RETRIES = 10
 # seconds to wait between retry attempts
 SECONDS_BETWEEN_RETRIES = 3
 
-# unverified SSL context
-SSL_CONTEXT = ssl._create_unverified_context()
-
 def get_page(url, count=0, last_request=0, return_full=False):
     """
     Request a webpage, retry on failure, cache as desired
@@ -47,11 +44,10 @@ def get_page(url, count=0, last_request=0, return_full=False):
     if last_request > time.time()-1:
         time.sleep(SECONDS_BETWEEN_RETRIES)
     try:
-        r = urlopen(url, context=SSL_CONTEXT)
+        r = urlopen(url)
         return r if return_full else r.read().decode('utf-8')
     except Exception as e:
         count += 1
-        print('error: ', e)
         print('Failed getting URL "%s", retrying...' % url)
         return get_page(url, count, time.time(), return_full)
 
@@ -93,7 +89,7 @@ def load_csv_data(region, date='latest'):
         track = dict(zip(fields, row))
         if len(track) == len(fields):
             track['Region'] = region
-            track['TrackID'] = get_track_id(track['URL'])
+            track['TrackID'] = get_track_id(track['URL']) 
             data[track['TrackID']] = track
     return data
 
@@ -116,7 +112,7 @@ class Spotify(object):
         }).encode('UTF-8')
         r = Request(endpoint, data)
         r.add_header('Authorization', 'Basic %s' % auth.decode('UTF-8'))
-        response = urlopen(r, context=SSL_CONTEXT).read()
+        response = urlopen(r).read()
         auth_dict = json.loads(response)
         self.access_token = auth_dict['access_token']
         self.token_type = auth_dict['token_type']
@@ -160,7 +156,7 @@ class Spotify(object):
                     raise
         try:
             q = Request(url, None, headers)
-            data = urlopen(q, context=SSL_CONTEXT).read().decode('utf-8')
+            data = urlopen(q).read().decode('utf-8')
             if cache:
                 with open(cache_file, 'w', encoding='utf-8') as f:
                     f.write(data)
@@ -295,7 +291,7 @@ class TrackDatabase(object):
         self.c = self.db.cursor()
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS tracks (
-                hash_track text PRIMARY KEY,
+                hash text PRIMARY KEY,
                 Name text NOT NULL,
                 Artist text NOT NULL,
                 Label text NOT NULL,
@@ -358,7 +354,7 @@ class TrackDatabase(object):
         """
         try:
             self.c.execute('''
-                INSERT OR IGNORE INTO processed
+                INSERT OR IGNORE INTO processed 
                 (url)
                 VALUES
                 (?)
@@ -397,9 +393,9 @@ class TrackDatabase(object):
         position = int(position)
         stats = self.get_track_stats(track_hash)
         stats_query = '''
-            INSERT OR REPLACE INTO stats
-            (track_hash, added, last_seen, peak_rank, peak_date)
-            VALUES
+            INSERT OR REPLACE INTO stats 
+            (track_hash, added, last_seen, peak_rank, peak_date) 
+            VALUES 
             (?, ?, ?, ?, ?)
         '''
         added = self.order_dates(stats[1], date_str)[0] if stats else date_str
@@ -412,7 +408,7 @@ class TrackDatabase(object):
             peak = stats[3] if stats else position
             peak_date = stats[2] if stats else date_str
         self.c.execute(
-            stats_query,
+            stats_query, 
             [track_hash, added, date_str, peak, peak_date]
         )
     def add_tracks(self, track_list, date_str):
@@ -423,7 +419,7 @@ class TrackDatabase(object):
             row = self.track_to_tuple(track)
             try:
                 self.c.execute('''
-                    INSERT OR IGNORE INTO tracks
+                    INSERT OR IGNORE INTO tracks 
                     (hash, Name, Artist, Label, TrackID, AlbumID,
                      URL, Region, ISRC, Released, Genres)
                     VALUES
@@ -432,7 +428,7 @@ class TrackDatabase(object):
                 self.update_track_stats(row[0], track['Position'], date_str)
                 pos_hash = self.get_track_position_hash(row[0], date_str)
                 self.c.execute('''
-                    INSERT OR IGNORE INTO track_position
+                    INSERT OR IGNORE INTO track_position 
                     (hash, track_hash, position, streams, date_str)
                     VALUES
                     (?, ?, ?, ?, ?)
@@ -448,7 +444,7 @@ class TrackDatabase(object):
         """
         hashed = self.get_row_hash(track)
         return (
-            hashed,
+            hashed, 
             str(track['Track Name']),
             str(track['Artist']),
             str(track['Label']),
@@ -462,13 +458,13 @@ class TrackDatabase(object):
         )
     def get_row_hash(self, track):
         """
-        Return an SHA1 hash for a given track
+        Return an SHA1 hash for a given track 
         """
         hash_str = "%r-%r-%r-%r" % (track['ISRC'],track['Region'],track['TrackID'],track['AlbumID'])
         return hashlib.sha1(hash_str.encode('utf-8')).hexdigest()
     def get_track_position_hash(self, track_hash, date_str):
         """
-        Return an SHA1 hash for a given track and position
+        Return an SHA1 hash for a given track and position 
         """
         hash_str = "%r:%r" % (track_hash,date_str)
         return hashlib.sha1(hash_str.encode('utf-8')).hexdigest()
@@ -536,10 +532,10 @@ if __name__ == '__main__':
     #CACHE_ENABLED = True
     cache_msg = '\033[92m enabled' if CACHE_ENABLED else '\033[91m disabled'
     print('HTTP cache is%s\033[0m' % cache_msg)
-
+    
     # setup db
     db = TrackDatabase(DATABASE_FILE)
-
+    
     # prompt for date/mode
     while True:
         mode = input('\nEnter a date (YYYY-MM-DD) or use "all|watch|latest": ')
