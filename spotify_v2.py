@@ -13,23 +13,25 @@ CLIENT_ID = 'e021413b59f5430d9b1b0b46f67c9dec'
 CLIENT_SECRET = '1c155d57d1514944972ea4a6b7ed7554'
 
 # sqlite database filename/path
-DATABASE_FILE = '../Spotify-SQLite.db'
+DATABASE_FILE = '../test.db'
 
 # the daily regional CSV download link
-CSV_URL = 'https://spotifycharts.com/regional/{}/daily/{}/download'
+CSV_url = 'https://spotifycharts.com/regional/{}/daily/{}/download'
 
 # the regions to download
-REGIONS = [
-    'global','gb','ad','ar','at','au','be','bg','bo','br',
-    'ca','ch','cl','co','cr','cy','cz','de','dk','do','ec',
-    'ee','es','fi','fr','gr','gt','hk','hn','hu','id','ie',
-    'is','it','jp','lt','lu','lv','mc','mt','mx','my','ni',
-    'nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
-    'sk','sv','th','tr','tw','uy'
-]
+# REGIONS = [
+#     'global','gb','ad','ar','at','au','be','bg','bo','br',
+#     'ca','ch','cl','co','cr','cy','cz','de','dk','do','ec',
+#     'ee','es','fi','fr','gr','gt','hk','hn','hu','id','ie',
+#     'is','it','jp','lt','lu','lv','mc','mt','mx','my','ni',
+#     'nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
+#     'sk','sv','th','tr','tw','uy'
+# ]
+# test
+REGIONS = ['global']
 
 # max number of times to retry http requests
-MAX_URL_RETRIES = 10
+MAX_url_RETRIES = 10
 
 # seconds to wait between retry attempts
 SECONDS_BETWEEN_RETRIES = 3
@@ -41,7 +43,7 @@ def get_page(url, count=0, last_request=0, return_full=False):
     """
     Request a webpage, retry on failure, cache as desired
     """
-    if count > MAX_URL_RETRIES:
+    if count > MAX_url_RETRIES:
         print('Failed getting page "%s", retried %i times' % (url, count))
         return False
     if last_request > time.time()-1:
@@ -52,7 +54,7 @@ def get_page(url, count=0, last_request=0, return_full=False):
     except Exception as e:
         count += 1
         print('error: ', e)
-        print('Failed getting URL "%s", retrying...' % url)
+        print('Failed getting url "%s", retrying...' % url)
         return get_page(url, count, time.time(), return_full)
 
 def get_dates_for_region(region):
@@ -70,15 +72,15 @@ def get_dates_for_region(region):
     # convert M/D/Y to Y-M-D
     return [re.sub(r"(\d{2})\/(\d{2})\/(\d{4})", '\\3-\\1-\\2', d, 0) for d in rows]
 
-def get_csv_url(region, date='latest'):
-    return CSV_URL.format(region, date)
+def get_spotify_csv_url(region, date='latest'):
+    return CSV_url.format(region, date)
 
-def load_csv_data(region, date='latest'):
+def load_spotify_csv_data(region, date='latest'):
     """
     Load and process the CSV file for a given region and date
     Returns a list of tracks with region and track ID appended
     """
-    url = get_csv_url(region, date)
+    url = get_spotify_csv_url(region, date)
     r = get_page(url, return_full=True)
     info = r.info()
     if info.get_content_type() != 'text/csv':
@@ -97,6 +99,9 @@ def load_csv_data(region, date='latest'):
             data[track['TrackID']] = track
     return data
 
+# SPOTIFY CLASS START
+#
+#
 class Spotify(object):
     """ Handle Basic Spotify OAuth2 Requests """
     def __init__(self, client_id, client_secret):
@@ -173,17 +178,20 @@ class Spotify(object):
         except Exception as e:
             count += 1
             return get_page(url, cache, count, time.time())
+#
+#
+# SPOTIFY CLASS END
 
 def get_isrc_by_id(tracks, track_id):
     """
-    Return the ISRC data for the track matching track_id
+    Return the isrc data for the track matching track_id
     """
     for track in tracks:
         if track['id'] == track_id:
             if 'external_ids' in track and 'isrc' in track['external_ids']:
                 return track['external_ids']['isrc']
             else:
-                print('ISRC data not available for track ID %s' % track_id)
+                print('isrc data not available for track ID %s' % track_id)
     return False
 
 def get_album_by_id(tracks, track_id):
@@ -207,50 +215,52 @@ def get_artist_by_id(tracks, track_id):
             if 'artists' in track and track['artists'] and 'id' in track['artists'][0]:
                 return track['artists'][0]['id']
             else:
-                print('Artist ID not available for track ID %s' % track_id)
+                print('artist ID not available for track ID %s' % track_id)
     return False
 
 def append_track_data(tracks, batch_size=50):
     """
-    Append the ISRC, artist ID, and album ID to tracks_list using the Spotify tracks API
+    Append the isrc, artist ID, and album ID to tracks_list using the Spotify tracks API
     See: https://developer.spotify.com/web-api/console/get-several-tracks/
-    Returns track_list with "ISRC", "ArtistID" and "AlbumID" appended
+    Returns track_list with "isrc", "artistID" and "albumId" appended
     """
     spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
     endpoint = "https://api.spotify.com/v1/tracks?ids={}"
     # api supports up to 50 ids at a time
     track_list = list(tracks)
     batches = [track_list[i:i + batch_size] for i in range(0, len(track_list), batch_size)]
-    for batch in batches:
+    for i, batch in enumerate(batches):
         id_str = ','.join(map(str, batch))
         r_dict = spotify.request(endpoint.format(id_str))
         for track_id in batch:
             tracks[track_id]['ISRC'] = get_isrc_by_id(r_dict['tracks'], track_id)
-            tracks[track_id]['AlbumID'] = get_album_by_id(r_dict['tracks'], track_id)
-            tracks[track_id]['ArtistID'] = get_artist_by_id(r_dict['tracks'], track_id)
+            tracks[track_id]['albumId'] = get_album_by_id(r_dict['tracks'], track_id)
+            tracks[track_id]['artistId'] = get_artist_by_id(r_dict['tracks'], track_id)
+        print('Appended track data for batch %d of %d' % (i+1, len(batches)) )
     return tracks
 
 def append_track_album_data(tracks, batch_size=20):
     """
     Append the label and release date to tracks using the Spotify albums API
     See: hhttps://developer.spotify.com/web-api/console/get-several-albums/
-    Returns tracks with "Label" and "Released" appended
+    Returns tracks with "label" and "released" appended
     """
     spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
     endpoint = "https://api.spotify.com/v1/albums?ids={}"
     # api supports up to 20 ids at a time
-    albums = [t['AlbumID'] for k,t in tracks.items() if t['AlbumID']]
+    albums = [t['albumId'] for k,t in tracks.items() if t['albumId']]
     batches = [albums[i:i + batch_size] for i in range(0, len(albums), batch_size)]
-    for batch in batches:
+    for i, batch in enumerate(batches):
         id_str = ','.join(batch)
         r_dict = spotify.request(endpoint.format(id_str))
         for album in r_dict['albums']:
             released = album['release_date']
             label = album['label']
             for track_id, track in tracks.items():
-                if track['AlbumID'] == album['id']:
-                    tracks[track_id]['Released'] = released
-                    tracks[track_id]['Label'] = label
+                if track['albumId'] == album['id']:
+                    tracks[track_id]['released'] = released
+                    tracks[track_id]['label'] = label
+        print('Appended album data for batch %d of %d' % (i+1, len(batches)) )
     return tracks
 
 def append_artist_data(tracks, batch_size=50):
@@ -262,20 +272,21 @@ def append_artist_data(tracks, batch_size=50):
     spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
     endpoint = "https://api.spotify.com/v1/artists?ids={}"
     # api supports up to 50 ids at a time
-    artists = [t['ArtistID'] for k,t in tracks.items() if t['ArtistID']]
+    artists = [t['artistId'] for k,t in tracks.items() if t['artistId']]
     batches = [artists[i:i + batch_size] for i in range(0, len(artists), batch_size)]
-    for batch in batches:
+    for i, batch in enumerate(batches):
         id_str = ','.join(batch)
         r_dict = spotify.request(endpoint.format(id_str))
         for artist in r_dict['artists']:
             for track_id, track in tracks.items():
-                if track['ArtistID'] == artist['id']:
+                if track['artistId'] == artist['id']:
                     tracks[track_id]['Genres'] = ','.join(artist['genres'])
+        print('Appended artist data for batch %d of %d' % (i+1, len(batches)) )
     return tracks
 
 def get_track_id(url):
     """
-    Return the Spotify track ID from a given URL
+    Return the Spotify track ID from a given url
     Example: https://open.spotify.com/track/r1OmcAT5Y8UPv9qJT4R
     """
     regex = r"open\.spotify\.com\/track\/(\w+)"
@@ -283,9 +294,12 @@ def get_track_id(url):
     assert matches, "No track ID found for {}".format(url)
     return matches.group(1)
 
+# TrackDatabase class start
+#
+#
 class TrackDatabase(object):
     """ SQLite Database Manager """
-    def __init__(self, db_file='Spotify-SQLite.db'):
+    def __init__(self, db_file='test.db'):
         super(TrackDatabase, self).__init__()
         self.db_file = db_file
         self.init_database()
@@ -293,49 +307,102 @@ class TrackDatabase(object):
         print('Initializing database...')
         self.db = sqlite3.connect(self.db_file)
         self.c = self.db.cursor()
+
+        #tracks table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS tracks (
-                hash_track text PRIMARY KEY,
-                Name text NOT NULL,
-                Artist text NOT NULL,
-                Label text NOT NULL,
-                TrackID varchar(255) NOT NULL,
-                AlbumID varchar(255) NOT NULL,
-                URL text NOT NULL,
-                Region varchar(10) NOT NULL,
-                ISRC varchar(255) NOT NULL,
-                Released varchar(255) NOT NULL,
-                Genres varchar(255) NULL
+                track_hash text PRIMARY KEY,
+                track_name text NOT NULL,
+                artist text NOT NULL,
+                label text NOT NULL,
+                isrc varchar(255) NOT NULL,
+                release_date varchar(255) NOT NULL,
+                genres varchar(255) NULL
             )
         ''')
+
+        # processed table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS processed (
                 url text PRIMARY KEY
             )
         ''')
+
+        # service table
+        self.c.execute('''
+            CREATE TABLE IF NOT EXISTS service (
+                serviceId integer PRIMARY KEY,
+                service_name varchar(255) NOT NULL
+            )
+        ''')
+
+        # seed service table
+        self.c.execute('''
+            INSERT OR IGNORE INTO service
+            (serviceId, service_name)
+            VALUES
+            (?, ?)
+        ''', (1111, 'Spotify')
+        )
+
+        # stats table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS stats (
                 track_hash text PRIMARY KEY,
+                territoryId integer NOT NULL,
+                serviceId integer NOT NULL,
                 added varchar(255) NOT NULL,
                 last_seen varchar(255) NOT NULL,
                 peak_rank integer NOT NULL,
                 peak_date varchar(255) NOT NULL
             )
         ''')
+
+        # track_position table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS track_position (
                 hash varchar(255) PRIMARY KEY,
                 track_hash varchar(255) NOT NULL,
+                territoryId integer NOT NULL,
+                serviceId integer NOT NULL,
                 position integer NOT NULL,
                 streams integer NOT NULL,
                 date_str varchar(255) NOT NULL
             )
         ''')
+
+        # territory table
+        self.c.execute('''
+            CREATE TABLE IF NOT EXISTS territory (
+                territoryId integer PRIMARY KEY,
+                code varchar(10) NOT NULL,
+                name varchar(255) NOT NULL
+            )
+        ''')
+
+        self.c.execute('''
+            INSERT OR IGNORE INTO territory
+            (territoryId, code, name)
+            VALUES
+            (?, ?, ?)
+        ''', (1, 'global', 'global')
+        )
+
+        # track_service_info table
+        self.c.execute('''
+            CREATE TABLE IF NOT EXISTS track_service_info (
+                track_hash varchar(255) NOT NULL,
+                spotify_url text NOT NULL,
+                spotify_trackId varchar(255) NOT NULL,
+                spotify_albumId varchar(255) NOT NULL
+            )
+        ''')
+
         stat = os.stat(self.db_file)
         print("Using Database '%s'" % self.db_file)
         print("# Bytes: %r" % stat.st_size)
         bq = self.c.execute("SELECT COUNT(*) FROM processed")
-        print("# URLs Processed: %r" % bq.fetchone()[0])
+        print("# urls Processed: %r" % bq.fetchone()[0])
         tq = self.c.execute("SELECT COUNT(*) FROM tracks")
         print("# Tracks: %r" % tq.fetchone()[0])
         sq = self.c.execute("SELECT COUNT(*) FROM stats")
@@ -344,7 +411,7 @@ class TrackDatabase(object):
         print("# Position Stats: %r\n" % pq.fetchone()[0])
     def is_processed(self, url):
         """
-        Has CSV URL already been processed?
+        Has CSV url already been processed?
         """
         query = '''
             SELECT * FROM processed WHERE url = ?
@@ -363,12 +430,13 @@ class TrackDatabase(object):
                 VALUES
                 (?)
             ''', [url])
+            print('processed %s' % (url))
         except Exception as e:
             raise e
         return True
     def get_track_stats(self, track_hash):
         """
-        Returns a tuple of track stats (hash, added, last, peak, peak date)
+        Returns a tuple of track stats (track_hash, territoryId, serviceId, added, last_seen, peak_rank, peak_date)
         """
         query = self.c.execute('''
             SELECT * FROM stats WHERE track_hash = ?
@@ -390,58 +458,89 @@ class TrackDatabase(object):
         if a_matches.group(3) < b_matches.group(3):
             return (a, b)
         return (b, a)
-    def update_track_stats(self, track_hash, position, date_str):
+    def update_track_stats(self, track_hash, territoryId, serviceId, position, date_str):
         """
         Update the rolling stats for a track
         """
         position = int(position)
+        # latest track stats in the db
         stats = self.get_track_stats(track_hash)
+        # destructure to readable variables
+        if stats:
+            track_hash, territoryId, serviceId, added, last_seen, peak_rank, peak_date = stats
         stats_query = '''
             INSERT OR REPLACE INTO stats
-            (track_hash, added, last_seen, peak_rank, peak_date)
+            (track_hash, territoryId, serviceId, added, last_seen, peak_rank, peak_date)
             VALUES
-            (?, ?, ?, ?, ?)
+            (?, ?, ?, ?, ?, ?, ?)
         '''
-        added = self.order_dates(stats[1], date_str)[0] if stats else date_str
-        if stats and stats[3]<position:
-            # track is higher now
-            peak = position
+        # finds the earlier of the two dates, the current added and the current date query
+        added = self.order_dates(added, date_str)[0] if stats else date_str
+        # finds the later of the current last_seen and the current date query
+        last_seen = self.order_dates(last_seen, date_str)[1] if stats else date_str
+        if stats and position < peak_rank:
+            # track is ranked higher when current position is less than old now
+            peak_rank = position
             peak_date = date_str
         else:
             # track was higher then, or doesn't have stats
-            peak = stats[3] if stats else position
-            peak_date = stats[2] if stats else date_str
+            peak_rank = peak_rank if stats else position
+            peak_date = peak_date if stats else date_str
         self.c.execute(
             stats_query,
-            [track_hash, added, date_str, peak, peak_date]
+            [track_hash, territoryId, serviceId, added, last_seen, peak_rank, peak_date]
         )
-    def add_tracks(self, track_list, date_str):
+    def add_tracks(self, track_list, date_str, service_name):
         """
         Add tracks to the database
         """
+        serviceId = self.get_serviceId(service_name)
         for track_id, track in track_list.items():
             row = self.track_to_tuple(track)
+            track_hash = row[0]
+            # NOTE: can we assume the region will be the same for all tracks, then only do this query once, instead of for each track
+            territoryId = self.get_territoryId(track['Region'])
+            position = track['Position']
+
+            print ('---------TRACK IS---------', track)
             try:
+                # update tracks table
                 self.c.execute('''
                     INSERT OR IGNORE INTO tracks
-                    (hash, Name, Artist, Label, TrackID, AlbumID,
-                     URL, Region, ISRC, Released, Genres)
+                    (track_hash, track_name, artist, label,
+                     isrc, release_date, genres)
                     VALUES
-                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (?, ?, ?, ?, ?, ?, ?)
                 ''', row)
-                self.update_track_stats(row[0], track['Position'], date_str)
-                pos_hash = self.get_track_position_hash(row[0], date_str)
+
+                # update stats table
+                self.update_track_stats(track_hash, territoryId, serviceId, position, date_str)
+
+                # update track_position table
+                pos_hash = self.get_track_position_hash(track_hash, date_str)
                 self.c.execute('''
                     INSERT OR IGNORE INTO track_position
-                    (hash, track_hash, position, streams, date_str)
+                    (hash, track_hash, territoryId, serviceId, position, streams, date_str)
                     VALUES
-                    (?, ?, ?, ?, ?)
-                ''', [pos_hash, row[0], track['Position'], track['Streams'], date_str])
+                    (?, ?, ?, ?, ?, ?, ?)
+                ''', [pos_hash, track_hash, territoryId, serviceId, position, track['Streams'], date_str]
+                )
+
+                # update track_service_info table
+                self.c.execute('''
+                    INSERT OR IGNORE INTO track_service_info
+                    (track_hash, spotify_url, spotify_trackId, spotify_albumId)
+                    VALUES
+                    (?, ?, ?, ?)
+                ''', [track_hash, track['URL'], track['TrackID'], track['albumId']])
+
                 self.db.commit()
+
             except Exception as e:
                 print(e)
                 raise
         return True
+
     def track_to_tuple(self, track):
         """
         Convert a track dict into a tuple
@@ -451,20 +550,16 @@ class TrackDatabase(object):
             hashed,
             str(track['Track Name']),
             str(track['Artist']),
-            str(track['Label']),
-            str(track['TrackID']),
-            str(track['AlbumID']),
-            str(track['URL']),
-            str(track['Region']),
+            str(track['label']),
             str(track['ISRC']),
-            str(track['Released']),
+            str(track['released']),
             str(track['Genres'])
         )
     def get_row_hash(self, track):
         """
         Return an SHA1 hash for a given track
         """
-        hash_str = "%r-%r-%r-%r" % (track['ISRC'],track['Region'],track['TrackID'],track['AlbumID'])
+        hash_str = "%r-%r-%r-%r" % (track['ISRC'],track['Region'],track['TrackID'],track['albumId'])
         return hashlib.sha1(hash_str.encode('utf-8')).hexdigest()
     def get_track_position_hash(self, track_hash, date_str):
         """
@@ -472,13 +567,35 @@ class TrackDatabase(object):
         """
         hash_str = "%r:%r" % (track_hash,date_str)
         return hashlib.sha1(hash_str.encode('utf-8')).hexdigest()
+    def get_territoryId(self, code):
+        """
+        Retrieve territoryId from region code
+        """
+        code = code.lower()
+        query = self.c.execute('''
+            SELECT territoryId FROM territory WHERE code = ?
+        ''', [code])
+        territoryId = query.fetchone()[0]
+        print('THE TERRITORY ID IS ', territoryId)
+        return territoryId
 
+    def get_serviceId(self, service_name):
+        """
+        Retrieve serviceId from service name
+        """
+        query = self.c.execute('''
+            SELECT serviceId FROM service WHERE service_name = ?
+        ''', [service_name])
+        serviceId = query.fetchone()[0]
+        print('THE SERVICE ID IS ', serviceId)
+        return serviceId
 
 def process(mode):
     """
     Process each region for "date" mode
     Can be YYYY-MM-DD, "watch", "all", or "latest"
     """
+    service_name = 'Spotify'
     for region in REGIONS:
         if mode == 'all':
             # gets all historical data for each region
@@ -508,25 +625,22 @@ def process(mode):
 
         for date_str in available_dates:
             print('Loading tracks for region "%s" on "%s"...' % (region, date_str))
-            url = get_csv_url(region, date_str)
-            if db.is_processed(url):
-                print('Already processed, skipping...')
-                print('-' * 40)
-                continue
-            region_data = load_csv_data(region, date_str)
+            url = get_spotify_csv_url(region, date_str)
+
+            region_data = load_spotify_csv_data(region, date_str)
             if not region_data:
                 print('No download available, skipping...')
                 print('-' * 40)
                 continue
             print('Found %i tracks.' % len(region_data))
-            print('Getting track data from Spotify "tracks" API...')
+            print('Getting track data from Spotify "Tracks" API...')
             tracks = append_track_data(region_data)
-            print('Getting label and release date from Spotify "albums" API...')
+            print('Getting label and release date from Spotify "Albums" API...')
             tracks = append_track_album_data(tracks)
-            print('Getting genre tags from Spotify "artists" API...')
+            print('Getting genre tags from Spotify "Artists" API...')
             tracks = append_artist_data(tracks)
             print('Processed %i tracks, adding to database' % len(tracks))
-            added = db.add_tracks(tracks, date_str)
+            added = db.add_tracks(tracks, date_str, service_name)
             db.set_processed(url)
             print('-' * 40)
 
