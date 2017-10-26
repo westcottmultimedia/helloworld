@@ -1,4 +1,4 @@
-import sqlite3, csv, codecs, re, json, os, base64, time, hashlib, ssl
+import sqlite3, csv, codecs, re, json, os, base64, time, hashlib, ssl, datetime
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from lxml import html
@@ -19,16 +19,16 @@ DATABASE_FILE = '../test.db'
 CSV_url = 'https://spotifycharts.com/regional/{}/daily/{}/download'
 
 # the regions to download
-# REGIONS = [
-#     'global','gb','ad','ar','at','au','be','bg','bo','br',
-#     'ca','ch','cl','co','cr','cy','cz','de','dk','do','ec',
-#     'ee','es','fi','fr','gr','gt','hk','hn','hu','id','ie',
-#     'is','it','jp','lt','lu','lv','mc','mt','mx','my','ni',
-#     'nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
-#     'sk','sv','th','tr','tw','uy'
-# ]
-# test
-REGIONS = ['global']
+REGIONS = [
+    'global','gb','ad','ar','at','au','be','bg','bo','br',
+    'ca','ch','cl','co','cr','cy','cz','de','dk','do','ec',
+    'ee','es','fi','fr','gr','gt','hk','hn','hu','id','ie',
+    'is','it','jp','lt','lu','lv','mc','mt','mx','my','ni',
+    'nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
+    'sk','sv','th','tr','tw','uy'
+]
+# global only to test
+# REGIONS = ['global']
 
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
@@ -621,6 +621,8 @@ def process(mode):
             available_dates = [mode]
 
         for date_str in available_dates:
+            starttime = datetime.datetime.now()
+            print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d'))
             print('Loading tracks for region "%s" on "%s"...' % (region, date_str))
             url = get_spotify_csv_url(region, date_str)
             if db.is_processed(url):
@@ -642,6 +644,10 @@ def process(mode):
             print('Processed %i tracks, adding to database' % len(tracks))
             added = db.add_tracks(tracks, date_str, service_name)
             db.set_processed(url)
+            endtime = datetime.datetime.now()
+            processtime = endtime - starttime
+            print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d'))
+            print('Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
             print('-' * 40)
 
 if __name__ == '__main__':
