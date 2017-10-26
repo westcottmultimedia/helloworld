@@ -391,7 +391,7 @@ class TrackDatabase(object):
         # track_service_info table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS track_service_info (
-                track_hash varchar(255) NOT NULL,
+                track_hash varchar(255) NOT NULL PRIMARY KEY,
                 spotify_url text NOT NULL,
                 spotify_trackId varchar(255) NOT NULL,
                 spotify_albumId varchar(255) NOT NULL
