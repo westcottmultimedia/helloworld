@@ -94,9 +94,9 @@ def load_spotify_csv_data(region, date='latest'):
             continue
         track = dict(zip(fields, row))
         if len(track) == len(fields):
-            track['Region'] = region
-            track['TrackID'] = get_track_id(track['URL'])
-            data[track['TrackID']] = track
+            track['region'] = region
+            track['trackId'] = get_track_id(track['URL'])
+            data[track['trackId']] = track
     return data
 
 # SPOTIFY CLASS START
@@ -233,7 +233,7 @@ def append_track_data(tracks, batch_size=50):
         id_str = ','.join(map(str, batch))
         r_dict = spotify.request(endpoint.format(id_str))
         for track_id in batch:
-            tracks[track_id]['ISRC'] = get_isrc_by_id(r_dict['tracks'], track_id)
+            tracks[track_id]['isrc'] = get_isrc_by_id(r_dict['tracks'], track_id)
             tracks[track_id]['albumId'] = get_album_by_id(r_dict['tracks'], track_id)
             tracks[track_id]['artistId'] = get_artist_by_id(r_dict['tracks'], track_id)
         print('Appended track data for batch %d of %d' % (i+1, len(batches)) )
@@ -280,7 +280,7 @@ def append_artist_data(tracks, batch_size=50):
         for artist in r_dict['artists']:
             for track_id, track in tracks.items():
                 if track['artistId'] == artist['id']:
-                    tracks[track_id]['Genres'] = ','.join(artist['genres'])
+                    tracks[track_id]['genres'] = ','.join(artist['genres'])
         print('Appended artist data for batch %d of %d' % (i+1, len(batches)) )
     return tracks
 
@@ -430,7 +430,7 @@ class TrackDatabase(object):
                 VALUES
                 (?)
             ''', [url])
-            print('processed %s' % (url))
+            self.db.commit()
         except Exception as e:
             raise e
         return True
@@ -499,10 +499,9 @@ class TrackDatabase(object):
             row = self.track_to_tuple(track)
             track_hash = row[0]
             # NOTE: can we assume the region will be the same for all tracks, then only do this query once, instead of for each track
-            territoryId = self.get_territoryId(track['Region'])
+            territoryId = self.get_territoryId(track['region'])
             position = track['Position']
 
-            print ('---------TRACK IS---------', track)
             try:
                 # update tracks table
                 self.c.execute('''
@@ -532,7 +531,7 @@ class TrackDatabase(object):
                     (track_hash, spotify_url, spotify_trackId, spotify_albumId)
                     VALUES
                     (?, ?, ?, ?)
-                ''', [track_hash, track['URL'], track['TrackID'], track['albumId']])
+                ''', [track_hash, track['URL'], track['trackId'], track['albumId']])
 
                 self.db.commit()
 
@@ -551,15 +550,15 @@ class TrackDatabase(object):
             str(track['Track Name']),
             str(track['Artist']),
             str(track['label']),
-            str(track['ISRC']),
+            str(track['isrc']),
             str(track['released']),
-            str(track['Genres'])
+            str(track['genres'])
         )
     def get_row_hash(self, track):
         """
         Return an SHA1 hash for a given track
         """
-        hash_str = "%r-%r-%r-%r" % (track['ISRC'],track['Region'],track['TrackID'],track['albumId'])
+        hash_str = "%r-%r-%r-%r" % (track['isrc'],track['region'],track['trackId'],track['albumId'])
         return hashlib.sha1(hash_str.encode('utf-8')).hexdigest()
     def get_track_position_hash(self, track_hash, date_str):
         """
@@ -576,7 +575,6 @@ class TrackDatabase(object):
             SELECT territoryId FROM territory WHERE code = ?
         ''', [code])
         territoryId = query.fetchone()[0]
-        print('THE TERRITORY ID IS ', territoryId)
         return territoryId
 
     def get_serviceId(self, service_name):
@@ -587,7 +585,6 @@ class TrackDatabase(object):
             SELECT serviceId FROM service WHERE service_name = ?
         ''', [service_name])
         serviceId = query.fetchone()[0]
-        print('THE SERVICE ID IS ', serviceId)
         return serviceId
 
 def process(mode):
@@ -626,7 +623,10 @@ def process(mode):
         for date_str in available_dates:
             print('Loading tracks for region "%s" on "%s"...' % (region, date_str))
             url = get_spotify_csv_url(region, date_str)
-
+            if db.is_processed(url):
+                print('Already processed, skipping...')
+                print('-' * 40)
+                continue
             region_data = load_spotify_csv_data(region, date_str)
             if not region_data:
                 print('No download available, skipping...')
