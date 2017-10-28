@@ -1,6 +1,7 @@
 import sqlite3, csv, codecs, re, json, os, base64, time, hashlib, ssl, datetime
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
+from urllib.error import HTTPError
 from lxml import html
 
 # cache http requests?
@@ -19,16 +20,16 @@ DATABASE_FILE = '../test.db'
 CSV_url = 'https://spotifycharts.com/regional/{}/daily/{}/download'
 
 # the regions to download
-# REGIONS = [
-#     'global','gb','ad','ar','at','au','be','bg','bo','br',
-#     'ca','ch','cl','co','cr','cy','cz','de','dk','do','ec',
-#     'ee','es','fi','fr','gr','gt','hk','hn','hu','id','ie',
-#     'is','it','jp','lt','lu','lv','mc','mt','mx','my','ni',
-#     'nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
-#     'sk','sv','th','tr','tw','uy'
-# ]
+REGIONS = [
+    'global','gb','ad','ar','at','au','be','bg','bo','br',
+    'ca','ch','cl','co','cr','cy','cz','de','dk','do','ec',
+    'ee','es','fi','fr','gr','gt','hk','hn','hu','id','ie',
+    'is','it','jp','lt','lu','lv','mc','mt','mx','my','ni',
+    'nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
+    'sk','sv','th','tr','tw','uy'
+]
 # global only to test
-REGIONS = ['global']
+# REGIONS = ['gb']
 
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
@@ -191,7 +192,7 @@ class Spotify(object):
                 with open(cache_file, 'w', encoding='utf-8') as f:
                     f.write(data)
             return json.loads(data)
-        except urllib2.HTTPError as err:
+        except HTTPError as err:
             if err.code == 400:
                 print('HTTP 400, said:')
                 print(data)
@@ -287,7 +288,6 @@ def append_track_data(tracks, batch_size=50):
         # 'track_hash' key would be appended to the track if it exists in the db
         if 'track_hash' not in tracks[track_id]:
             tracks_to_lookup.append(track_id)
-
     # api supports up to 50 ids at a time
     batches = [tracks_to_lookup[i:i + batch_size] for i in range(0, len(tracks_to_lookup), batch_size)]
     for i, batch in enumerate(batches):
@@ -298,6 +298,7 @@ def append_track_data(tracks, batch_size=50):
             tracks[track_id]['albumId'] = get_album_by_id(r_dict['tracks'], track_id)
             tracks[track_id]['artistId'] = get_artist_by_id(r_dict['tracks'], track_id)
         print('Appended track data for batch %d of %d' % (i+1, len(batches)) )
+    print('Added %i tracks to the DB' % len(tracks_to_lookup) )
     return tracks
 
 def append_track_album_data(tracks, batch_size=20):
@@ -574,13 +575,13 @@ class TrackDatabase(object):
             # thus, the track is already in the DB
             if 'track_hash' in track:
                 track_hash = track['track_hash']
-                pos_hash = self.get_track_position_hash(track_hash, date_str)
+                pos_hash = self.get_track_position_hash(track_hash, date_str, territoryId, serviceId)
             # track doesn't have track_hash and the data for the track and album were retrieved from Spotify API
 
             else:
                 row = self.track_to_tuple(track)
                 track_hash = row[0]
-                pos_hash = self.get_track_position_hash(track_hash, date_str)
+                pos_hash = self.get_track_position_hash(track_hash, date_str, territoryId, serviceId)
 
                 try:
                     # update tracks table
@@ -642,11 +643,11 @@ class TrackDatabase(object):
         """
         hash_str = "%r-%r-%r-%r" % (track['isrc'],track['region'],track['trackId'],track['albumId'])
         return hashlib.sha1(hash_str.encode('utf-8')).hexdigest()
-    def get_track_position_hash(self, track_hash, date_str):
+    def get_track_position_hash(self, track_hash, date_str, territoryId, serviceId):
         """
         Return an SHA1 hash for a given track and position
         """
-        hash_str = "%r:%r" % (track_hash,date_str)
+        hash_str = "%r:%r:%r:%r" % (track_hash,date_str,territoryId,serviceId)
         return hashlib.sha1(hash_str.encode('utf-8')).hexdigest()
     def get_territoryId(self, code):
         """
@@ -666,8 +667,7 @@ class TrackDatabase(object):
         query = self.c.execute('''
             SELECT serviceId FROM service WHERE service_name = ?
         ''', [service_name])
-        serviceId = query.fetchone()[0]
-        return serviceId
+        return query.fetchone()[0] if query else false
 
 def process(mode):
     """
@@ -740,14 +740,17 @@ def process(mode):
             # timestamp
             endtime = datetime.datetime.now()
             processtime = endtime - starttime
+            processtime_running_total = endtime - starttime_total
             print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%y'))
             print('Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
+            print('Running processing time: %i minutes, %i seconds' % divmod(processtime_running_total.days *86400 + processtime_running_total.seconds, 60))
             print('-' * 40)
 
     # timestamping
+    endtime_total = datetime.datetime.now()
     processtime_total = endtime_total - starttime_total
     print('Finished processing all applicable dates at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
-    print('Total Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
+    print('Total processing time: %i minutes, %i seconds' % divmod(processtime_total.days *86400 + processtime_total.seconds, 60))
     print('-' * 40)
 if __name__ == '__main__':
 
