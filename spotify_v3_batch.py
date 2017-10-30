@@ -195,7 +195,7 @@ class Spotify(object):
         except HTTPError as err:
             if err.code == 400:
                 print('HTTP 400, said:')
-                print(data)
+                # print(data)
             raise
         except Exception as e:
             count += 1
@@ -313,22 +313,33 @@ def append_track_album_data(tracks, batch_size=20):
     Returns tracks with "label" and "released" appended
     """
     spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
-    endpoint = "https://api.spotify.com/v1/albums?ids={}"
+    endpoint_album = "https://api.spotify.com/v1/albums/{}"
+    endpoint_albums = "https://api.spotify.com/v1/albums?ids={}"
 
     # api supports up to 20 ids at a time
     albums = [t['albumId'] for k,t in tracks.items() if 'albumId' in t]
-    batches = [albums[i:i + batch_size] for i in range(0, len(albums), batch_size)]
-    for i, batch in enumerate(batches):
-        id_str = ','.join(batch)
-        r_dict = spotify.request(endpoint.format(id_str))
-        for album in r_dict['albums']:
-            released = album['release_date']
-            label = album['label']
-            for track_id, track in tracks.items():
-                if 'albumId' in track and track['albumId'] == album['id']:
-                    tracks[track_id]['released'] = released
-                    tracks[track_id]['label'] = label
-        print('Appended album data for batch %d of %d' % (i+1, len(batches)) )
+
+    if len(albums) != 1:
+        batches = [albums[i:i + batch_size] for i in range(0, len(albums), batch_size)]
+        for i, batch in enumerate(batches):
+            id_str = ','.join(batch)
+            r_dict = spotify.request(endpoint_albums.format(id_str))
+            for album in r_dict['albums']:
+                released = album['release_date']
+                label = album['label']
+                for track_id, track in tracks.items():
+                    if 'albumId' in track and track['albumId'] == album['id']:
+                        tracks[track_id]['released'] = released
+                        tracks[track_id]['label'] = label
+            print('Appended album data for batch %d of %d' % (i+1, len(batches)) )
+    else:
+        album_id = albums[0]
+        album = spotify.request(endpoint_album.format(album_id))
+        for track_id, track in tracks.items():
+            if 'albumId' in track and track['albumId'] == album['id']:
+                tracks[track_id]['released'] = album['release_date']
+                tracks[track_id]['label'] = album['label']
+        print('Appended album data for album_id %s' % album_id )
     return tracks
 
 def append_artist_data(tracks, batch_size=50):
