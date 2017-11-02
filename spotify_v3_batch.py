@@ -554,17 +554,19 @@ class TrackDatabase(object):
             (?, ?, ?, ?, ?, ?, ?)
         '''
         # finds the earlier of the two dates, the current added and the current date query
+        # this is important because of the asynchronous nature of collecting the data - the script can download
+        # any date from spotify at any time, it is not necessarily in chronological order of when the data is processed
         added = self.order_dates(added, date_str)[0] if stats else date_str
         # finds the later of the current last_seen and the current date query
         last_seen = self.order_dates(last_seen, date_str)[1] if stats else date_str
         if stats and position < peak_rank:
-            # track is ranked higher when current position is less than old now
+            # track is ranked higher (has a lower numbered position) when current position is less than old now
             peak_rank = position
             peak_date = date_str
         else:
             # track was higher then, or doesn't have stats
             peak_rank = peak_rank if stats else position
-            peak_date = peak_date if stats else date_str
+            peak_date = self.order_dates(peak_date, date_str) if stats else date_str # use the earliest peak date for the peak rank
         self.c.execute(
             stats_query,
             [track_hash, territoryId, serviceId, added, last_seen, peak_rank, peak_date]
