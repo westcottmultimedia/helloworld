@@ -1,7 +1,9 @@
 import sqlite3, csv, codecs, re, json, os, base64, time, hashlib, ssl, datetime, datetime, jwt, configparser
+from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from urllib.error import HTTPError
 from lxml import html
+from pprint import pprint
 
 '''BLUEPRINT
 0. Find data accuracy of API chart data and RSS feed generator
@@ -20,8 +22,6 @@ from lxml import html
 
 # cache http requests?
 CACHE_ENABLED = False
-
-# Apple Token Generator config
 
 # sqlite database filename/path
 DATABASE_FILE = '../test.db'
@@ -144,7 +144,6 @@ class Apple(object):
 
     def __init__(self):
         super(Apple, self).__init__()
-        # grab config from file
         self.authorize()
 
     def authorize(self):
@@ -174,6 +173,7 @@ class Apple(object):
             	"exp": int(time_expired.strftime("%s"))
             }
             self.token = jwt.encode(payload, self.secret, algorithm=alg, headers=headers).decode('UTF-8')
+            print('woo!', self.token)
         else:
             print('Check {} file for correct section {}'.format(config_file, config.section))
 
@@ -181,13 +181,6 @@ class Apple(object):
         """
         Request a webpage, retry on failure, cache as desired
         """
-        # hashedurl = hashlib.sha256(url.encode('utf-8')).hexdigest()
-        # cache_file = "./cache/%s.cache" % hashedurl
-        # if cache and os.path.isfile(cache_file):
-        #     with open(cache_file) as f:
-        #         # return cached json
-        #         data = f.read()
-        #         return json.loads(data)
         if count > 3:
             # retried 3 times, giving up
             print('Failed getting page "%s", retried %i times' % (url, count))
@@ -197,22 +190,16 @@ class Apple(object):
             time.sleep(3)
         # make request
         headers = {
-            'Authorization': 'Bearer {} "{}"'.format(self.get_token()),
+            'Authorization': 'Bearer \'{}\''.format(self.token),
             'Accept': 'application/json',
         }
-        # if cache and not os.path.exists(os.path.dirname(cache_file)):
-        #     try:
-        #         os.makedirs(os.path.dirname(cache_file))
-        #     except OSError as exc:
-        #         if exc.errno != errno.EEXIST:
-        #             raise
         try:
             q = Request(url, None, headers)
-            data = urlopen(q, context=SSL_CONTEXT).read().decode('utf-8')
-            if cache:
-                with open(cache_file, 'w', encoding='utf-8') as f:
-                    f.write(data)
-            return json.loads(data)
+            q.add_header('Authorization', 'Bearer {}'.format(self.token))
+            data = urlopen(q).read().decode('utf8')
+            response = json.loads(data)
+            pprint(response) 
+            return response
         except HTTPError as err:
             if err.code == 400:
                 print('HTTP 400, said:')
@@ -220,7 +207,7 @@ class Apple(object):
             raise
         except Exception as e:
             count += 1
-            return get_page(url, cache, count, time.time())
+            return request(url, cache, count, time.time()) # NOTE: not sure this will work as expected
 #
 #
 # APPLE CLASS END
@@ -787,7 +774,8 @@ def process(mode):
 if __name__ == '__main__':
     # TEST APPLE TOKEN
     apple = Apple()
-    apple.authorize()
+    # apple.authorize()
+    apple.request("https://api.music.apple.com/v1/catalog/us/songs/203709340")
 
     # are http requests being cached?
     #CACHE_ENABLED = True
