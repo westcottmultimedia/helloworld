@@ -1,0 +1,592 @@
+// APPLE regions/storefronts
+
+===
+# seed db with territory info
+
+INSERT OR IGNORE INTO territory
+(territoryId, code, name)
+VALUES
+(1, 'global', 'global'),
+(2, 'gb', 'United Kingdom'),
+(3, 'ad','Andorra'),
+(4, 'ar','Argentina'),
+(5, 'at','Austria'),
+(6, 'au','Australia'),
+(7, 'be','Belgium'),
+(8, 'bg, 'Bulgaria'),
+(9, 'bo','Bolivia'),
+(10, 'br',Brazil'),
+(11,'ca','Canada'),
+(12,'ch','Switzerland'),
+(13,'cl','Chile'),
+(14,'co','Colombia'),
+(15,'cr','Costa Rica'),
+(16,'cy','Cyprus'),
+(17,'cz','Czech Republic'),
+(18,'de','Germany'),
+(19,'dk','Denmark'),
+(20,'do','Dominican Republic'),
+(21,'ec','Ecuador'),
+(22,'ee','Estonia'),
+(23,'es','Spain'),
+(24,'fi','Finland'),
+(25,'fr','France'),
+(26,'gr','Greece'),
+(27,'gt','Guatemala'),
+(28,'hk','Hong Kong'),
+(29,'hn','Honduras'),
+(30,'hu','Hungary'),
+(31,'id','Indonesia'),
+(32,'ie','Ireland'),
+(33,'is','Iceland'),
+(34,'it','Italy'),
+(35,'jp','Japan'),
+(36,'lt','Lithuania'),
+(37,'lu','Luxembourg'),
+(38,'lv','Latvia'),
+(39,'mc','Monaco'),
+(40,'mt','Malta'),
+(41,'mx','Mexico'),
+(42,'my','Malaysia'),
+(43,'ni','Nicaragua'),
+(44,'nl','Netherlands'),
+(45,'no','Norway'),
+(46,'nz','New Zealand'),
+(47,'pa','Panama'),
+(48,'pe','Peru'),
+(49,'ph','Philippines'),
+(50,'pl','Poland'),
+(51,'pt','Portugal'),
+(52,'py','Paraguay'),
+(53,'se','Sweden'),
+(54,'sg','Singapore'),
+(55,'sk','Slovakia'),
+(56,'sv','El Salvador'),
+(57,'th','Thailand'),
+(58,'tr','Turkey'),
+(59,'tw','Taiwan'),
+(60,'uy', 'Uruguay')
+(61, "ae", "UAE"),
+(62, "ag", "Antigua and Barbuda"),
+(63, "ai", "Anguilla"),
+(64, "al", "Albania"),
+(65, "am", "Armenia"),
+(66, "ao", "Angola"),
+(67, "az", "Azerbaijan"),
+(68, "bb", "Barbados"),
+(69, "bf", "Burkina Faso"),
+(70, "bh", "Bahrain"),
+(71, "bj", "Benin"),
+(72, "bm", "Bermuda"),
+(73, "bn", "Brunei Darussalam"),
+(74, "bs", "Bahamas"),
+(75, "bt", "Bhutan"),
+(76, "bw", "Botswana"),
+(77, "by", "Belarus"),
+(78, "bz", "Belize"),
+(79, "cg", "Congo, Republic of the"),
+(80, "cn", "China"),
+(81, "cv", "Cape Verde"),
+(82, "dm", "Dominica"),
+(83, "dz", "Algeria"),
+(84, "eg", "Egypt"),
+(85, "fj", "Fiji"),
+(86, "fm", "Micronesia, Federated States of"),
+(87, "gd", "Grenada"),
+(88, "gh", "Ghana"),
+(89, "gm", "Gambia"),
+(90, "gw", "Guinea-Bissau"),
+(91, "gy", "Guyana"),
+(92, "hr", "Croatia"),
+(93, "il", "Israel"),
+(94, "in", "India"),
+(95, "jm", "Jamaica"),
+(96, "jo", "Jordan"),
+(97, "ke", "Kenya"),
+(98, "kg", "Kyrgyzstan"),
+(99, "kh", "Cambodia"),
+(100, "kn", "St. Kitts and Nevis"),
+(101, "kr", "Korea, Republic of"),
+(102, "kw", "Kuwait"),
+(103, "ky", "Cayman Islands"),
+(104, "kz", "Kazakhstan"),
+(105, "la", "Lao People's Democratic Republic"),
+(106, "lb", "Lebanon"),
+(107, "lc", "St. Lucia"),
+(108, "lk", "Sri Lanka"),
+(109, "lr", "Liberia"),
+(110, "md", "Moldova"),
+(111, "mg", "Madagascar"),
+(112, "mk", "Macedonia"),
+(113, "ml", "Mali"),
+(114, "mn", "Mongolia"),
+(115, "mo", "Macau"),
+(116, "mr", "Mauritania"),
+(117, "ms", "Montserrat"),
+(118, "mu", "Mauritius"),
+(119, "mw", "Malawi"),
+(120, "mz", "Mozambique"),
+(121, "na", "Namibia"),
+(122, "ne", "Niger"),
+(123, "ng", "Nigeria"),
+(124, "np", "Nepal"),
+(125, "om", "Oman"),
+(126, "pg", "Papua New Guinea"),
+(127, "pk", "Pakistan"),
+(128, "pw", "Palau"),
+(129, "qa", "Qatar"),
+(130, "ro", "Romania"),
+(131, "ru", "Russia"),
+(132, "sa", "Saudi Arabia"),
+(133, "sb", "Solomon Islands"),
+(134, "sc", "Seychelles"),
+(135, "si", "Slovenia"),
+(136, "sl", "Sierra Leone"),
+(137, "sn", "Senegal"),
+(138, "sr", "Suriname"),
+(139, "st", "São Tomé and Príncipe"),
+(140, "sz", "Swaziland"),
+(141, "tc", "Turks and Caicos"),
+(142, "td", "Chad"),
+(143, "tj", "Tajikistan"),
+(144, "tm", "Turkmenistan"),
+(145, "tn", "Tunisia"),
+(146, "tt", "Trinidad and Tobago"),
+(147, "tz", "Tanzania"),
+(148, "ua", "Ukraine"),
+(149, "ug", "Uganda"),
+(150, "us", "United States"),
+(151, "uz", "Uzbekistan"),
+(152, "vc", "St. Vincent and The Grenadines"),
+(153, "ve", "Venezuela"),
+(154, "vg", "British Virgin Islands"),
+(155, "vn", "Vietnam"),
+(156, "ye", "Yemen"),
+(157, "za", "South Africa"),
+(158, "zw", "Zimbabwe")
+
+===
+{"vn", "Vietnam},
+{"mn", "Mongolia},
+{"za", "South Africa},
+{"mz", "Mozambique},
+{"mr", "Mauritania},
+{"tw", "Taiwan},
+{"fm", "Micronesia, Federated States of"},
+{"sg", "Singapore},
+{"gw", "Guinea-Bissau},
+{"cn", "China"},
+{"kg", "Kyrgyzstan"},
+{"jp", "Japan"},
+{"fj", "Fiji"},
+{"hk", "Hong Kong"},
+{"gm", "Gambia"},
+{"mx", "Mexico"},
+{"co", "Colombia"},
+{"mw", "Malawi"},
+{"ru", "Russia"},
+{"ve", "Venezuela"},
+{"kr", "Korea, Republic of"},
+{"la", "Lao People's Democratic Republic"},
+{"in", "India"},
+{"lr", "Liberia"},
+{"ar", "Argentina"},
+{"sv", "El Salvador"},
+{"br", "Brazil"},
+{"gt", "Guatemala"},
+{"ec", "Ecuador"},
+{"pe", "Peru"},
+{"do", "Dominican Republic"},
+{"hu", "Hungary"},
+{"cl", "Chile"},
+{"tr", "Turkey"},
+{"ae", "UAE"},
+{"th", "Thailand"},
+{"id", "Indonesia"},
+{"pg", "Papua New Guinea"},
+{"my", "Malaysia"},
+{"na", "Namibia"},
+{"ph", "Philippines"},
+{"pw", "Palau"},
+{"sa", "Saudi Arabia"},
+{"ni", "Nicaragua"},
+{"py", "Paraguay"},
+{"pk", "Pakistan"},
+{"hn", "Honduras"},
+{"st", "São Tomé and Príncipe"},
+{"pl", "Poland"},
+{"jm", "Jamaica"},
+{"sc", "Seychelles"},
+{"eg", "Egypt"},
+{"kz", "Kazakhstan"},
+{"uy", "Uruguay"},
+{"mo", "Macau"},
+{"ee", "Estonia"},
+{"lv", "Latvia"},
+{"kw", "Kuwait"},
+{"hr", "Croatia"},
+{"il", "Israel"},
+{"ua", "Ukraine"},
+{"lk", "Sri Lanka"},
+{"ro", "Romania"},
+{"lt", "Lithuania"},
+{"np", "Nepal"},
+{"pa", "Panama"},
+{"md", "Moldova"},
+{"am", "Armenia"},
+{"mt", "Malta"},
+{"cz", "Czech Republic"},
+{"jo", "Jordan"},
+{"bw", "Botswana"},
+{"bg", "Bulgaria"},
+{"ke", "Kenya"},
+{"lb", "Lebanon"},
+{"mk", "Macedonia"},
+{"qa", "Qatar"},
+{"mg", "Madagascar"},
+{"cr", "Costa Rica"},
+{"sk", "Slovakia"},
+{"ne", "Niger"},
+{"sn", "Senegal"},
+{"si", "Slovenia"},
+{"ml", "Mali"},
+{"mu", "Mauritius"},
+{"ai", "Anguilla"},
+{"bs", "Bahamas"},
+{"tn", "Tunisia"},
+{"ug", "Uganda"},
+{"bb", "Barbados"},
+{"bm", "Bermuda"},
+{"ag", "Antigua and Barbuda"},
+{"dm", "Dominica"},
+{"gd", "Grenada"},
+{"vg", "British Virgin Islands"},
+{"ky", "Cayman Islands"},
+{"lc", "St. Lucia"},
+{"ms", "Montserrat"},
+{"kn", "St. Kitts and Nevis"},
+{"bn", "Brunei Darussalam"}
+{"tc", "Turks and Caicos"},
+{"gy", "Guyana"},
+{"vc", "St. Vincent and The Grenadines"},
+{"tt", "Trinidad and Tobago"},
+{"bo", "Bolivia"},
+{"cy", "Cyprus"},
+{"sr", "Suriname"},
+{"bz", "Belize"},
+{"is", "Iceland"},
+{"bh", "Bahrain"},
+{"it", "Italy"},
+{"ye", "Yemen"},
+{"fr", "France"},
+{"dz", "Algeria"},
+{"de", "Germany"},
+{"ao", "Angola"},
+{"ng", "Nigeria"},
+{"us", "United States"},
+{"om", "Oman"},
+{"be", "Belgium"},
+{"sl", "Sierra Leone"},
+{"fi", "Finland"},
+{"az", "Azerbaijan"},
+{"sb", "Solomon Islands"},
+{"gb", "United Kingdom"},
+{"by", "Belarus"},
+{"at", "Austria"},
+{"uz", "Uzbekistan"},
+{"tm", "Turkmenistan"},
+{"zw", "Zimbabwe"},
+{"gr", "Greece"},
+{"sz", "Swaziland"},
+{"ie", "Ireland"},
+{"tj", "Tajikistan"},
+{"au", "Australia"},
+{"td", "Chad"},
+{"nz", "New Zealand"},
+{"cg", "Congo, Republic of the"},
+{"cv", "Cape Verde"},
+{"pt", "Portugal"},
+{"es", "Spain"},
+{"al", "Albania"},
+{"lu", "Luxembourg"},
+{"tz", "Tanzania"},
+{"nl", "Netherlands"},
+{"gh", "Ghana"},
+{"no", "Norway"},
+{"bf", "Burkina Faso"},
+{"dk", "Denmark"},
+{"kh", "Cambodia"},
+{"ca", "Canada"},
+{"bj", "Benin"},
+{"se", "Sweden"},
+{"bt", "Bhutan"},
+{"ch, "Switzerland"}
+
+
+=======
+TUPLE LIST OF "ADDITIONAL" APPLE TERRITORIES (To the SPOTIFY TERRITORIES)
+(1, "ae", "UAE")
+(1, "ag", "Antigua and Barbuda")
+(1, "ai", "Anguilla")
+(1, "al", "Albania")
+(1, "am", "Armenia")
+(1, "ao", "Angola")
+(1, "az", "Azerbaijan")
+(1, "bb", "Barbados")
+(1, "bf", "Burkina Faso")
+(1, "bh", "Bahrain")
+(1, "bj", "Benin")
+(1, "bm", "Bermuda")
+(1, "bn", "Brunei Darussalam")
+(1, "bs", "Bahamas")
+(1, "bt", "Bhutan")
+(1, "bw", "Botswana")
+(1, "by", "Belarus")
+(1, "bz", "Belize")
+(1, "cg", "Congo, Republic of the")
+(1, "cn", "China")
+(1, "cv", "Cape Verde")
+(1, "dm", "Dominica")
+(1, "dz", "Algeria")
+(1, "eg", "Egypt")
+(1, "fj", "Fiji")
+(1, "fm", "Micronesia, Federated States of")
+(1, "gd", "Grenada")
+(1, "gh", "Ghana")
+(1, "gm", "Gambia")
+(1, "gw", "Guinea-Bissau")
+(1, "gy", "Guyana")
+(1, "hr", "Croatia")
+(1, "il", "Israel")
+(1, "in", "India")
+(1, "jm", "Jamaica")
+(1, "jo", "Jordan")
+(1, "ke", "Kenya")
+(1, "kg", "Kyrgyzstan")
+(1, "kh", "Cambodia")
+(1, "kn", "St. Kitts and Nevis")
+(1, "kr", "Korea, Republic of")
+(1, "kw", "Kuwait")
+(1, "ky", "Cayman Islands")
+(1, "kz", "Kazakhstan")
+(1, "la", "Lao People's Democratic Republic")
+(1, "lb", "Lebanon")
+(1, "lc", "St. Lucia")
+(1, "lk", "Sri Lanka")
+(1, "lr", "Liberia")
+(1, "md", "Moldova")
+(1, "mg", "Madagascar")
+(1, "mk", "Macedonia")
+(1, "ml", "Mali")
+(1, "mn", "Mongolia")
+(1, "mo", "Macau")
+(1, "mr", "Mauritania")
+(1, "ms", "Montserrat")
+(1, "mu", "Mauritius")
+(1, "mw", "Malawi")
+(1, "mz", "Mozambique")
+(1, "na", "Namibia")
+(1, "ne", "Niger")
+(1, "ng", "Nigeria")
+(1, "np", "Nepal")
+(1, "om", "Oman")
+(1, "pg", "Papua New Guinea")
+(1, "pk", "Pakistan")
+(1, "pw", "Palau")
+(1, "qa", "Qatar")
+(1, "ro", "Romania")
+(1, "ru", "Russia")
+(1, "sa", "Saudi Arabia")
+(1, "sb", "Solomon Islands")
+(1, "sc", "Seychelles")
+(1, "si", "Slovenia")
+(1, "sl", "Sierra Leone")
+(1, "sn", "Senegal")
+(1, "sr", "Suriname")
+(1, "st", "São Tomé and Príncipe")
+(1, "sz", "Swaziland")
+(1, "tc", "Turks and Caicos")
+(1, "td", "Chad")
+(1, "tj", "Tajikistan")
+(1, "tm", "Turkmenistan")
+(1, "tn", "Tunisia")
+(1, "tt", "Trinidad and Tobago")
+(1, "tz", "Tanzania")
+(1, "ua", "Ukraine")
+(1, "ug", "Uganda")
+(1, "us", "United States")
+(1, "uz", "Uzbekistan")
+(1, "vc", "St. Vincent and The Grenadines")
+(1, "ve", "Venezuela")
+(1, "vg", "British Virgin Islands")
+(1, "vn", "Vietnam")
+(1, "ye", "Yemen")
+(1, "za", "South Africa")
+(1, "zw", "Zimbabwe")
+
+====
+DICTIONARY
+
+=========================
+{"vn": "Vietnam",
+"mn": "Mongolia",
+"za": "South Africa",
+"mz": "Mozambique",
+"mr": "Mauritania",
+"tw": "Taiwan",
+"fm": "Micronesia, Federated States of",
+"sg": "Singapore",
+"gw": "Guinea-Bissau",
+"cn": "China",
+"kg": "Kyrgyzstan",
+"jp": "Japan",
+"fj": "Fiji",
+"hk": "Hong Kong",
+"gm": "Gambia",
+"mx": "Mexico",
+"co": "Colombia",
+"mw": "Malawi",
+"ru": "Russia",
+"ve": "Venezuela",
+"kr": "Korea, Republic of",
+"la": "Lao People's Democratic Republic",
+"in": "India",
+"lr": "Liberia",
+"ar": "Argentina",
+"sv": "El Salvador",
+"br": "Brazil",
+"gt": "Guatemala",
+"ec": "Ecuador",
+"pe": "Peru",
+"do": "Dominican Republic",
+"hu": "Hungary",
+"cl": "Chile",
+"tr": "Turkey",
+"ae": "UAE",
+"th": "Thailand",
+"id": "Indonesia",
+"pg": "Papua New Guinea",
+"my": "Malaysia",
+"na": "Namibia",
+"ph": "Philippines",
+"pw": "Palau",
+"sa": "Saudi Arabia",
+"ni": "Nicaragua",
+"py": "Paraguay",
+"pk": "Pakistan",
+"hn": "Honduras",
+"st": "São Tomé and Príncipe",
+"pl": "Poland",
+"jm": "Jamaica",
+"sc": "Seychelles",
+"eg": "Egypt",
+"kz": "Kazakhstan",
+"uy": "Uruguay",
+"mo": "Macau",
+"ee": "Estonia",
+"lv": "Latvia",
+"kw": "Kuwait",
+"hr": "Croatia",
+"il": "Israel",
+"ua": "Ukraine",
+"lk": "Sri Lanka",
+"ro": "Romania",
+"lt": "Lithuania",
+"np": "Nepal",
+"pa": "Panama",
+"md": "Moldova",
+"am": "Armenia",
+"mt": "Malta",
+"cz": "Czech Republic",
+"jo": "Jordan",
+"bw": "Botswana",
+"bg": "Bulgaria",
+"ke": "Kenya",
+"lb": "Lebanon",
+"mk": "Macedonia",
+"qa": "Qatar",
+"mg": "Madagascar",
+"cr": "Costa Rica",
+"sk": "Slovakia",
+"ne": "Niger",
+"sn": "Senegal",
+"si": "Slovenia",
+"ml": "Mali",
+"mu": "Mauritius",
+"ai": "Anguilla",
+"bs": "Bahamas",
+"tn": "Tunisia",
+"ug": "Uganda",
+"bb": "Barbados",
+"bm": "Bermuda",
+"ag": "Antigua and Barbuda",
+"dm": "Dominica",
+"gd": "Grenada",
+"vg": "British Virgin Islands",
+"ky": "Cayman Islands",
+"lc": "St. Lucia",
+"ms": "Montserrat",
+"kn": "St. Kitts and Nevis",
+"bn": "Brunei Darussalam",
+"tc": "Turks and Caicos",
+"gy": "Guyana",
+"vc": "St. Vincent and The Grenadines",
+"tt": "Trinidad and Tobago",
+"bo": "Bolivia",
+"cy": "Cyprus",
+"sr": "Suriname",
+"bz": "Belize",
+"is": "Iceland",
+"bh": "Bahrain",
+"it": "Italy",
+"ye": "Yemen",
+"fr": "France",
+"dz": "Algeria",
+"de": "Germany",
+"ao": "Angola",
+"ng": "Nigeria",
+"us": "United States",
+"om": "Oman",
+"be": "Belgium",
+"sl": "Sierra Leone",
+"fi": "Finland",
+"az": "Azerbaijan",
+"sb": "Solomon Islands",
+"gb": "United Kingdom",
+"by": "Belarus",
+"at": "Austria",
+"uz": "Uzbekistan",
+"tm": "Turkmenistan",
+"zw": "Zimbabwe",
+"gr": "Greece",
+"sz": "Swaziland",
+"ie": "Ireland",
+"tj": "Tajikistan",
+"au": "Australia",
+"td": "Chad",
+"nz": "New Zealand",
+"cg": "Congo, Republic of the",
+"cv": "Cape Verde",
+"pt": "Portugal",
+"es": "Spain",
+"al": "Albania",
+"lu": "Luxembourg",
+"tz": "Tanzania",
+"nl": "Netherlands",
+"gh": "Ghana",
+"no": "Norway",
+"bf": "Burkina Faso",
+"dk": "Denmark",
+"kh": "Cambodia",
+"ca": "Canada",
+"bj": "Benin",
+"se": "Sweden",
+"bt": "Bhutan",
+"ch": "Switzerland"}
+
+====
+
+ARRAY list
+["vn", "mn", "za", "mz", "mr", "tw", "fm", "sg", "gw", "cn", "kg", "jp", "fj", "hk", "gm", "mx", "co", "mw", "ru", "ve", "kr", "la", "in", "lr", "ar", "sv", "br", "gt", "ec", "pe",
+"do", "hu", "cl", "tr", "ae", "th", "id", "pg", "my", "na", "ph", "pw", "sa", "ni", "py", "pk", "hn", "st", "pl", "jm", "sc", "eg", "kz", "uy", "mo", "ee", "lv", "kw", "hr", "il", "ua", "lk", "ro", "lt", "np", "pa", "md", "am", "mt", "cz", "jo", "bw", "bg", "ke", "lb", "mk", "qa", "mg", "cr", "sk", "ne", "sn", "si", "ml", "mu", "ai", "bs", "tn", "ug", "bb", "bm", "ag", "dm", "gd", "vg", "ky", "lc", "ms", "kn", "bn", "tc", "gy", "vc", "tt", "bo", "cy", "sr", "bz", "is",
+"bh", "it", "ye", "fr", "dz", "de", "ao", "ng", "us", "om", "be", "sl", "fi", "az", "sb", "gb", "by", "at", "uz", "tm", "zw", "gr", "sz", "ie", "tj", "au", "td", "nz", "cg", "cv", "pt", "es", "al", "lu", "tz", "nl", "gh", "no", "bf", "dk", "kh", "ca", "bj", "se", "bt", "ch"]
