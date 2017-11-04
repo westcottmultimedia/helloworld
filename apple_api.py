@@ -4,11 +4,15 @@ from urllib.parse import urlencode
 from urllib.error import HTTPError
 from lxml import html
 from pprint import pprint
+from datetime import date
 
 '''BLUEPRINT
 0. Find data accuracy of API chart data and RSS feed generator
+    -close but not 100% the same. The songs are generally the same, but positions can be slightly different.
+    -RSS feed json has timestamp of updated time. API feed does not.
 1. download day's RSS feed generator for apple music.
     -for each country code
+1a. download all 200 songs...
 2. Save json data into folder.
     -figure out naming/folder structure
 2a. For later project scope, download apple music videos, etc.for later seeding the database
@@ -26,115 +30,37 @@ CACHE_ENABLED = False
 # sqlite database filename/path
 DATABASE_FILE = '../test.db'
 
-# the daily regional CSV download link
+# the Apple API url
 # ie. https://api.music.apple.com/v1/catalog/{storefront}/genres/{id}
-API_url = 'https://api.music.apple.com/v1/{}/{}/{}/{}'
+API_url = 'https://api.music.apple.com/v1/catalog/{}/{}?limit=50&types={}'
+# https://api.music.apple.com/v1/catalog/us/charts?types=songs&limit=50
+
+# Apple RSS Feed url
+# ie. https://rss.itunes.apple.com/api/v1/us/apple-music/hot-tracks/all/100/explicit.json
+RSS_url = 'https://rss.itunes.apple.com/api/v1/{region}/{media}/{chart}/all/{limit}/explicit.json'
+
 
 # the regions to download
-REGIONS = ["vn", "mn", "za", "mz", "mr", "tw", "fm", "sg", "gw", "cn", "kg", "jp", "fj",
-    "hk", "gm", "mx", "co", "mw", "ru", "ve", "kr", "la", "in", "lr", "ar", "sv", "br",
-    "gt", "ec", "pe", "do", "hu", "cl", "tr", "ae", "th", "id", "pg", "my", "na", "ph",
-    "pw", "sa", "ni", "py", "pk", "hn", "st", "pl", "jm", "sc", "eg", "kz", "uy", "mo",
-    "ee", "lv", "kw", "hr", "il", "ua", "lk", "ro", "lt", "np", "pa", "md", "am", "mt", "cz",
-    "jo", "bw", "bg", "ke", "lb", "mk", "qa", "mg", "cr", "sk", "ne", "sn", "si", "ml", "mu",
-    "ai", "bs", "tn", "ug", "bb", "bm", "ag", "dm", "gd", "vg", "ky", "lc", "ms", "kn", "bn",
-    "tc", "gy", "vc", "tt", "bo", "cy", "sr", "bz", "is", "bh", "it", "ye", "fr", "dz", "de",
-    "ao", "ng", "us", "om", "be", "sl", "fi", "az", "sb", "gb", "by", "at", "uz", "tm", "zw",
-    "gr", "sz", "ie", "tj", "au", "td", "nz", "cg", "cv", "pt", "es", "al", "lu", "tz", "nl",
-    "gh", "no", "bf", "dk", "kh", "ca", "bj", "se", "bt", "ch"]
+# REGIONS = ["us", "gb", "vn", "mn", "za", "mz", "mr", "tw", "fm", "sg", "gw", "cn", "kg", "jp", "fj",
+#     "hk", "gm", "mx", "co", "mw", "ru", "ve", "kr", "la", "in", "lr", "ar", "sv", "br",
+#     "gt", "ec", "pe", "do", "hu", "cl", "tr", "ae", "th", "id", "pg", "my", "na", "ph",
+#     "pw", "sa", "ni", "py", "pk", "hn", "st", "pl", "jm", "sc", "eg", "kz", "uy", "mo",
+#     "ee", "lv", "kw", "hr", "il", "ua", "lk", "ro", "lt", "np", "pa", "md", "am", "mt", "cz",
+#     "jo", "bw", "bg", "ke", "lb", "mk", "qa", "mg", "cr", "sk", "ne", "sn", "si", "ml", "mu",
+#     "ai", "bs", "tn", "ug", "bb", "bm", "ag", "dm", "gd", "vg", "ky", "lc", "ms", "kn", "bn",
+#     "tc", "gy", "vc", "tt", "bo", "cy", "sr", "bz", "is", "bh", "it", "ye", "fr", "dz", "de",
+#     "ao", "ng", "om", "be", "sl", "fi", "az", "sb", "by", "at", "uz", "tm", "zw",
+#     "gr", "sz", "ie", "tj", "au", "td", "nz", "cg", "cv", "pt", "es", "al", "lu", "tz", "nl",
+#     "gh", "no", "bf", "dk", "kh", "ca", "bj", "se", "bt", "ch"]
 
 # global only to test
-# REGIONS = ['gb']
+REGIONS = ['us']
 
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
 
 # seconds to wait between retry attempts
 SECONDS_BETWEEN_RETRIES = 3
-
-# unverified SSL context
-SSL_CONTEXT = ssl._create_unverified_context()
-
-def get_page(url, count=0, last_request=0, return_full=False):
-    """
-    Request a webpage, retry on failure, cache as desired
-    """
-    if count > MAX_url_RETRIES:
-        print('Failed getting page "%s", retried %i times' % (url, count))
-        return False
-    if last_request > time.time()-1:
-        time.sleep(SECONDS_BETWEEN_RETRIES)
-    try:
-        r = urlopen(url, context=SSL_CONTEXT)
-        return r if return_full else r.read().decode('utf-8')
-    except Exception as e:
-        count += 1
-        print('error: ', e)
-        print('Failed getting url "%s", retrying...' % url)
-        return get_page(url, count, time.time(), return_full)
-
-def get_dates_for_region(region):
-    """
-    Scrape the available chart dates for a given region
-    Returns a list of date strings
-    """
-    # scrape xpath from html page div structure
-    url = 'https://spotifycharts.com/regional/{}/daily/'.format(region)
-    r = get_page(url)
-    page = html.fromstring(r)
-    xpath = '*//div[contains(concat(" ", normalize-space(@data-type), " "), " date ")]/ul/li/text()'
-    rows = page.xpath(xpath)
-    # check that rows is valid
-    if not isinstance(rows, list) and not len(rows):
-        return False
-    # convert M/D/Y to Y-M-D
-    return [re.sub(r"(\d{2})\/(\d{2})\/(\d{4})", '\\3-\\1-\\2', d, 0) for d in rows]
-
-def get_spotify_csv_url(region, date='latest'):
-    return CSV_url.format(region, date)
-
-def load_spotify_csv_data(region, date='latest'):
-    """
-    Load and process the CSV file for a given region and date
-    Returns a dictionary of tracks with key of spotify track ID
-    and with region and track ID appended
-    """
-    """ Example return data:
-    {'2SmgFAhQkQCQPyBiBxR6Te':
-        {'Position': '1', 'Track Name': 'Criminal',
-        'Artist': 'Natti Natasha',
-        'Streams': '267879',
-        'URL': 'https://open.spotify.com/track/2SmgFAhQkQCQPyBiBxR6Te',
-        'region': 'ar', 'trackId': '2SmgFAhQkQCQPyBiBxR6Te'},
-    '<id>':
-        {'etc': 'etc' }
-    }
-    """
-    url = get_spotify_csv_url(region, date)
-    r = get_page(url, return_full=True) # SPOTIFY CSV is 'r'
-    info = r.info()
-    if info.get_content_type() != 'text/csv':
-        return False
-    else:
-        spotify_csv = codecs.iterdecode(r, 'utf-8')
-    # NOTE: concatenate r to master csv file.
-        # Add in csv field for territory 2-letter code, OR territoryId, or a dictionary lookup
-    # NOTE: Refactor:
-    rows = csv.reader(codecs.iterdecode(r, 'utf-8'))
-    fields = None
-    data = {}
-    for row in rows:
-        if not fields:
-            fields = row
-            continue
-        track = dict(zip(fields, row))
-        if len(track) == len(fields):
-            track['region'] = region
-            track['trackId'] = get_track_id_from_url(track['URL'])
-
-            # set key value of dictionary to be spotify track id
-            data[track['trackId']] = track
-    return data
 
 # APPLE CLASS START
 #
@@ -173,7 +99,7 @@ class Apple(object):
             	"exp": int(time_expired.strftime("%s"))
             }
             self.token = jwt.encode(payload, self.secret, algorithm=alg, headers=headers).decode('UTF-8')
-            print('woo!', self.token)
+            print('authorized with apple music api...')
         else:
             print('Check {} file for correct section {}'.format(config_file, config.section))
 
@@ -181,6 +107,9 @@ class Apple(object):
         """
         Request a webpage, retry on failure, cache as desired
         """
+        # NOTE: make this file directory smarter. just testing for now.
+        cache_file = "./apple/all-%s.json" % date.today().strftime('%m-%d-%Y')
+
         if count > 3:
             # retried 3 times, giving up
             print('Failed getting page "%s", retried %i times' % (url, count))
@@ -188,26 +117,36 @@ class Apple(object):
         if last_request > time.time()-1:
             # wait 3 seconds between retries
             time.sleep(3)
-        # make request
-        headers = {
-            'Authorization': 'Bearer \'{}\''.format(self.token),
-            'Accept': 'application/json',
-        }
         try:
-            q = Request(url, None, headers)
+            q = Request(url)
             q.add_header('Authorization', 'Bearer {}'.format(self.token))
             data = urlopen(q).read().decode('utf8')
             response = json.loads(data)
-            pprint(response) 
+
+            # Debug: did you receive anything?
+            pprint(response, depth=2)
+
+            # write data to file
+            file = open(cache_file, 'w+')
+            file.write(data)
+            # print('written!')
+
+            # pprint(response['results']['songs'][0]['data'][0]['attributes'], depth=2)
+            # test
+            songs = response['results']['songs'][0]['data']
+            for song in songs:
+                print(song['attributes']['name'])
+
             return response
         except HTTPError as err:
             if err.code == 400:
                 print('HTTP 400, said:')
-                # print(data)
-            raise
+
+            # raise
         except Exception as e:
             count += 1
-            return request(url, cache, count, time.time()) # NOTE: not sure this will work as expected
+            print('Exception in API request, retrying...')
+            # return request(url, cache, count, time.time())
 #
 #
 # APPLE CLASS END
@@ -370,16 +309,6 @@ def append_artist_data(tracks, batch_size=50):
                     tracks[track_id]['genres'] = ','.join(artist['genres'])
         print('Appended artist data for batch %d of %d' % (i+1, len(batches)) )
     return tracks
-
-def get_track_id_from_url(url):
-    """
-    Return the Spotify track ID from a given url
-    Example: https://open.spotify.com/track/r1OmcAT5Y8UPv9qJT4R
-    """
-    regex = r"open\.spotify\.com\/track\/(\w+)"
-    matches = re.search(regex, url)
-    assert matches, "No track ID found for {}".format(url)
-    return matches.group(1)
 
 # TrackDatabase class start
 #
@@ -690,92 +619,73 @@ class TrackDatabase(object):
 
 def process(mode):
     """
-    Process each region for "date" mode
-    Can be YYYY-MM-DD, "watch", "all", or "latest"
+    Process each region
     """
-    starttime_total = datetime.datetime.now() # timestamping
+
+    number_results = 50
+    limit = '&limit={}'.format(number_results)
+
+    # DEBUG: which countries have no apple data
+    no_data = []
+    starttime_total = datetime.datetime.now() # timestamp
 
     service_name = 'Apple'
     for region in REGIONS:
-        if mode == 'all':
-            # gets all historical data for each region
-            print('Getting all dates available for region "%s"...' % region)
-            region_dates = get_dates_for_region(region)
-            if region_dates:
-                print('Found %i dates.\n' % len(region_dates))
-                available_dates = region_dates
-            else:
-                print('No dates found for region "%s", skipping...' % region)
-                print('-' * 40)
-                continue
-        elif mode == 'watch' or mode == 'latest':
-            # iterate through regions, get most recent date only
-            print('Getting most recent date available for region "%s"...' % region)
-            region_dates = get_dates_for_region(region)
-            if region_dates:
-                print('Most recent date is "%s".\n' % region_dates[0])
-                available_dates = [region_dates[0]]
-            else:
-                print('No date found for region "%s", skipping...' % region)
-                print('-' * 40)
-                continue
-        else:
-            # get data for each region on literal user-supplied date string
-            available_dates = [mode]
+        # debug:
+        print(region)
+        starttime = datetime.datetime.now() # timestamp
+        print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y')) # timestamp
 
-        for date_str in available_dates:
-            starttime = datetime.datetime.now()
-            print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y'))
-            print('Loading tracks for region "%s" on "%s"...' % (region, date_str))
-            url = get_spotify_csv_url(region, date_str)
-            if db.is_processed(url):
-                print('Already processed, skipping...')
-                print('-' * 40)
-                continue
-            region_data = load_spotify_csv_data(region, date_str)
-            # NOTE: DEBUG:
-            # print(region_data)
-            if not region_data:
-                print('No download available, skipping...')
-                print('-' * 40)
-                continue
-            print('Found %i tracks.' % len(region_data))
-            print('Looking up tracks in database...')
+        print('Loading charts for region "%s" "...' % (region))
+        region_data = apple.request(API_url.format(region, 'charts', 'songs,albums,music-videos') + limit)
+        # region_data = apple.request("https://api.music.apple.com/v1/catalog/us/charts?chart=most-played&offset=300&limit=50&types=songs")
+        # NOTE: DEBUG:
+        print(region_data)
 
-            # append data to Spotify API response
-            tracks = append_track_hash_from_db(region_data)
-            print('Getting track data from Spotify "Tracks" API...')
-            tracks = append_track_data(region_data)
-            print('Getting label and release date from Spotify "Albums" API...')
-            tracks = append_track_album_data(tracks)
-            print('Getting genre tags from Spotify "Artists" API...')
-            tracks = append_artist_data(tracks)
-            print('Processed %i tracks, adding to database' % len(tracks))
-            added = db.add_tracks(tracks, date_str, service_name)
-
-            # write data to DB
-            db.set_processed(url)
-
-            # timestamp
-            endtime = datetime.datetime.now()
-            processtime = endtime - starttime
-            processtime_running_total = endtime - starttime_total
-            print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%y'))
-            print('Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
-            print('Running processing time: %i minutes, %i seconds' % divmod(processtime_running_total.days *86400 + processtime_running_total.seconds, 60))
+        if not region_data:
+            no_data.append(region)
+            print('No download available, skipping...')
+            print('There are now {} regions without data.'.format(len(no_data)))
             print('-' * 40)
+            continue
+        print('Found %i tracks.' % len(region_data))
 
-    # timestamping
+        # append data to Spotify API response
+        # tracks = append_track_hash_from_db(region_data)
+        # print('Getting track data from Spotify "Tracks" API...')
+        # tracks = append_track_data(region_data)
+        # print('Getting label and release date from Spotify "Albums" API...')
+        # tracks = append_track_album_data(tracks)
+        # print('Getting genre tags from Spotify "Artists" API...')
+        # tracks = append_artist_data(tracks)
+        # print('Processed %i tracks, adding to database' % len(tracks))
+        # added = db.add_tracks(tracks, date_str, service_name)
+
+        # write data to DB
+        # db.set_processed(url)
+
+        # timestamp
+        endtime = datetime.datetime.now()
+        processtime = endtime - starttime
+        processtime_running_total = endtime - starttime_total
+        print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%y'))
+        print('Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
+        print('Running processing time: %i minutes, %i seconds' % divmod(processtime_running_total.days *86400 + processtime_running_total.seconds, 60))
+        print('-' * 40)
+
+    # timestamp
     endtime_total = datetime.datetime.now()
     processtime_total = endtime_total - starttime_total
-    print('Finished processing all applicable dates at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
+    print('Finished processing all regions at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
     print('Total processing time: %i minutes, %i seconds' % divmod(processtime_total.days *86400 + processtime_total.seconds, 60))
     print('-' * 40)
+
+    # no data
+    print('no data for {} countries: {}'.format(len(no_data), no_data))
+
 if __name__ == '__main__':
-    # TEST APPLE TOKEN
+    # setup Apple api
     apple = Apple()
-    # apple.authorize()
-    apple.request("https://api.music.apple.com/v1/catalog/us/songs/203709340")
 
     # are http requests being cached?
     #CACHE_ENABLED = True
@@ -797,8 +707,10 @@ if __name__ == '__main__':
     # print('-' * 40)
     # print()
 
+    mode = 'test'
     # while True:
-    #     process(mode)
+    process(mode)
+
     #
     #     if mode == 'watch':
     #         print()

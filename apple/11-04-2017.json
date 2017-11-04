@@ -1,0 +1,1748 @@
+{
+    "results": {
+        "songs": [{
+            "name": "Top Songs",
+            "chart": "most-played",
+            "href": "/v1/catalog/us/charts?chart=most-played&limit=50&types=songs",
+            "next": "/v1/catalog/us/charts?chart=most-played&offset=50&types=songs",
+            "data": [{
+                "id": "1303426037",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1303426037",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/4e/5a/b6/4e5ab64a-1fbf-e43c-7c72-ae6340ff0439/mzaf_35679739220625154.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/10/ba/42/10ba42d9-5af2-8a40-6f82-2b528149138f/source/{w}x{h}bb.jpg",
+                        "bgColor": "1a1c1b",
+                        "textColor1": "ffffff",
+                        "textColor2": "e1731c",
+                        "textColor3": "d1d1d1",
+                        "textColor4": "b9621c"
+                    },
+                    "artistName": "21 Savage, Offset & Metro Boomin",
+                    "url": "https://itunes.apple.com/us/album/ghostface-killers-feat-travis-scott/id1303426031?i=1303426037",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 268933,
+                    "releaseDate": "2017-10-31",
+                    "name": "Ghostface Killers (feat. Travis Scott)",
+                    "isrc": "QZ45A1700062",
+                    "albumName": "Without Warning",
+                    "playParams": {
+                        "id": "1303426037",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Shayaa Joseph, Kiari Cephus, Leland Wayne & Jacques Webster",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1303426039",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1303426039",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/33/6f/26/336f267f-d420-fc18-adee-90ea7ebe27ad/mzaf_8073096335119726353.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/10/ba/42/10ba42d9-5af2-8a40-6f82-2b528149138f/source/{w}x{h}bb.jpg",
+                        "bgColor": "1a1c1b",
+                        "textColor1": "ffffff",
+                        "textColor2": "e1731c",
+                        "textColor3": "d1d1d1",
+                        "textColor4": "b9621c"
+                    },
+                    "artistName": "Offset & Metro Boomin",
+                    "url": "https://itunes.apple.com/us/album/ric-flair-drip/id1303426031?i=1303426039",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 172800,
+                    "releaseDate": "2017-10-31",
+                    "name": "Ric Flair Drip",
+                    "isrc": "QZ45A1700064",
+                    "albumName": "Without Warning",
+                    "playParams": {
+                        "id": "1303426039",
+                        "kind": "song"
+                    },
+                    "trackNumber": 3,
+                    "composerName": "Kiari Cephus, Leland Wayne & Bijan",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1281165480",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1281165480",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/32/71/06/32710628-e0d5-f876-c6d3-3137a564d0d4/mzaf_5288235235499953369.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1800,
+                        "height": 1800,
+                        "url": "https://is2-ssl.mzstatic.com/image/thumb/Music118/v4/b1/b3/5a/b1b35a74-fa6e-e909-a2dd-61ff21631059/source/{w}x{h}bb.jpg",
+                        "bgColor": "161616",
+                        "textColor1": "e2c862",
+                        "textColor2": "cdae46",
+                        "textColor3": "b9a453",
+                        "textColor4": "a88f3d"
+                    },
+                    "artistName": "Post Malone",
+                    "url": "https://itunes.apple.com/us/album/rockstar-feat-21-savage/id1281165478?i=1281165480",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 218293,
+                    "releaseDate": "2017-09-15",
+                    "name": "rockstar (feat. 21 Savage)",
+                    "isrc": "USUM71710087",
+                    "albumName": "rockstar (feat. 21 Savage) - Single",
+                    "playParams": {
+                        "id": "1281165480",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Austin Post, Louis Bell, Olufunmibi Awoshiley & Shayaa Abraham-Joseph",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1303426038",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1303426038",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/33/1d/5f/331d5f83-ca27-d0ff-8748-97b524ee4849/mzaf_5442177130119801239.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/10/ba/42/10ba42d9-5af2-8a40-6f82-2b528149138f/source/{w}x{h}bb.jpg",
+                        "bgColor": "1a1c1b",
+                        "textColor1": "ffffff",
+                        "textColor2": "e1731c",
+                        "textColor3": "d1d1d1",
+                        "textColor4": "b9621c"
+                    },
+                    "artistName": "21 Savage, Offset & Metro Boomin",
+                    "url": "https://itunes.apple.com/us/album/rap-saved-me-feat-quavo/id1303426031?i=1303426038",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 257600,
+                    "releaseDate": "2017-10-31",
+                    "name": "Rap Saved Me (feat. Quavo)",
+                    "isrc": "QZ45A1700063",
+                    "albumName": "Without Warning",
+                    "playParams": {
+                        "id": "1303426038",
+                        "kind": "song"
+                    },
+                    "trackNumber": 2,
+                    "composerName": "Shayaa Joseph, Kiari Cephus, Leland Wayne & Quavious Marshall",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1303426044",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1303426044",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/ca/75/7c/ca757c64-8e85-799a-821a-c13bd7baa188/mzaf_4806472710881210915.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/10/ba/42/10ba42d9-5af2-8a40-6f82-2b528149138f/source/{w}x{h}bb.jpg",
+                        "bgColor": "1a1c1b",
+                        "textColor1": "ffffff",
+                        "textColor2": "e1731c",
+                        "textColor3": "d1d1d1",
+                        "textColor4": "b9621c"
+                    },
+                    "artistName": "21 Savage & Metro Boomin",
+                    "url": "https://itunes.apple.com/us/album/my-choppa-hate-n-s/id1303426031?i=1303426044",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 148640,
+                    "releaseDate": "2017-10-31",
+                    "name": "My Choppa Hate N****s",
+                    "isrc": "QZ45A1700065",
+                    "albumName": "Without Warning",
+                    "playParams": {
+                        "id": "1303426044",
+                        "kind": "song"
+                    },
+                    "trackNumber": 4,
+                    "composerName": "Shayaa Joseph, Leland Wayne, Kevin Gromringer & Tim Gomringer",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1301744358",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1301744358",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/3e/83/7f/3e837fdc-e19f-8304-4d97-51a2190604a7/mzaf_319060106038537830.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 3000,
+                        "height": 3000,
+                        "url": "https://is5-ssl.mzstatic.com/image/thumb/Music118/v4/51/3b/f6/513bf62e-2aaa-8422-2dd2-9fbc9553d10c/source/{w}x{h}bb.jpg",
+                        "bgColor": "1c1c1c",
+                        "textColor1": "efeff1",
+                        "textColor2": "7cd7ff",
+                        "textColor3": "c5c5c7",
+                        "textColor4": "68b2d1"
+                    },
+                    "artistName": "Migos, Nicki Minaj & Cardi B",
+                    "url": "https://itunes.apple.com/us/album/motorsport/id1301743949?i=1301744358",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 307660,
+                    "releaseDate": "2017-10-27",
+                    "name": "MotorSport",
+                    "isrc": "USUM71712002",
+                    "albumName": "MotorSport - Single",
+                    "playParams": {
+                        "id": "1301744358",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Quavious Marshall, Kiari Cephus, Kirsnick Ball, Onika Maraj, Belcalis Almanzar, Shane Lindstrom, Kevin Gomringer & Tim Gomringer",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1303426045",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1303426045",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/81/1f/8c/811f8cb6-8f0f-a6c9-d8bc-6d62657bb66c/mzaf_1827068268452915393.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/10/ba/42/10ba42d9-5af2-8a40-6f82-2b528149138f/source/{w}x{h}bb.jpg",
+                        "bgColor": "1a1c1b",
+                        "textColor1": "ffffff",
+                        "textColor2": "e1731c",
+                        "textColor3": "d1d1d1",
+                        "textColor4": "b9621c"
+                    },
+                    "artistName": "Offset & Metro Boomin",
+                    "url": "https://itunes.apple.com/us/album/nightmare/id1303426031?i=1303426045",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 147987,
+                    "releaseDate": "2017-10-31",
+                    "name": "Nightmare",
+                    "isrc": "QZ45A1700066",
+                    "albumName": "Without Warning",
+                    "playParams": {
+                        "id": "1303426045",
+                        "kind": "song"
+                    },
+                    "trackNumber": 5,
+                    "composerName": "Kiari Cephus & Leland Wayne",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1303426046",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1303426046",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/9e/19/d5/9e19d5a6-bccf-380e-8396-b525eb3912bb/mzaf_2828268843171216712.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/10/ba/42/10ba42d9-5af2-8a40-6f82-2b528149138f/source/{w}x{h}bb.jpg",
+                        "bgColor": "1a1c1b",
+                        "textColor1": "ffffff",
+                        "textColor2": "e1731c",
+                        "textColor3": "d1d1d1",
+                        "textColor4": "b9621c"
+                    },
+                    "artistName": "21 Savage, Offset & Metro Boomin",
+                    "url": "https://itunes.apple.com/us/album/mad-stalkers/id1303426031?i=1303426046",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 202667,
+                    "releaseDate": "2017-10-31",
+                    "name": "Mad Stalkers",
+                    "isrc": "QZ45A1700067",
+                    "albumName": "Without Warning",
+                    "playParams": {
+                        "id": "1303426046",
+                        "kind": "song"
+                    },
+                    "trackNumber": 6,
+                    "composerName": "Shayaa Joseph, Kiari Cephus, Leland Wayne & Andre Eric Proctor",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1271423854",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1271423854",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/35/e3/11/35e31140-6ce1-6da2-b2c6-6f54fe3c9997/mzaf_567758738076774932.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1425,
+                        "height": 1425,
+                        "url": "https://is5-ssl.mzstatic.com/image/thumb/Music118/v4/35/26/bf/3526bf3b-f20c-7f6b-7ba9-33481c20fb2c/source/{w}x{h}bb.jpg",
+                        "bgColor": "010100",
+                        "textColor1": "fffffd",
+                        "textColor2": "d2971b",
+                        "textColor3": "ccccca",
+                        "textColor4": "a87915"
+                    },
+                    "artistName": "Gucci Mane",
+                    "url": "https://itunes.apple.com/us/album/i-get-the-bag-feat-migos/id1271423847?i=1271423854",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 233087,
+                    "releaseDate": "2017-08-18",
+                    "name": "I Get the Bag (feat. Migos)",
+                    "isrc": "USAT21703178",
+                    "albumName": "Mr. Davis",
+                    "playParams": {
+                        "id": "1271423854",
+                        "kind": "song"
+                    },
+                    "trackNumber": 3,
+                    "composerName": "Joshua Howard Luellen, Leland Tyler Wayne & Radric Davis",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1303426047",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1303426047",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/87/51/d5/8751d51b-3a7d-f80e-b0e5-42d7fb07d4f1/mzaf_5509615856030798228.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/10/ba/42/10ba42d9-5af2-8a40-6f82-2b528149138f/source/{w}x{h}bb.jpg",
+                        "bgColor": "1a1c1b",
+                        "textColor1": "ffffff",
+                        "textColor2": "e1731c",
+                        "textColor3": "d1d1d1",
+                        "textColor4": "b9621c"
+                    },
+                    "artistName": "21 Savage, Offset & Metro Boomin",
+                    "url": "https://itunes.apple.com/us/album/disrespectful/id1303426031?i=1303426047",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 160320,
+                    "releaseDate": "2017-10-31",
+                    "name": "Disrespectful",
+                    "isrc": "QZ45A1700068",
+                    "albumName": "Without Warning",
+                    "playParams": {
+                        "id": "1303426047",
+                        "kind": "song"
+                    },
+                    "trackNumber": 7,
+                    "composerName": "Shayaa Joseph, Kiari Cephus & Leland Wayne",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1278389921",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1278389921",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/c6/94/7d/c6947dac-240c-9fe1-57f7-35711283f3e3/mzaf_1482864523297161664.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is4-ssl.mzstatic.com/image/thumb/Music128/v4/f5/8f/0d/f58f0ddc-6afb-a0fa-95e7-49b5c71b2c89/source/{w}x{h}bb.jpg",
+                        "bgColor": "0d0f0e",
+                        "textColor1": "edecea",
+                        "textColor2": "c4c4c1",
+                        "textColor3": "c0c0be",
+                        "textColor4": "a0a09d"
+                    },
+                    "artistName": "G-Eazy",
+                    "url": "https://itunes.apple.com/us/album/no-limit-feat-a%24ap-rocky-cardi-b/id1278388839?i=1278389921",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 211006,
+                    "releaseDate": "2017-09-08",
+                    "name": "No Limit (feat. A$AP Rocky & Cardi B)",
+                    "isrc": "USRC11702117",
+                    "albumName": "No Limit (feat. A$AP Rocky & Cardi B) - Single",
+                    "playParams": {
+                        "id": "1278389921",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Gerald Gillum, Allen Ritter, Matthew Samuels, Rakim Mayers & Belcalis Almanzar",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1292381954",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1292381954",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/8c/1a/b3/8c1ab302-b814-e148-b249-b16d3566121d/mzaf_1290930189139201618.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is5-ssl.mzstatic.com/image/thumb/Music128/v4/17/13/93/171393f6-a2cc-aa0e-c5af-fe63a160a0b3/source/{w}x{h}bb.jpg",
+                        "bgColor": "005683",
+                        "textColor1": "eaf9f2",
+                        "textColor2": "63fed4",
+                        "textColor3": "bbd9dc",
+                        "textColor4": "4fdcc4"
+                    },
+                    "artistName": "Lil Pump",
+                    "url": "https://itunes.apple.com/us/album/gucci-gang/id1292381888?i=1292381954",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 124056,
+                    "releaseDate": "2017-10-06",
+                    "name": "Gucci Gang",
+                    "isrc": "USWB11701486",
+                    "albumName": "Lil Pump",
+                    "playParams": {
+                        "id": "1292381954",
+                        "kind": "song"
+                    },
+                    "trackNumber": 2,
+                    "composerName": "Tha Lights Global, Brenden Murray, Gazzy Garcia & Gerrell Nealy",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1248378144",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1248378144",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview117/v4/61/ae/b1/61aeb103-c845-1161-586c-866b6deac672/mzaf_6837615395829211832.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1425,
+                        "height": 1425,
+                        "url": "https://is5-ssl.mzstatic.com/image/thumb/Music127/v4/97/6f/80/976f80d6-2280-4fb5-da37-353cbd1e874c/source/{w}x{h}bb.jpg",
+                        "bgColor": "e8e4f3",
+                        "textColor1": "0c0000",
+                        "textColor2": "5a0000",
+                        "textColor3": "382d31",
+                        "textColor4": "772d31"
+                    },
+                    "artistName": "Cardi B",
+                    "url": "https://itunes.apple.com/us/album/bodak-yellow/id1248377996?i=1248378144",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 223962,
+                    "releaseDate": "2017-06-16",
+                    "name": "Bodak Yellow",
+                    "isrc": "USAT21701762",
+                    "albumName": "Bodak Yellow - Single",
+                    "playParams": {
+                        "id": "1248378144",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "J. White, Klenord Raphael, Belcalis Almanzar, D. Octave & Jordan Thorpe",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1303426048",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1303426048",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/f3/23/71/f32371b9-44c8-4c30-8ffe-f90b3e5a58d8/mzaf_7482893388046686553.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/10/ba/42/10ba42d9-5af2-8a40-6f82-2b528149138f/source/{w}x{h}bb.jpg",
+                        "bgColor": "1a1c1b",
+                        "textColor1": "ffffff",
+                        "textColor2": "e1731c",
+                        "textColor3": "d1d1d1",
+                        "textColor4": "b9621c"
+                    },
+                    "artistName": "21 Savage & Metro Boomin",
+                    "url": "https://itunes.apple.com/us/album/run-up-the-racks/id1303426031?i=1303426048",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 189800,
+                    "releaseDate": "2017-10-31",
+                    "name": "Run Up the Racks",
+                    "isrc": "QZ45A1700069",
+                    "albumName": "Without Warning",
+                    "playParams": {
+                        "id": "1303426048",
+                        "kind": "song"
+                    },
+                    "trackNumber": 8,
+                    "composerName": "Shayaa Joseph, Leland Wayne & Joshua Luellen",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1170700480",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1170700480",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview71/v4/81/0b/21/810b21a6-6dc2-d8d1-da38-d0036eb5e6c3/mzaf_1203326766206057102.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1800,
+                        "height": 1800,
+                        "url": "https://is1-ssl.mzstatic.com/image/thumb/Music71/v4/93/80/78/938078cc-6bfc-a518-e8b6-8bf731fcfbc6/source/{w}x{h}bb.jpg",
+                        "bgColor": "0c2621",
+                        "textColor1": "fafcfb",
+                        "textColor2": "f49755",
+                        "textColor3": "cbd1d0",
+                        "textColor4": "c6814b"
+                    },
+                    "artistName": "Post Malone",
+                    "url": "https://itunes.apple.com/us/album/i-fall-apart/id1170699981?i=1170700480",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 223350,
+                    "releaseDate": "2016-12-09",
+                    "name": "I Fall Apart",
+                    "isrc": "USUM71614475",
+                    "albumName": "Stoney (Deluxe)",
+                    "playParams": {
+                        "id": "1170700480",
+                        "kind": "song"
+                    },
+                    "trackNumber": 7,
+                    "composerName": "Austin Post, Carlo Montagnese & Billy Walsh",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1303426049",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1303426049",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/d8/5a/27/d85a27bc-9779-7a4e-123c-09e38b16b82c/mzaf_1053721409593072923.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/10/ba/42/10ba42d9-5af2-8a40-6f82-2b528149138f/source/{w}x{h}bb.jpg",
+                        "bgColor": "1a1c1b",
+                        "textColor1": "ffffff",
+                        "textColor2": "e1731c",
+                        "textColor3": "d1d1d1",
+                        "textColor4": "b9621c"
+                    },
+                    "artistName": "21 Savage, Offset & Metro Boomin",
+                    "url": "https://itunes.apple.com/us/album/still-serving/id1303426031?i=1303426049",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 231787,
+                    "releaseDate": "2017-10-31",
+                    "name": "Still Serving",
+                    "isrc": "QZ45A1700070",
+                    "albumName": "Without Warning",
+                    "playParams": {
+                        "id": "1303426049",
+                        "kind": "song"
+                    },
+                    "trackNumber": 9,
+                    "composerName": "Shayaa Joseph, Kiari Cephus, Leland Wayne, Kevin Gromringer & Tim Gomringer",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1298483142",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1298483142",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/53/f8/7e/53f87eec-f31f-4358-2906-a409986736bc/mzaf_5150932333716647328.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is5-ssl.mzstatic.com/image/thumb/Music118/v4/72/9d/28/729d28cd-6092-7124-955d-ad25d1015443/source/{w}x{h}bb.jpg",
+                        "bgColor": "d6d6d6",
+                        "textColor1": "000000",
+                        "textColor2": "1f1e23",
+                        "textColor3": "2a2a2a",
+                        "textColor4": "444347"
+                    },
+                    "artistName": "Future & Young Thug",
+                    "url": "https://itunes.apple.com/us/album/patek-water-feat-offset/id1298483081?i=1298483142",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 189480,
+                    "releaseDate": "2017-10-20",
+                    "name": "Patek Water (feat. Offset)",
+                    "isrc": "USSM11709201",
+                    "albumName": "SUPER SLIMEY",
+                    "playParams": {
+                        "id": "1298483142",
+                        "kind": "song"
+                    },
+                    "trackNumber": 6,
+                    "composerName": "Nayvadius Wilburn, Jeffery Williams & Kiari Cephus",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1254351757",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1254351757",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview117/v4/03/f6/d0/03f6d075-fe7b-2dc9-8623-ea150c03d065/mzaf_2629488935182261128.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music111/v4/f5/b4/3b/f5b43b33-8dbb-3f11-540b-6fd75538e495/source/{w}x{h}bb.jpg",
+                        "bgColor": "f49996",
+                        "textColor1": "000000",
+                        "textColor2": "1d1716",
+                        "textColor3": "301e1e",
+                        "textColor4": "483130"
+                    },
+                    "artistName": "21 Savage",
+                    "url": "https://itunes.apple.com/us/album/bank-account/id1254351754?i=1254351757",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 220307,
+                    "releaseDate": "2017-07-07",
+                    "name": "Bank Account",
+                    "isrc": "USSM11705546",
+                    "albumName": "Issa Album",
+                    "playParams": {
+                        "id": "1254351757",
+                        "kind": "song"
+                    },
+                    "trackNumber": 2,
+                    "composerName": "Shayaa Joseph",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1306033523",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1306033523",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/10/69/d9/1069d90a-d8f6-bf9e-7ed7-093a97d191d7/mzaf_5185129464270089970.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 3000,
+                        "height": 3000,
+                        "url": "https://is5-ssl.mzstatic.com/image/thumb/Music118/v4/d3/00/54/d3005445-cec3-c943-0019-eb9eccf94306/source/{w}x{h}bb.jpg",
+                        "bgColor": "ffffff",
+                        "textColor1": "000000",
+                        "textColor2": "2d2d2d",
+                        "textColor3": "333333",
+                        "textColor4": "575757"
+                    },
+                    "artistName": "Taylor Swift",
+                    "url": "https://itunes.apple.com/us/album/call-it-what-you-want/id1306033445?i=1306033523",
+                    "discNumber": 1,
+                    "genreNames": ["Pop", "Music"],
+                    "durationInMillis": 203506,
+                    "releaseDate": "2017-11-03",
+                    "name": "Call It What You Want",
+                    "isrc": "USCJY1750015",
+                    "albumName": "Call It What You Want - Single",
+                    "playParams": {
+                        "id": "1306033523",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Taylor Swift & Jack Antonoff"
+                }
+            }, {
+                "id": "1266716155",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1266716155",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/07/75/99/07759985-054c-61d3-7e19-8d6940fefe8c/mzaf_2748837210714279510.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is2-ssl.mzstatic.com/image/thumb/Music128/v4/46/19/e3/4619e3b9-37de-dfb3-433d-29a1bb43bf3b/source/{w}x{h}bb.jpg",
+                        "bgColor": "ae1728",
+                        "textColor1": "fbd5a8",
+                        "textColor2": "fca783",
+                        "textColor3": "ebaf8f",
+                        "textColor4": "ed8b71"
+                    },
+                    "artistName": "Camila Cabello",
+                    "url": "https://itunes.apple.com/us/album/havana-feat-young-thug/id1266716082?i=1266716155",
+                    "discNumber": 1,
+                    "genreNames": ["Pop", "Music"],
+                    "durationInMillis": 216897,
+                    "releaseDate": "2017-08-05",
+                    "name": "Havana (feat. Young Thug)",
+                    "isrc": "USSM11706905",
+                    "albumName": "Havana (feat. Young Thug) - Single",
+                    "playParams": {
+                        "id": "1266716155",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Camila Cabello"
+                }
+            }, {
+                "id": "1271395149",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1271395149",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/bd/b2/2c/bdb22c52-8d08-9040-5a62-91d3828e2322/mzaf_596004782748183222.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 3620,
+                        "height": 3620,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/bd/e2/40/bde2404a-115d-2af4-2249-acaff533d388/source/{w}x{h}bb.jpg",
+                        "bgColor": "373737",
+                        "textColor1": "ffffff",
+                        "textColor2": "f4af74",
+                        "textColor3": "d6d6d6",
+                        "textColor4": "ce9768"
+                    },
+                    "artistName": "Kodak Black",
+                    "url": "https://itunes.apple.com/us/album/roll-in-peace-feat-xxxtentacion/id1271395139?i=1271395149",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop", "Music", "Hip-Hop/Rap"],
+                    "durationInMillis": 213132,
+                    "releaseDate": "2017-08-18",
+                    "name": "Roll in Peace (feat. XXXTENTACION)",
+                    "isrc": "USAT21703096",
+                    "albumName": "Project Baby 2",
+                    "playParams": {
+                        "id": "1271395149",
+                        "kind": "song"
+                    },
+                    "trackNumber": 3,
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1266713364",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1266713364",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/18/9e/b4/189eb41a-4587-d5fb-559b-23a83150c177/mzaf_1616329684996869517.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is5-ssl.mzstatic.com/image/thumb/Music128/v4/14/24/fe/1424fec5-3b0b-4bfb-ed46-25ee9ec02689/source/{w}x{h}bb.jpg",
+                        "bgColor": "6f1e1c",
+                        "textColor1": "eecfb8",
+                        "textColor2": "e4bc9f",
+                        "textColor3": "d4ac99",
+                        "textColor4": "cc9d85"
+                    },
+                    "artistName": "A$AP Ferg",
+                    "url": "https://itunes.apple.com/us/album/plain-jane/id1266713355?i=1266713364",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 173602,
+                    "releaseDate": "2017-08-04",
+                    "name": "Plain Jane",
+                    "isrc": "USRC11701803",
+                    "albumName": "Still Striving",
+                    "playParams": {
+                        "id": "1266713364",
+                        "kind": "song"
+                    },
+                    "trackNumber": 8,
+                    "composerName": "Darold Brown, Kirlan Labarrie, Paul Beauregard & Jordan Houston",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1303426050",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1303426050",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/7d/8b/49/7d8b4950-9b85-4542-86e5-cd8bc9da9d64/mzaf_1388157931920863684.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/10/ba/42/10ba42d9-5af2-8a40-6f82-2b528149138f/source/{w}x{h}bb.jpg",
+                        "bgColor": "1a1c1b",
+                        "textColor1": "ffffff",
+                        "textColor2": "e1731c",
+                        "textColor3": "d1d1d1",
+                        "textColor4": "b9621c"
+                    },
+                    "artistName": "21 Savage, Offset & Metro Boomin",
+                    "url": "https://itunes.apple.com/us/album/darth-vader/id1303426031?i=1303426050",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 228893,
+                    "releaseDate": "2017-10-31",
+                    "name": "Darth Vader",
+                    "isrc": "QZ45A1700071",
+                    "albumName": "Without Warning",
+                    "playParams": {
+                        "id": "1303426050",
+                        "kind": "song"
+                    },
+                    "trackNumber": 10,
+                    "composerName": "Shayaa Joseph, Kiari Cephus & Leland Wayne",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1221017219",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1221017219",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview122/v4/59/4b/98/594b9816-bbac-c778-8e8f-c3a9f69317d1/mzaf_160627964787963891.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1800,
+                        "height": 1800,
+                        "url": "https://is4-ssl.mzstatic.com/image/thumb/Music122/v4/f5/67/de/f567de5a-5811-45e0-4c02-52ff0254281c/source/{w}x{h}bb.jpg",
+                        "bgColor": "261616",
+                        "textColor1": "eccfbc",
+                        "textColor2": "e6a89a",
+                        "textColor3": "c4aa9b",
+                        "textColor4": "bf8a7f"
+                    },
+                    "artistName": "Logic",
+                    "url": "https://itunes.apple.com/us/album/1-800-273-8255-feat-alessia-cara-khalid/id1221017205?i=1221017219",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 250176,
+                    "releaseDate": "2017-04-28",
+                    "name": "1-800-273-8255 (feat. Alessia Cara & Khalid)",
+                    "isrc": "USUM71702778",
+                    "albumName": "Everybody",
+                    "playParams": {
+                        "id": "1221017219",
+                        "kind": "song"
+                    },
+                    "trackNumber": 10,
+                    "composerName": "Sir Robert Bryson Hall II, Arjun Ivatury, Alessia Caracciolo & Khalid Robinson",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1200868874",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1200868874",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview111/v4/1e/2e/43/1e2e433d-61e4-1ed9-5f74-1d73c77f993e/mzaf_7771373670711903116.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is5-ssl.mzstatic.com/image/thumb/Music122/v4/b9/ab/a7/b9aba7fd-bccd-9e84-8cc6-41f616ddb429/source/{w}x{h}bb.jpg",
+                        "bgColor": "27496e",
+                        "textColor1": "fffffd",
+                        "textColor2": "dad7dd",
+                        "textColor3": "d3dae0",
+                        "textColor4": "b6bbc7"
+                    },
+                    "artistName": "Khalid",
+                    "url": "https://itunes.apple.com/us/album/young-dumb-broke/id1200868601?i=1200868874",
+                    "discNumber": 1,
+                    "genreNames": ["R&B/Soul", "Music"],
+                    "durationInMillis": 202535,
+                    "releaseDate": "2017-03-03",
+                    "name": "Young Dumb & Broke",
+                    "isrc": "USRC11700144",
+                    "albumName": "American Teen",
+                    "playParams": {
+                        "id": "1200868874",
+                        "kind": "song"
+                    },
+                    "trackNumber": 2,
+                    "composerName": "N/A"
+                }
+            }, {
+                "id": "1293917433",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1293917433",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/1f/fb/0f/1ffb0fd6-ed92-fa32-0735-aff68c105dbd/mzaf_2481361705821760462.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/0c/3f/a8/0c3fa85c-7f06-0ede-4659-ffa785dc6ae7/source/{w}x{h}bb.jpg",
+                        "bgColor": "000000",
+                        "textColor1": "dc8dcb",
+                        "textColor2": "de71b0",
+                        "textColor3": "b070a2",
+                        "textColor4": "b25a8d"
+                    },
+                    "artistName": "Chris Brown",
+                    "url": "https://itunes.apple.com/us/album/high-end-feat-future-young-thug/id1293916276?i=1293917433",
+                    "discNumber": 1,
+                    "genreNames": ["R&B/Soul", "Music"],
+                    "durationInMillis": 202214,
+                    "releaseDate": "2017-10-13",
+                    "name": "High End (feat. Future & Young Thug)",
+                    "isrc": "USRC11702532",
+                    "albumName": "Heartbreak on a Full Moon",
+                    "playParams": {
+                        "id": "1293917433",
+                        "kind": "song"
+                    },
+                    "trackNumber": 31,
+                    "composerName": "Chris Brown, Tony Son, Nayvadius Wilburn & Jeffrey Lamar Williams",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1274152200",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1274152200",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/3e/e6/07/3ee60746-4fbb-b19b-8ee1-814d64fc919e/mzaf_3618959878024021517.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1425,
+                        "height": 1425,
+                        "url": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/63/71/32/63713234-2038-00cd-c7dd-6c93256a481c/source/{w}x{h}bb.jpg",
+                        "bgColor": "1c1c1c",
+                        "textColor1": "d7dbf6",
+                        "textColor2": "c4e1ed",
+                        "textColor3": "b2b5ca",
+                        "textColor4": "a2bac3"
+                    },
+                    "artistName": "Lil Uzi Vert",
+                    "url": "https://itunes.apple.com/us/album/the-way-life-goes-feat-oh-wonder/id1274150514?i=1274152200",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 221747,
+                    "releaseDate": "2017-08-25",
+                    "name": "The Way Life Goes (feat. Oh Wonder)",
+                    "isrc": "USAT21703395",
+                    "albumName": "Luv Is Rage 2",
+                    "playParams": {
+                        "id": "1274152200",
+                        "kind": "song"
+                    },
+                    "trackNumber": 5,
+                    "composerName": "I. Smith & S. Woods",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1239976603",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239976603",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview117/v4/b2/72/77/b27277ab-d04b-e1b8-bf07-fdc41541ba7d/mzaf_5186700290683498481.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is4-ssl.mzstatic.com/image/thumb/Music117/v4/d7/c6/8e/d7c68eb5-3e7a-d116-8b23-2720d663632e/source/{w}x{h}bb.jpg",
+                        "bgColor": "10241a",
+                        "textColor1": "efe7d8",
+                        "textColor2": "ebe4e7",
+                        "textColor3": "c2c0b2",
+                        "textColor4": "bfbebe"
+                    },
+                    "artistName": "SZA",
+                    "url": "https://itunes.apple.com/us/album/love-galore-feat-travis-scott/id1239976329?i=1239976603",
+                    "discNumber": 1,
+                    "genreNames": ["R&B/Soul", "Music"],
+                    "durationInMillis": 275085,
+                    "releaseDate": "2017-04-28",
+                    "name": "Love Galore (feat. Travis Scott)",
+                    "isrc": "USRC11700886",
+                    "albumName": "Ctrl",
+                    "playParams": {
+                        "id": "1239976603",
+                        "kind": "song"
+                    },
+                    "trackNumber": 2,
+                    "composerName": "Solana Rowe, Jacques Webster, Carter Lang, Cody Fayne & Terrence Henderson",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1170700486",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1170700486",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview71/v4/c1/71/85/c1718555-ba41-b47f-045c-7a45e158ae42/mzaf_1242339759624601997.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1800,
+                        "height": 1800,
+                        "url": "https://is1-ssl.mzstatic.com/image/thumb/Music71/v4/93/80/78/938078cc-6bfc-a518-e8b6-8bf731fcfbc6/source/{w}x{h}bb.jpg",
+                        "bgColor": "0c2621",
+                        "textColor1": "fafcfb",
+                        "textColor2": "f49755",
+                        "textColor3": "cbd1d0",
+                        "textColor4": "c6814b"
+                    },
+                    "artistName": "Post Malone",
+                    "url": "https://itunes.apple.com/us/album/congratulations-feat-quavo/id1170699981?i=1170700486",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 220285,
+                    "releaseDate": "2016-11-04",
+                    "name": "Congratulations (feat. Quavo)",
+                    "isrc": "USUM71614484",
+                    "albumName": "Stoney (Deluxe)",
+                    "playParams": {
+                        "id": "1170700486",
+                        "kind": "song"
+                    },
+                    "trackNumber": 12,
+                    "composerName": "Austin Post, Louis Bell, Adam Feeney, Quavious Marshall & Leland Wayne",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1274153124",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1274153124",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/4a/23/66/4a236601-5de7-0af0-08c4-60f555ab0d10/mzaf_8632936601887016738.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1425,
+                        "height": 1425,
+                        "url": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/63/71/32/63713234-2038-00cd-c7dd-6c93256a481c/source/{w}x{h}bb.jpg",
+                        "bgColor": "1c1c1c",
+                        "textColor1": "d7dbf6",
+                        "textColor2": "c4e1ed",
+                        "textColor3": "b2b5ca",
+                        "textColor4": "a2bac3"
+                    },
+                    "artistName": "Lil Uzi Vert",
+                    "url": "https://itunes.apple.com/us/album/xo-tour-llif3/id1274150514?i=1274153124",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 182707,
+                    "releaseDate": "2017-02-26",
+                    "name": "XO TOUR Llif3",
+                    "isrc": "USAT21700684",
+                    "albumName": "Luv Is Rage 2",
+                    "playParams": {
+                        "id": "1274153124",
+                        "kind": "song"
+                    },
+                    "trackNumber": 16,
+                    "composerName": "Jw Lucas, Bryan Lamar Simmons & S. Woods",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1300804206",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1300804206",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/a3/d3/ad/a3d3ad8a-5c20-7c11-0294-b4bf87fa2762/mzaf_8408554102670683741.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/6a/78/d1/6a78d198-a246-eb3b-92be-f14039a25e1c/source/{w}x{h}bb.jpg",
+                        "bgColor": "ffd800",
+                        "textColor1": "000000",
+                        "textColor2": "1b1a20",
+                        "textColor3": "332b00",
+                        "textColor4": "48401a"
+                    },
+                    "artistName": "N.E.R.D & Rihanna",
+                    "url": "https://itunes.apple.com/us/album/lemon/id1300804183?i=1300804206",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 219716,
+                    "releaseDate": "2017-11-01",
+                    "name": "Lemon",
+                    "isrc": "USSM11708242",
+                    "albumName": "Lemon - Single",
+                    "playParams": {
+                        "id": "1300804206",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Pharrell Williams",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1239976607",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239976607",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview127/v4/7e/34/39/7e343901-d885-5d7a-909e-9b8ded82cc7f/mzaf_478374928555891493.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is4-ssl.mzstatic.com/image/thumb/Music117/v4/d7/c6/8e/d7c68eb5-3e7a-d116-8b23-2720d663632e/source/{w}x{h}bb.jpg",
+                        "bgColor": "10241a",
+                        "textColor1": "efe7d8",
+                        "textColor2": "ebe4e7",
+                        "textColor3": "c2c0b2",
+                        "textColor4": "bfbebe"
+                    },
+                    "artistName": "SZA",
+                    "url": "https://itunes.apple.com/us/album/the-weekend/id1239976329?i=1239976607",
+                    "discNumber": 1,
+                    "genreNames": ["R&B/Soul", "Music"],
+                    "durationInMillis": 272194,
+                    "releaseDate": "2017-06-09",
+                    "name": "The Weekend",
+                    "isrc": "USRC11701116",
+                    "albumName": "Ctrl",
+                    "playParams": {
+                        "id": "1239976607",
+                        "kind": "song"
+                    },
+                    "trackNumber": 6,
+                    "composerName": "N/A",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1238461121",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1238461121",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview117/v4/79/a0/bc/79a0bc93-ff7d-ff8b-9fdd-9e725659dfaf/mzaf_1602469113905604115.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is2-ssl.mzstatic.com/image/thumb/Music117/v4/60/5b/8a/605b8a12-6709-a5fe-a1e2-a32c4460cce0/source/{w}x{h}bb.jpg",
+                        "bgColor": "191d0f",
+                        "textColor1": "fbc671",
+                        "textColor2": "fda857",
+                        "textColor3": "cea45e",
+                        "textColor4": "cf8c49"
+                    },
+                    "artistName": "Travis Scott",
+                    "url": "https://itunes.apple.com/us/album/butterfly-effect/id1238460728?i=1238461121",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 190678,
+                    "releaseDate": "2017-05-15",
+                    "name": "Butterfly Effect",
+                    "isrc": "USSM11704799",
+                    "albumName": "Butterfly Effect - Single",
+                    "playParams": {
+                        "id": "1238461121",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Jacques Webster & Shane Lindstrom"
+                }
+            }, {
+                "id": "1254555499",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1254555499",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview117/v4/04/f5/10/04f51009-19d1-19a0-7f11-ca4325da4fc1/mzaf_7500265870179592962.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is1-ssl.mzstatic.com/image/thumb/Music127/v4/6c/8a/c6/6c8ac6ef-97ce-8411-a8c5-57b9a5f22eed/source/{w}x{h}bb.jpg",
+                        "bgColor": "dc7b46",
+                        "textColor1": "0e0d12",
+                        "textColor2": "100f0d",
+                        "textColor3": "37231c",
+                        "textColor4": "382519"
+                    },
+                    "artistName": "French Montana",
+                    "url": "https://itunes.apple.com/us/album/unforgettable-feat-swae-lee/id1254555045?i=1254555499",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 233902,
+                    "releaseDate": "2017-04-07",
+                    "name": "Unforgettable (feat. Swae Lee)",
+                    "isrc": "USSM11703478",
+                    "albumName": "Jungle Rules",
+                    "playParams": {
+                        "id": "1254555499",
+                        "kind": "song"
+                    },
+                    "trackNumber": 2,
+                    "composerName": "Karim Kharbouch, Khalif Brown, Michael L. Williams II, Christopher Washington, McCulloch Reid Sutphin & Aujla Jagvir Singh",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1223592501",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1223592501",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview111/v4/d9/81/6c/d9816cc5-12b0-504a-e5fc-453a425de5a1/mzaf_8888588272341164632.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1800,
+                        "height": 1800,
+                        "url": "https://is2-ssl.mzstatic.com/image/thumb/Music111/v4/56/46/3f/56463f62-0d8d-3595-368b-38a995f10e36/source/{w}x{h}bb.jpg",
+                        "bgColor": "f6f4f9",
+                        "textColor1": "2c1b20",
+                        "textColor2": "361a20",
+                        "textColor3": "54464c",
+                        "textColor4": "5c464b"
+                    },
+                    "artistName": "Kendrick Lamar",
+                    "url": "https://itunes.apple.com/us/album/love-feat-zacari/id1223592280?i=1223592501",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 213400,
+                    "releaseDate": "2017-04-14",
+                    "name": "LOVE. (FEAT. ZACARI.)",
+                    "isrc": "USUM71703088",
+                    "albumName": "DAMN.",
+                    "playParams": {
+                        "id": "1223592501",
+                        "kind": "song"
+                    },
+                    "trackNumber": 10,
+                    "composerName": "K. Duckworth, Z. Pacaldo, T. Walton, M. Spears, G. Kurstin & Anthony Tiffith",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1215426433",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1215426433",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview111/v4/55/95/ab/5595ab0b-15bf-147b-5cc0-2de77d7d27b8/mzaf_4055502281138611830.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is4-ssl.mzstatic.com/image/thumb/Music111/v4/3e/32/a0/3e32a06d-f3d4-9729-1ac1-923de6b99261/source/{w}x{h}bb.jpg",
+                        "bgColor": "000233",
+                        "textColor1": "ff633e",
+                        "textColor2": "ff4900",
+                        "textColor3": "cc503b",
+                        "textColor4": "cc3a0a"
+                    },
+                    "artistName": "GoldLink",
+                    "url": "https://itunes.apple.com/us/album/crew-feat-brent-faiyaz-shy-glizzy/id1215426121?i=1215426433",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 176391,
+                    "releaseDate": "2016-12-16",
+                    "name": "Crew (feat. Brent Faiyaz & Shy Glizzy)",
+                    "isrc": "USRC11602777",
+                    "albumName": "At What Cost",
+                    "playParams": {
+                        "id": "1215426433",
+                        "kind": "song"
+                    },
+                    "trackNumber": 10,
+                    "composerName": "D'Anthony Carlos & Teddy Walton",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1274653784",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1274653784",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/2c/9c/aa/2c9caa6a-ac77-f147-7b44-6f50d04e157b/mzaf_1843244755777633220.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 3000,
+                        "height": 3000,
+                        "url": "https://is5-ssl.mzstatic.com/image/thumb/Music128/v4/09/c6/4d/09c64d53-e9e9-63b7-6241-1f4d270a3a54/source/{w}x{h}bb.jpg",
+                        "bgColor": "bebebe",
+                        "textColor1": "0e0e0e",
+                        "textColor2": "0f0f0d",
+                        "textColor3": "313131",
+                        "textColor4": "323230"
+                    },
+                    "artistName": "XXXTENTACION",
+                    "url": "https://itunes.apple.com/us/album/f-k-love-feat-trippie-redd/id1274653476?i=1274653784",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 146520,
+                    "releaseDate": "2017-08-25",
+                    "name": "F**k Love (feat. Trippie Redd)",
+                    "isrc": "USUYG1156898",
+                    "albumName": "17",
+                    "playParams": {
+                        "id": "1274653784",
+                        "kind": "song"
+                    },
+                    "trackNumber": 8,
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1305302954",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1305302954",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/3e/dd/c4/3eddc433-4dfe-b5a0-b9d9-aab08c438dd6/mzaf_8907026585318780437.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 3000,
+                        "height": 3000,
+                        "url": "https://is2-ssl.mzstatic.com/image/thumb/Music128/v4/c0/15/6f/c0156fb1-a019-df5a-9ea5-0298f521df3a/source/{w}x{h}bb.jpg",
+                        "bgColor": "000000",
+                        "textColor1": "ffffff",
+                        "textColor2": "d3d6d5",
+                        "textColor3": "cbcbcb",
+                        "textColor4": "a9abaa"
+                    },
+                    "artistName": "Big Sean & Metro Boomin",
+                    "url": "https://itunes.apple.com/us/album/pull-up-n-wreck-feat-21-savage/id1305301596?i=1305302954",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 227560,
+                    "releaseDate": "2017-11-03",
+                    "name": "Pull Up N Wreck (feat. 21 Savage)",
+                    "isrc": "USUG11702041",
+                    "albumName": "Pull Up N Wreck (feat. 21 Savage) - Single",
+                    "playParams": {
+                        "id": "1305302954",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Leland Wayne, Joshua Luellen, Sean Anderson & Shayaa Abraham-Joseph",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1298483095",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1298483095",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/87/67/91/876791c6-784e-7471-75da-7e0e9bf2915c/mzaf_6794081085350127290.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is5-ssl.mzstatic.com/image/thumb/Music118/v4/72/9d/28/729d28cd-6092-7124-955d-ad25d1015443/source/{w}x{h}bb.jpg",
+                        "bgColor": "d6d6d6",
+                        "textColor1": "000000",
+                        "textColor2": "1f1e23",
+                        "textColor3": "2a2a2a",
+                        "textColor4": "444347"
+                    },
+                    "artistName": "Future & Young Thug",
+                    "url": "https://itunes.apple.com/us/album/no-cap/id1298483081?i=1298483095",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 144142,
+                    "releaseDate": "2017-10-20",
+                    "name": "No Cap",
+                    "isrc": "USSM11709196",
+                    "albumName": "SUPER SLIMEY",
+                    "playParams": {
+                        "id": "1298483095",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Nayvadius Wilburn & Jeffery Williams",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1249546109",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1249546109",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview117/v4/d4/ac/f9/d4acf9b2-28a6-14ec-c66c-e515416d41dd/mzaf_3382183088413343182.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music127/v4/4a/49/79/4a4979e7-84fe-082f-8341-ca1213626e4e/source/{w}x{h}bb.jpg",
+                        "bgColor": "040000",
+                        "textColor1": "fbece9",
+                        "textColor2": "e37b4e",
+                        "textColor3": "cabdba",
+                        "textColor4": "b6623f"
+                    },
+                    "artistName": "Yo Gotti",
+                    "url": "https://itunes.apple.com/us/album/rake-it-up-feat-nicki-minaj/id1249546091?i=1249546109",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 276333,
+                    "releaseDate": "2017-06-02",
+                    "name": "Rake It Up (feat. Nicki Minaj)",
+                    "isrc": "USSM11705366",
+                    "albumName": "Rake It Up (feat. Nicki Minaj) - Single",
+                    "playParams": {
+                        "id": "1249546109",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Mario Mims, Michael Williams & Onika Maraj",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1278404871",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1278404871",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/13/cd/59/13cd59af-58b4-6a3d-958f-988e36dab0ed/mzaf_2498598283370031536.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1425,
+                        "height": 1425,
+                        "url": "https://is2-ssl.mzstatic.com/image/thumb/Music118/v4/89/67/a5/8967a513-dab6-d1e6-106f-cd86cac63bb6/source/{w}x{h}bb.jpg",
+                        "bgColor": "f5f5f7",
+                        "textColor1": "000413",
+                        "textColor2": "311812",
+                        "textColor3": "313441",
+                        "textColor4": "58443f"
+                    },
+                    "artistName": "A Boogie wit da Hoodie",
+                    "url": "https://itunes.apple.com/us/album/say-a/id1278404610?i=1278404871",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 214854,
+                    "releaseDate": "2017-09-29",
+                    "name": "Say A'",
+                    "isrc": "USAT21703539",
+                    "albumName": "The Bigger Artist",
+                    "playParams": {
+                        "id": "1278404871",
+                        "kind": "song"
+                    },
+                    "trackNumber": 4,
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1277340836",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1277340836",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/6b/41/34/6b413435-4d8f-80e3-df4f-75e8e5a66199/mzaf_6146117840131182063.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1800,
+                        "height": 1800,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music118/v4/33/f8/31/33f831c6-8d8b-657e-0dcc-6270f0e59ab3/source/{w}x{h}bb.jpg",
+                        "bgColor": "8b8b8b",
+                        "textColor1": "000000",
+                        "textColor2": "161616",
+                        "textColor3": "1b1b1b",
+                        "textColor4": "2e2e2e"
+                    },
+                    "artistName": "Sam Smith",
+                    "url": "https://itunes.apple.com/us/album/too-good-at-goodbyes/id1277340826?i=1277340836",
+                    "discNumber": 1,
+                    "genreNames": ["Pop", "Music"],
+                    "durationInMillis": 201004,
+                    "releaseDate": "2017-09-08",
+                    "name": "Too Good at Goodbyes",
+                    "isrc": "GBUM71704089",
+                    "albumName": "Too Good at Goodbyes - Single",
+                    "playParams": {
+                        "id": "1277340836",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Sam Smith, James Napier, Tor Erik Hermansen & Mikkel Storleer Eriksen"
+                }
+            }, {
+                "id": "1278404870",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1278404870",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/81/1d/b6/811db696-6219-5918-0627-54836b199b1a/mzaf_828513060459450904.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1425,
+                        "height": 1425,
+                        "url": "https://is2-ssl.mzstatic.com/image/thumb/Music118/v4/89/67/a5/8967a513-dab6-d1e6-106f-cd86cac63bb6/source/{w}x{h}bb.jpg",
+                        "bgColor": "f5f5f7",
+                        "textColor1": "000413",
+                        "textColor2": "311812",
+                        "textColor3": "313441",
+                        "textColor4": "58443f"
+                    },
+                    "artistName": "A Boogie wit da Hoodie",
+                    "url": "https://itunes.apple.com/us/album/drowning-feat-kodak-black/id1278404610?i=1278404870",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 209269,
+                    "releaseDate": "2017-03-10",
+                    "name": "Drowning (feat. Kodak Black)",
+                    "isrc": "USAT21700435",
+                    "albumName": "The Bigger Artist",
+                    "playParams": {
+                        "id": "1278404870",
+                        "kind": "song"
+                    },
+                    "trackNumber": 3,
+                    "composerName": "Jahaan Sweet, Artist Dubose & Dieuson Octave",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1298483097",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1298483097",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/8a/1e/23/8a1e2387-bbe9-dd4e-a5c3-4565deadc224/mzaf_4004582826146424070.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1500,
+                        "height": 1500,
+                        "url": "https://is5-ssl.mzstatic.com/image/thumb/Music118/v4/72/9d/28/729d28cd-6092-7124-955d-ad25d1015443/source/{w}x{h}bb.jpg",
+                        "bgColor": "d6d6d6",
+                        "textColor1": "000000",
+                        "textColor2": "1f1e23",
+                        "textColor3": "2a2a2a",
+                        "textColor4": "444347"
+                    },
+                    "artistName": "Future & Young Thug",
+                    "url": "https://itunes.apple.com/us/album/all-da-smoke/id1298483081?i=1298483097",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 204960,
+                    "releaseDate": "2017-10-20",
+                    "name": "All da Smoke",
+                    "isrc": "USSM11709198",
+                    "albumName": "SUPER SLIMEY",
+                    "playParams": {
+                        "id": "1298483097",
+                        "kind": "song"
+                    },
+                    "trackNumber": 3,
+                    "composerName": "Nayvadius Wilburn & Jeffery Williams",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1274152107",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1274152107",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/59/55/76/595576ba-47a3-db95-93c4-37f1f33414e0/mzaf_4002222894797514891.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1425,
+                        "height": 1425,
+                        "url": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/63/71/32/63713234-2038-00cd-c7dd-6c93256a481c/source/{w}x{h}bb.jpg",
+                        "bgColor": "1c1c1c",
+                        "textColor1": "d7dbf6",
+                        "textColor2": "c4e1ed",
+                        "textColor3": "b2b5ca",
+                        "textColor4": "a2bac3"
+                    },
+                    "artistName": "Lil Uzi Vert",
+                    "url": "https://itunes.apple.com/us/album/sauce-it-up/id1274150514?i=1274152107",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 207039,
+                    "releaseDate": "2017-08-25",
+                    "name": "Sauce It Up",
+                    "isrc": "USAT21703393",
+                    "albumName": "Luv Is Rage 2",
+                    "playParams": {
+                        "id": "1274152107",
+                        "kind": "song"
+                    },
+                    "trackNumber": 3,
+                    "composerName": "D. Cannon & S. Woods",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1193701400",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1193701400",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview122/v4/8a/dd/1f/8add1f4d-142c-1317-250d-ff6370962fb8/mzaf_7601694821840779604.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 3000,
+                        "height": 3000,
+                        "url": "https://is5-ssl.mzstatic.com/image/thumb/Music122/v4/ef/ca/a4/efcaa44a-517a-98e3-2353-5bff15471ed5/source/{w}x{h}bb.jpg",
+                        "bgColor": "151716",
+                        "textColor1": "7ddafa",
+                        "textColor2": "69d5f1",
+                        "textColor3": "68b3cc",
+                        "textColor4": "58afc5"
+                    },
+                    "artistName": "Ed Sheeran",
+                    "url": "https://itunes.apple.com/us/album/perfect/id1193701079?i=1193701400",
+                    "discNumber": 1,
+                    "genreNames": ["Pop", "Music", "Singer/Songwriter"],
+                    "durationInMillis": 263400,
+                    "releaseDate": "2017-03-03",
+                    "name": "Perfect",
+                    "isrc": "GBAHS1700007",
+                    "albumName": "÷ (Deluxe)",
+                    "playParams": {
+                        "id": "1193701400",
+                        "kind": "song"
+                    },
+                    "trackNumber": 5
+                }
+            }, {
+                "id": "1299309938",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1299309938",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/ab/3b/38/ab3b389d-7335-ed61-2b6e-06490c072966/mzaf_5636702169555911398.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 3000,
+                        "height": 3000,
+                        "url": "https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/e0/b1/2c/e0b12ca1-27fb-dbdb-136c-aaac32e179a3/source/{w}x{h}bb.jpg",
+                        "bgColor": "00153b",
+                        "textColor1": "fdfffe",
+                        "textColor2": "92bbd5",
+                        "textColor3": "cad0d6",
+                        "textColor4": "759ab6"
+                    },
+                    "artistName": "Selena Gomez & Marshmello",
+                    "url": "https://itunes.apple.com/us/album/wolves/id1299309813?i=1299309938",
+                    "discNumber": 1,
+                    "genreNames": ["Pop", "Music"],
+                    "durationInMillis": 197993,
+                    "releaseDate": "2017-10-25",
+                    "name": "Wolves",
+                    "isrc": "USUM71712103",
+                    "albumName": "Wolves - Single",
+                    "playParams": {
+                        "id": "1299309938",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "composerName": "Selena Gomez, Marshmello, Andrew Wotman, Alexandra Tamposi, Brian D. Lee, Louis Bell & Carl Rosen"
+                }
+            }, {
+                "id": "1271395370",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1271395370",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview128/v4/47/ee/ed/47eeed76-110c-e0d5-1a28-93d4bbc84283/mzaf_6528149308766068328.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 3620,
+                        "height": 3620,
+                        "url": "https://is3-ssl.mzstatic.com/image/thumb/Music128/v4/bd/e2/40/bde2404a-115d-2af4-2249-acaff533d388/source/{w}x{h}bb.jpg",
+                        "bgColor": "373737",
+                        "textColor1": "ffffff",
+                        "textColor2": "f4af74",
+                        "textColor3": "d6d6d6",
+                        "textColor4": "ce9768"
+                    },
+                    "artistName": "Kodak Black",
+                    "url": "https://itunes.apple.com/us/album/transportin/id1271395139?i=1271395370",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop", "Music", "Hip-Hop/Rap"],
+                    "durationInMillis": 169345,
+                    "releaseDate": "2017-08-18",
+                    "name": "Transportin'",
+                    "isrc": "USAT21703103",
+                    "albumName": "Project Baby 2",
+                    "playParams": {
+                        "id": "1271395370",
+                        "kind": "song"
+                    },
+                    "trackNumber": 10,
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1223592498",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1223592498",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview122/v4/36/d8/11/36d81157-1e96-c024-9d5b-b2123e3b0d3a/mzaf_2871762800921706089.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1800,
+                        "height": 1800,
+                        "url": "https://is2-ssl.mzstatic.com/image/thumb/Music111/v4/56/46/3f/56463f62-0d8d-3595-368b-38a995f10e36/source/{w}x{h}bb.jpg",
+                        "bgColor": "f6f4f9",
+                        "textColor1": "2c1b20",
+                        "textColor2": "361a20",
+                        "textColor3": "54464c",
+                        "textColor4": "5c464b"
+                    },
+                    "artistName": "Kendrick Lamar",
+                    "url": "https://itunes.apple.com/us/album/humble/id1223592280?i=1223592498",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 177000,
+                    "releaseDate": "2017-03-31",
+                    "name": "HUMBLE.",
+                    "isrc": "USUM71703085",
+                    "albumName": "DAMN.",
+                    "playParams": {
+                        "id": "1223592498",
+                        "kind": "song"
+                    },
+                    "trackNumber": 8,
+                    "composerName": "Kendrick Lamar, A. Hogan & Michael L. Williams II",
+                    "contentRating": "explicit"
+                }
+            }, {
+                "id": "1296951744",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1296951744",
+                "attributes": {
+                    "previews": [{
+                        "url": "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview118/v4/73/ee/7b/73ee7b9c-2e68-159e-6256-e2b0014da6cb/mzaf_415355596677077428.plus.aac.p.m4a"
+                    }],
+                    "artwork": {
+                        "width": 1425,
+                        "height": 1425,
+                        "url": "https://is2-ssl.mzstatic.com/image/thumb/Music128/v4/e3/e7/08/e3e7087b-f425-57a3-3179-b2e39f94d41e/source/{w}x{h}bb.jpg",
+                        "bgColor": "0b0b13",
+                        "textColor1": "65ec07",
+                        "textColor2": "4be200",
+                        "textColor3": "53bf09",
+                        "textColor4": "3eb703"
+                    },
+                    "artistName": "Famous Dex",
+                    "url": "https://itunes.apple.com/us/album/pick-it-up-feat-a%24ap-rocky/id1296951374?i=1296951744",
+                    "discNumber": 1,
+                    "genreNames": ["Hip-Hop/Rap", "Music"],
+                    "durationInMillis": 191252,
+                    "releaseDate": "2017-10-20",
+                    "name": "Pick It Up (feat. A$AP Rocky)",
+                    "isrc": "QMCE31701365",
+                    "albumName": "Pick It Up (feat. A$AP Rocky) - Single",
+                    "playParams": {
+                        "id": "1296951744",
+                        "kind": "song"
+                    },
+                    "trackNumber": 1,
+                    "contentRating": "explicit"
+                }
+            }]
+        }]
+    }
+}
