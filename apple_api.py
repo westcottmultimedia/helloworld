@@ -37,7 +37,7 @@ API_url = 'https://api.music.apple.com/v1/catalog/{}/{}?limit=50&types={}'
 
 # Apple RSS Feed url
 # ie. https://rss.itunes.apple.com/api/v1/us/apple-music/hot-tracks/all/100/explicit.json
-RSS_url = 'https://rss.itunes.apple.com/api/v1/{region}/{media}/{chart}/all/{limit}/explicit.json'
+RSS_url = 'https://rss.itunes.apple.com/api/v1/{region}/{media}/{chart}/{genre}/{limit}/explicit.json'
 
 
 # the regions to download
@@ -629,26 +629,47 @@ def process(mode):
     no_data = []
     starttime_total = datetime.datetime.now() # timestamp
 
+    rss_params = {
+        'region': '',
+        'media': 'apple-music',
+        'chart': 'top-songs',
+        'genre': 'all',
+        'limit': 200,
+    }
+
     service_name = 'Apple'
     for region in REGIONS:
         # debug:
-        print(region)
         starttime = datetime.datetime.now() # timestamp
         print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y')) # timestamp
 
-        print('Loading charts for region "%s" "...' % (region))
-        region_data = apple.request(API_url.format(region, 'charts', 'songs,albums,music-videos') + limit)
-        # region_data = apple.request("https://api.music.apple.com/v1/catalog/us/charts?chart=most-played&offset=300&limit=50&types=songs")
-        # NOTE: DEBUG:
-        print(region_data)
+        try:
+            rss_params['region'] = region
+            url = RSS_url.format(**rss_params)
 
-        if not region_data:
-            no_data.append(region)
-            print('No download available, skipping...')
-            print('There are now {} regions without data.'.format(len(no_data)))
-            print('-' * 40)
-            continue
-        print('Found %i tracks.' % len(region_data))
+            print('Loading charts for region "%s" "...' % (region))
+            req = Request(url)
+            r = urlopen(req).read().decode('UTF-8')
+            raw_data = json.loads(r)
+
+            results = raw_data['feed']['results']
+            print(results[0])
+
+            if not raw_data:
+                no_data.append(region)
+                print('No download available, skipping...')
+                print('There are now {} regions without data.'.format(len(no_data)))
+                print('-' * 40)
+                continue
+            print('Found {} tracks.'.format(len(results)))
+
+        except HTTPError as err:
+            if err.code == 400:
+                print('HTTP 400' )
+            if err.code == 404:
+                no_data.append(region) # country data for the chart is not available
+                print('No RSS feed data found for {}'.format(region))
+
 
         # append data to Spotify API response
         # tracks = append_track_hash_from_db(region_data)
