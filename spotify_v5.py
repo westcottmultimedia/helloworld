@@ -246,7 +246,7 @@ def append_tracksId_from_db(tracks):
         tracks: dict
     Output:
         tracks: dict
-    Appends key 'db_id' key with db lookup value.
+    Appends key 'track_id_db' key with db lookup value.
     This removes redundancy from spotify API calls to retrieve info already in the DB.
     """
     # NOTE: hardcoded in service_id = 1 for Spotify, may want to change to lookup
@@ -261,7 +261,7 @@ def append_tracksId_from_db(tracks):
         # NOTE: there should be a one-to-one relationship between spotify trackId and db_id
         row = db.c.execute(query, [tracks[track_id]['trackId']]).fetchone()
         if row:
-            tracks[track_id]['db_id'] = row[0]
+            tracks[track_id]['track_id_db'] = row[0]
 
     # NOTE: Debug
     # for key in tracks:
@@ -286,7 +286,7 @@ def append_track_data(tracks, batch_size=50):
     tracks_to_lookup = []
     for track_id in tracks:
         # db_id key would be appended to the track if it exists in the db
-        if 'db_id' not in tracks[track_id]:
+        if 'track_id_db' not in tracks[track_id]:
             tracks_to_lookup.append(track_id)
     # api supports up to 50 ids at a time
     batches = [tracks_to_lookup[i:i + batch_size] for i in range(0, len(tracks_to_lookup), batch_size)]
@@ -538,7 +538,7 @@ class TrackDatabase(object):
         if a_matches.group(3) < b_matches.group(3):
             return (a, b)
         return (b, a)
-    def update_track_stats(self, tracksId, territoryId, service_id, position, date_str):
+    def update_track_stats(self, track_id, territory_id, service_id, position, date_str):
         """
         Update the rolling stats for a track
         """
@@ -547,17 +547,17 @@ class TrackDatabase(object):
         stats = self.get_track_stats(tracksId)
         # destructure to readable variables
         if stats:
-            tracksId, territoryId, service_id, added, last_seen, peak_rank, peak_date = stats
+            service_id, territory_id, track_id, first_added, last_seen, peak_rank, peak_date = stats
         stats_query = '''
             INSERT OR REPLACE INTO stats
-            (tracksId, territoryId, service_id, added, last_seen, peak_rank, peak_date)
+            (service_id, territory_id, track_id, first_added, last_seen, peak_rank, peak_date)
             VALUES
             (?, ?, ?, ?, ?, ?, ?)
         '''
         # finds the earlier of the two dates, the current added and the current date query
         # this is important because of the asynchronous nature of collecting the data - the script can download
         # any date from spotify at any time, it is not necessarily in chronological order of when the data is processed
-        added = self.order_dates(added, date_str)[0] if stats else date_str
+        first_added = self.order_dates(first_added, date_str)[0] if stats else date_str
         # finds the later of the current last_seen and the current date query
         last_seen = self.order_dates(last_seen, date_str)[1] if stats else date_str
         if stats and position < peak_rank:
@@ -570,7 +570,7 @@ class TrackDatabase(object):
             peak_date = self.order_dates(peak_date, date_str) if stats else date_str # use the earliest peak date for the peak rank
         self.c.execute(
             stats_query,
-            [tracksId, territoryId, service_id, added, last_seen, peak_rank, peak_date]
+            [service_id, territory_id, track_id, first_added, last_seen, peak_rank, peak_date]
         )
     def add_tracks(self, track_list, date_str, service_name):
         """
@@ -582,12 +582,12 @@ class TrackDatabase(object):
 
         for track_id, track in track_list.items():
 
-            territoryId = self.get_territoryId(track['region'])
+            territory_id = self.get_territory_id(track['region'])
             position = track['Position']
 
             # if db_id is populated, the track is already in the DB
-            if 'db_id' in track:
-                db_id = track['db_id']
+            if 'track_id_db' in track:
+                track_id_db = track['track_id_db']
 
             # track doesn't have track.id and the data for the track and album were retrieved from Spotify API
             else:
@@ -648,7 +648,7 @@ class TrackDatabase(object):
                     #     SELECT LAST_INSERT_ROWID()
                     # ''').fetchone()[0]
 
-                    db_id = self.c.lastrowid
+                    track_id_db = self.c.lastrowid
 
                     print('THE NEWLY INSERTED ROW IS: {}'.format(db_id))
 
@@ -657,15 +657,15 @@ class TrackDatabase(object):
                     raise
 
             # update stats table
-            self.update_track_stats(db_id, territoryId, service_id, position, date_str)
+            self.update_track_stats(db_id, service_id, territory_id,  position, date_str)
 
             # update track_position table
             self.c.execute('''
                 INSERT OR IGNORE INTO track_position
-                (tracksId, territoryId, service_id, position, streams, date_str)
+                (service_id, territory_id, track_id,  position, stream_count, date_str)
                 VALUES
                 (?, ?, ?, ?, ?, ?)
-            ''', [db_id, territoryId, service_id, position, track['Streams'], date_str]
+            ''', [service_id, territory_id, track_id_db, position, track['Streams'], date_str]
             )
 
             self.db.commit()
@@ -681,14 +681,13 @@ class TrackDatabase(object):
             str(track['Track Name']),
             str(track['isrc'])
         )
-    def get_territoryId(self, code):
+    def get_territory_id(self, code):
         """
         Retrieve territoryId from region code
         """
-        code = code.lower()
         query = self.c.execute('''
-            SELECT territoryId FROM territory WHERE code = ?
-        ''', [code])
+            SELECT territory_id FROM territory WHERE code = ?
+        ''', [code.lower()])
         territoryId = query.fetchone()[0]
         return territoryId
 
