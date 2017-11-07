@@ -250,6 +250,7 @@ def append_tracksId_from_db(tracks):
     This removes redundancy from spotify API calls to retrieve info already in the DB.
     """
     # NOTE: hardcoded in service_id = 1 for Spotify, may want to change to lookup
+    # service_id = self.get_service_id(service_name)
     for track_id in tracks:
         query = """
             SELECT id
@@ -324,12 +325,11 @@ def append_track_album_data(tracks, batch_size=20):
             id_str = ','.join(batch)
             r_dict = spotify.request(endpoint_albums.format(id_str))
             for album in r_dict['albums']:
-                released = album['release_date']
-                label = album['label']
                 for track_id, track in tracks.items():
                     if 'albumId' in track and track['albumId'] == album['id']:
-                        tracks[track_id]['released'] = released
-                        tracks[track_id]['label'] = label
+                        tracks[track_id]['released'] = album['release_date']
+                        tracks[track_id]['label'] = album['label']
+                        tracks[track_id]['album_name'] = album['name']
             print('Appended album data for batch %d of %d' % (i+1, len(batches)) )
     else:
         album_id = albums[0]
@@ -338,6 +338,7 @@ def append_track_album_data(tracks, batch_size=20):
             if 'albumId' in track and track['albumId'] == album['id']:
                 tracks[track_id]['released'] = album['release_date']
                 tracks[track_id]['label'] = album['label']
+                tracks[track_id]['album_name'] = album['name']
         print('Appended album data for album_id %s' % album_id )
     return tracks
 
@@ -593,28 +594,63 @@ class TrackDatabase(object):
                 row = self.track_to_tuple(track)
 
                 try:
-                    # update tracks table
+                    # check if artist or album are in the db
+                    service_artist_id = str(track['artistId'])
+                    artist_name = str(track['Artist'])
+                    artist_id = self.get_artist_id(service_id, service_artist_id)
+                    album_id = self.get_album_id(service_id, track['albumId'])
+
+                    # add artist if not in the db
+                    if not artist_id:
+                        # add artist
+                        self.c.execute('''
+                            INSERT OR IGNORE INTO artist
+                            (service_id, service_artist_id, artist)
+                            VALUES
+                            (?, ?, ?)
+                        ''', (service_id, service_artist_id, artist_name))
+                        artist_id = self.c.lastrowid
+                        print('THE NEWLY INSERTED artistid  IS: {}'.format(artist_id))
+
+                        # add genres for artist
+                        for genre in track['genres']:
+                            self.c.execute('''
+                                INSERT OR IGNORE INTO artist_genre
+                                (artist_id, genre)
+                                VALUES
+                                (?, ?, ?)
+                            ''', (service_id, artist_id, genre))
+                            print('Added {} for {}'.format(genre, artist_name)
+
+                    # add album if not in the db
+                    if not album_id:
+                        self.c.execute('''
+                            INSERT OR IGNORE INTO album
+                            (service_id, artist_id, service_album_id, album, release_date, label)
+                            VALUES
+                            (?, ?, ?, ?, ?)
+                        ''', (service_id, artist_id, str(track['albumId'], str(track['album_name'], str(track['release_date'], str(track['label']))
+                        print('Added {} for {}'.format(str(track['album_name'], artist_name)
+
+
+                    # update track table
                     # add the new track
                     self.c.execute('''
-                        INSERT OR IGNORE INTO tracks
-                        (track_name, artist, label,
-                         isrc, release_date, genres)
+                        INSERT OR IGNORE INTO track
+                        (service_id, service_track_id, service_artist_id, track, isrc)
                         VALUES
-                        (?, ?, ?, ?, ?, ?)
-                    ''', row)
+                        (?, ?, ?, ?, ?)
+                    ''',
+                    (service_id, track_id, service_artist_id), str(track['Track Name']), str(track['isrc']))
 
-                    db_id = self.c.execute('''
-                        SELECT LAST_INSERT_ROWID()
-                    ''').fetchone()[0]
+                    # NOTE: unreliable way to find rowid
+                    # db_id = self.c.execute('''
+                    #     SELECT LAST_INSERT_ROWID()
+                    # ''').fetchone()[0]
+
+                    db_id = self.c.lastrowid
 
                     print('THE NEWLY INSERTED ROW IS: {}'.format(db_id))
-                    # update track_service_info table
-                    self.c.execute('''
-                        INSERT OR IGNORE INTO track_service_info
-                        (tracksId, spotify_url, spotify_trackId, spotify_albumId)
-                        VALUES
-                        (?, ?, ?, ?)
-                    ''', [db_id, track['URL'], track['trackId'], track['albumId']])
 
                 except Exception as e:
                     print(e)
@@ -643,11 +679,7 @@ class TrackDatabase(object):
         """
         return (
             str(track['Track Name']),
-            str(track['Artist']),
-            str(track['label']),
-            str(track['isrc']),
-            str(track['released']),
-            str(track['genres'])
+            str(track['isrc'])
         )
     def get_territoryId(self, code):
         """
@@ -667,8 +699,32 @@ class TrackDatabase(object):
         query = self.c.execute('''
             SELECT service_id FROM service WHERE service_name = ?
         ''', [service_name])
-        return query.fetchone()[0] if query else false
+        return query.fetchone()[0] if query else False
 
+    def get_artist_id(self, service_id, service_artist_id):
+        """
+        Retrive service_artist_id
+        """
+        query = self.c.execute('''
+            SELECT id FROM artist
+            WHERE
+            service_id = (?)
+            AND
+            service_artist_id = (?)
+        ''')
+        return query.fetchone()[0] if query else False
+    def get_album_id(self, service_id, service_album_id):
+        """
+        Retrive service_album_id
+        """
+        query = self.c.execute('''
+            SELECT id FROM album
+            WHERE
+            service_id = (?)
+            AND
+            service_album_id = (?)
+        ''')
+        return query.fetchone()[0] if query else False
 def process(mode):
     """
     Process each region for "date" mode
