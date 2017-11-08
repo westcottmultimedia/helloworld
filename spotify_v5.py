@@ -3,6 +3,16 @@ from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from urllib.error import HTTPError
 from lxml import html
+import logging
+
+# logging config
+# logger.critical('This is a critical message.')
+# logger.error('This is an error message.')
+# logger.warning('This is a warning message.')
+# logger.info('This is an informative message.')
+# logger.debug('This is a low-level debug message.')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.debug('Logging initiated.')
 
 # cache http requests?
 CACHE_ENABLED = False
@@ -14,7 +24,7 @@ CLIENT_ID = 'e021413b59f5430d9b1b0b46f67c9dec'
 CLIENT_SECRET = '1c155d57d1514944972ea4a6b7ed7554'
 
 # sqlite database filename/path
-DATABASE_FILE = '../test-v4.db'
+DATABASE_FILE = '../test-v5.db'
 
 # the daily regional CSV download link
 CSV_url = 'https://spotifycharts.com/regional/{}/daily/{}/download'
@@ -103,7 +113,7 @@ def load_spotify_csv_data(region, date='latest'):
     else:
         spotify_csv = codecs.iterdecode(r, 'utf-8')
     # NOTE: concatenate r to master csv file.
-        # Add in csv field for territory 2-letter code, OR territoryId, or a dictionary lookup
+        # Add in csv field for territory 2-letter code, OR territory_id, or a dictionary lookup
     # NOTE: Refactor:
     rows = csv.reader(codecs.iterdecode(r, 'utf-8'))
     fields = None
@@ -240,7 +250,7 @@ def get_artist_by_id(tracks, track_id):
                 print('artist ID not available for track ID %s' % track_id)
     return False
 
-def append_tracksId_from_db(tracks):
+def append_track_id_from_db(tracks):
     """
     Input:
         tracks: dict
@@ -263,9 +273,8 @@ def append_tracksId_from_db(tracks):
         if row:
             tracks[track_id]['track_id_db'] = row[0]
 
-    # NOTE: Debug
     # for key in tracks:
-    #     print("TRACKS--------", tracks[key])
+    #     logging.debug("TRACKS--------", tracks[key])
 
     return tracks
 
@@ -378,25 +387,68 @@ def get_track_id_from_url(url):
 #
 class TrackDatabase(object):
     """ SQLite Database Manager """
-    def __init__(self, db_file='test-v4.db'):
+    def __init__(self, db_file='test-v5.db'):
         super(TrackDatabase, self).__init__()
         self.db_file = db_file
         self.init_database()
+
     def init_database(self):
         print('Initializing database...')
         self.db = sqlite3.connect(self.db_file)
         self.c = self.db.cursor()
 
-        #tracks table
+        #track table
         self.c.execute('''
-            CREATE TABLE IF NOT EXISTS tracks (
+            CREATE TABLE IF NOT EXISTS track (
                 id integer PRIMARY KEY AUTOINCREMENT,
-                track_name text NOT NULL,
-                artist text NOT NULL,
-                label text NOT NULL,
-                isrc varchar(255) NOT NULL,
-                release_date varchar(255) NOT NULL,
-                genres varchar(255) NULL
+                service_id integer NOT NULL,
+                service_track_id text NOT NULL,
+                service_artist_id text NOT NULL,
+                track text NOT NULL,
+                isrc text NOT NULL
+            )
+        ''')
+
+        # artist table
+        self.c.execute('''
+            CREATE TABLE IF NOT EXISTS artist (
+                id integer PRIMARY KEY AUTOINCREMENT,
+                service_id integer NOT NULL,
+                service_artist_id text NOT NULL,
+                artist text NOT NULL
+            )
+        ''')
+
+        # artist_genre mapping table
+        self.c.execute('''
+            CREATE TABLE IF NOT EXISTS artist_genre (
+                id integer PRIMARY KEY AUTOINCREMENT,
+                service_id text NOT NULL,
+                artist_id text NOT NULL,
+                genre text NOT NULL
+            )
+        ''')
+
+        # album table
+        self.c.execute('''
+            CREATE TABLE IF NOT EXISTS album (
+                id integer PRIMARY KEY AUTOINCREMENT,
+                service_id integer NOT NULL,
+                artist_id integer NOT NULL,
+                service_album_id text NOT NULL,
+                album text NOT NULL,
+                release_date text NOT NULL,
+                label text NOT NULL
+            )
+        ''')
+
+        # music video table
+        self.c.execute('''
+            CREATE TABLE IF NOT EXISTS music_video (
+                id integer PRIMARY KEY AUTOINCREMENT,
+                service_id integer NOT NULL,
+                service_music_video_id integer NOT NULL,
+                music_video text NOT NULL
             )
         ''')
 
@@ -410,31 +462,22 @@ class TrackDatabase(object):
         # service table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS service (
-                service_id integer PRIMARY KEY,
-                service_name varchar(255) NOT NULL
+                id integer PRIMARY KEY AUTOINCREMENT,
+                service_name text NOT NULL
             )
         ''')
 
-        # seed service table
-        self.c.execute('''
-            INSERT OR IGNORE INTO service
-            (service_id, service_name)
-            VALUES
-            (?, ?)
-        ''', (1111, 'Spotify')
-        )
-
         # stats table
         self.c.execute('''
-            CREATE TABLE IF NOT EXISTS stats (
+            CREATE TABLE IF NOT EXISTS peak_track_position (
                 id integer PRIMARY KEY AUTOINCREMENT,
-                tracksId integer NOT NULL,
-                territoryId integer NOT NULL,
                 service_id integer NOT NULL,
-                added varchar(255) NOT NULL,
-                last_seen varchar(255) NOT NULL,
+                territory_id integer NOT NULL,
+                track_id integer NOT NULL,
+                first_added text NOT NULL,
+                last_seen text NOT NULL,
                 peak_rank integer NOT NULL,
-                peak_date varchar(255) NOT NULL
+                peak_date text NOT NULL
             )
         ''')
 
@@ -442,23 +485,34 @@ class TrackDatabase(object):
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS track_position (
                 id integer PRIMARY KEY AUTOINCREMENT,
-                tracksId integer NOT NULL,
-                territoryId integer NOT NULL,
                 service_id integer NOT NULL,
+                territory_id integer NOT NULL,
+                track_id integer NOT NULL,
                 position integer NOT NULL,
-                streams integer NOT NULL DEFAULT 0,
-                date_str varchar(255) NOT NULL
+                stream_count integer NOT NULL DEFAULT 0,
+                date_str text NOT NULL
             )
         ''')
 
         # territory table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS territory (
-                territoryId integer PRIMARY KEY AUTOINCREMENT,
+                id integer PRIMARY KEY AUTOINCREMENT,
                 code varchar(10) NOT NULL,
-                name varchar(255) NOT NULL
+                name text NOT NULL
             )
         ''')
+
+        # SEED DATABASE TABLES
+        #
+        # seed service table
+        self.c.execute('''
+            INSERT OR IGNORE INTO service
+            (service_name)
+            VALUES
+            (?)
+        ''', (['Spotify'])
+        )
 
         self.c.execute('''
             INSERT OR IGNORE INTO territory
@@ -468,27 +522,20 @@ class TrackDatabase(object):
         ''', ('global', 'global')
         )
 
-        # track_service_info table
-        self.c.execute('''
-            CREATE TABLE IF NOT EXISTS track_service_info (
-                tracksId integer NOT NULL PRIMARY KEY,
-                spotify_url text NOT NULL,
-                spotify_trackId varchar(255) NOT NULL,
-                spotify_albumId varchar(255) NOT NULL
-            )
-        ''')
+        self.db.commit()
 
         stat = os.stat(self.db_file)
         print("Using Database '%s'" % self.db_file)
         print("# Bytes: %r" % stat.st_size)
         bq = self.c.execute("SELECT COUNT(*) FROM processed")
         print("# urls Processed: %r" % bq.fetchone()[0])
-        tq = self.c.execute("SELECT COUNT(*) FROM tracks")
+        tq = self.c.execute("SELECT COUNT(*) FROM track")
         print("# Tracks: %r" % tq.fetchone()[0])
-        sq = self.c.execute("SELECT COUNT(*) FROM stats")
+        sq = self.c.execute("SELECT COUNT(*) FROM peak_track_position")
         print("# Track Stats: %r" % sq.fetchone()[0])
         pq = self.c.execute("SELECT COUNT(*) FROM track_position")
         print("# Position Stats: %r\n" % pq.fetchone()[0])
+
     def is_processed(self, url):
         """
         Has CSV url already been processed?
@@ -499,6 +546,7 @@ class TrackDatabase(object):
         for row in self.c.execute(query, [url]):
             return True
         return False
+
     def set_processed(self, url):
         """
         Mark url as already processed
@@ -514,14 +562,16 @@ class TrackDatabase(object):
         except Exception as e:
             raise e
         return True
-    def get_track_stats(self, tracksId):
+
+    def get_track_stats(self, track_id):
         """
-        Returns a tuple of track stats (tracksId, territoryId, service_id, added, last_seen, peak_rank, peak_date)
+        Returns a tuple of track stats (track_id, territory_id, service_id, added, last_seen, peak_rank, peak_date)
         """
         query = self.c.execute('''
-            SELECT * FROM stats WHERE tracksId = ?
-        ''', [tracksId])
+            SELECT * FROM peak_track_position WHERE track_id = ?
+        ''', [track_id])
         return query.fetchone() if query else False
+
     def order_dates(self, a, b):
         """
         Order two date strings (YYYY-MM-DD) chronologically
@@ -544,7 +594,7 @@ class TrackDatabase(object):
         """
         position = int(position)
         # latest track stats in the db
-        stats = self.get_track_stats(tracksId)
+        stats = self.get_track_stats(track_id)
         # destructure to readable variables
         if stats:
             service_id, territory_id, track_id, first_added, last_seen, peak_rank, peak_date = stats
@@ -598,7 +648,7 @@ class TrackDatabase(object):
                     service_artist_id = str(track['artistId'])
                     artist_name = str(track['Artist'])
                     artist_id = self.get_artist_id(service_id, service_artist_id)
-                    album_id = self.get_album_id(service_id, track['albumId'])
+                    album_id = self.get_album_id(service_id, str(track['albumId']))
 
                     # add artist if not in the db
                     if not artist_id:
@@ -610,7 +660,7 @@ class TrackDatabase(object):
                             (?, ?, ?)
                         ''', (service_id, service_artist_id, artist_name))
                         artist_id = self.c.lastrowid
-                        print('THE NEWLY INSERTED artistid  IS: {}'.format(artist_id))
+                        logging.debug('THE NEWLY INSERTED artistid  IS: {}'.format(artist_id))
 
                         # add genres for artist
                         for genre in track['genres']:
@@ -620,7 +670,8 @@ class TrackDatabase(object):
                                 VALUES
                                 (?, ?, ?)
                             ''', (service_id, artist_id, genre))
-                            print('Added {} for {}'.format(genre, artist_name)
+                            print('Added {} for {}'.format(genre, artist_name))
+
 
                     # add album if not in the db
                     if not album_id:
@@ -629,8 +680,9 @@ class TrackDatabase(object):
                             (service_id, artist_id, service_album_id, album, release_date, label)
                             VALUES
                             (?, ?, ?, ?, ?)
-                        ''', (service_id, artist_id, str(track['albumId'], str(track['album_name'], str(track['release_date'], str(track['label']))
-                        print('Added {} for {}'.format(str(track['album_name'], artist_name)
+                        ''', (service_id, artist_id, str(track['albumId']), str(track['album_name']), str(track['release_date']), str(track['label']) )
+                        )
+                        print('Added {} for {}'.format(str(track['album_name']), artist_name))
 
 
                     # update track table
@@ -650,7 +702,7 @@ class TrackDatabase(object):
 
                     track_id_db = self.c.lastrowid
 
-                    print('THE NEWLY INSERTED ROW IS: {}'.format(db_id))
+                    logging.debug('THE NEWLY INSERTED ROW IS: {}'.format(db_id))
 
                 except Exception as e:
                     print(e)
@@ -683,22 +735,24 @@ class TrackDatabase(object):
         )
     def get_territory_id(self, code):
         """
-        Retrieve territoryId from region code
+        Retrieve territory_id from region code
         """
         query = self.c.execute('''
-            SELECT territory_id FROM territory WHERE code = ?
+            SELECT id FROM territory WHERE code = ?
         ''', [code.lower()])
-        territoryId = query.fetchone()[0]
-        return territoryId
+        row = query.fetchone()
+
+        return row[0] if row else False
 
     def get_service_id(self, service_name):
         """
         Retrieve service_id from service name
         """
         query = self.c.execute('''
-            SELECT service_id FROM service WHERE service_name = ?
+            SELECT id FROM service WHERE service_name = ?
         ''', [service_name])
-        return query.fetchone()[0] if query else False
+        row = query.fetchone()
+        return row[0] if row else False
 
     def get_artist_id(self, service_id, service_artist_id):
         """
@@ -707,11 +761,13 @@ class TrackDatabase(object):
         query = self.c.execute('''
             SELECT id FROM artist
             WHERE
-            service_id = (?)
+            service_id = ?
             AND
-            service_artist_id = (?)
-        ''')
-        return query.fetchone()[0] if query else False
+            service_artist_id = ?
+        ''', (str(service_id), service_artist_id)
+        )
+        row = query.fetchone()
+        return row[0] if row else False
     def get_album_id(self, service_id, service_album_id):
         """
         Retrive service_album_id
@@ -719,11 +775,13 @@ class TrackDatabase(object):
         query = self.c.execute('''
             SELECT id FROM album
             WHERE
-            service_id = (?)
+            service_id = ?
             AND
-            service_album_id = (?)
-        ''')
-        return query.fetchone()[0] if query else False
+            service_album_id = ?
+        ''', (str(service_id), service_album_id)
+        )
+        row = query.fetchone()
+        return row[0] if query else False
 def process(mode):
     """
     Process each region for "date" mode
@@ -769,8 +827,7 @@ def process(mode):
                 print('-' * 40)
                 continue
             region_data = load_spotify_csv_data(region, date_str)
-            # NOTE: DEBUG:
-            # print(region_data)
+            # logging.debug(region_data)
             if not region_data:
                 print('No download available, skipping...')
                 print('-' * 40)
@@ -779,13 +836,13 @@ def process(mode):
             print('Looking up tracks in database...')
 
             # append data to Spotify API response
-            tracks = append_tracksId_from_db(region_data)
+            tracks = append_track_id_from_db(region_data)
             print('Getting track data from Spotify "Tracks" API...')
             tracks = append_track_data(region_data)
             print('Getting label and release date from Spotify "Albums" API...')
             tracks = append_track_album_data(tracks)
-            # print('Getting genre tags from Spotify "Artists" API...')
-            # tracks = append_artist_data(tracks)
+            print('Getting genre tags from Spotify "Artists" API...')
+            tracks = append_artist_data(tracks)
             print('Processed %i tracks, adding to database' % len(tracks))
             added = db.add_tracks(tracks, date_str, service_name)
 
