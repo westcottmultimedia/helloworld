@@ -268,7 +268,7 @@ def append_track_id_from_db(tracks):
             WHERE service_id = 1
             AND service_track_id = (?)
         """
-        # NOTE: there should be a one-to-one relationship between spotify trackId and db_id
+        # NOTE: there should be a one-to-one relationship between spotify trackId and db id
         row = db.c.execute(query, [tracks[track_id]['trackId']]).fetchone()
         if row:
             tracks[track_id]['track_id_db'] = row[0]
@@ -294,7 +294,7 @@ def append_track_data(tracks, batch_size=50):
 
     tracks_to_lookup = []
     for track_id in tracks:
-        # db_id key would be appended to the track if it exists in the db
+        # db id key would be appended to the track if it exists in the db
         if 'track_id_db' not in tracks[track_id]:
             tracks_to_lookup.append(track_id)
     # api supports up to 50 ids at a time
@@ -316,7 +316,7 @@ def append_track_album_data(tracks, batch_size=20):
         tracks: dict (with 'albumId' key, which refers to spotify albumId)
     Output:
         tracks: dict +
-            { 'released': xx, 'label': xx} for any track with 'albumId' key
+            { 'release_date': xx, 'label': xx} for any track with 'albumId' key
     Append the label and release date to tracks using the Spotify albums API
     See: https://developer.spotify.com/web-api/console/get-several-albums/
     Returns tracks with "label" and "released" appended
@@ -336,7 +336,7 @@ def append_track_album_data(tracks, batch_size=20):
             for album in r_dict['albums']:
                 for track_id, track in tracks.items():
                     if 'albumId' in track and track['albumId'] == album['id']:
-                        tracks[track_id]['released'] = album['release_date']
+                        tracks[track_id]['release_date'] = album['release_date']
                         tracks[track_id]['label'] = album['label']
                         tracks[track_id]['album_name'] = album['name']
             print('Appended album data for batch %d of %d' % (i+1, len(batches)) )
@@ -345,7 +345,7 @@ def append_track_album_data(tracks, batch_size=20):
         album = spotify.request(endpoint_album.format(album_id))
         for track_id, track in tracks.items():
             if 'albumId' in track and track['albumId'] == album['id']:
-                tracks[track_id]['released'] = album['release_date']
+                tracks[track_id]['release_date'] = album['release_date']
                 tracks[track_id]['label'] = album['label']
                 tracks[track_id]['album_name'] = album['name']
         print('Appended album data for album_id %s' % album_id )
@@ -466,7 +466,9 @@ class TrackDatabase(object):
                 service_name text NOT NULL
             )
         ''')
-
+        self.c.execute('''
+            CREATE UNIQUE INDEX IF NOT EXISTS service_name_u ON service (service_name)
+        ''')
         # stats table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS peak_track_position (
@@ -480,14 +482,19 @@ class TrackDatabase(object):
                 peak_date text NOT NULL
             )
         ''')
+        self.c.execute('''
+            CREATE UNIQUE INDEX IF NOT EXISTS peak_track_position_service_territory_track_ids_u ON peak_track_position (service_id, territory_id, track_id)
+        ''')
 
         # track_position table
+        # isrc is denormalized duplicated from track table for better lookup
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS track_position (
                 id integer PRIMARY KEY AUTOINCREMENT,
                 service_id integer NOT NULL,
                 territory_id integer NOT NULL,
                 track_id integer NOT NULL,
+                isrc text NOT NULL,
                 position integer NOT NULL,
                 stream_count integer NOT NULL DEFAULT 0,
                 date_str text NOT NULL
@@ -501,6 +508,10 @@ class TrackDatabase(object):
                 code varchar(10) NOT NULL,
                 name text NOT NULL
             )
+        ''')
+
+        self.c.execute('''
+            CREATE UNIQUE INDEX IF NOT EXISTS territory_code_u ON territory (code)
         ''')
 
         # SEED DATABASE TABLES
@@ -563,14 +574,26 @@ class TrackDatabase(object):
             raise e
         return True
 
-    def get_track_stats(self, track_id):
+    def get_track_stats(self, service_id, territory_id, track_id):
         """
         Returns a tuple of track stats (track_id, territory_id, service_id, added, last_seen, peak_rank, peak_date)
         """
         query = self.c.execute('''
-            SELECT * FROM peak_track_position WHERE track_id = ?
-        ''', [track_id])
-        return query.fetchone() if query else False
+            SELECT
+                first_added,
+                last_seen,
+                peak_rank,
+                peak_date
+            FROM peak_track_position
+            WHERE
+                service_id = ?
+            AND
+                territory_id = ?
+            AND
+                track_id = ?
+        ''', [service_id, territory_id, track_id])
+        row = query.fetchone()
+        return row if row else False
 
     def order_dates(self, a, b):
         """
@@ -588,18 +611,34 @@ class TrackDatabase(object):
         if a_matches.group(3) < b_matches.group(3):
             return (a, b)
         return (b, a)
-    def update_track_stats(self, track_id, territory_id, service_id, position, date_str):
+    def update_track_stats(self, service_id, territory_id, track_id, position, date_str):
         """
         Update the rolling stats for a track
         """
+
         position = int(position)
         # latest track stats in the db
-        stats = self.get_track_stats(track_id)
-        # destructure to readable variables
+        stats = self.get_track_stats(service_id, territory_id, track_id)
+
         if stats:
-            service_id, territory_id, track_id, first_added, last_seen, peak_rank, peak_date = stats
+            first_added, last_seen, peak_rank, peak_date = stats
+
+        stats_update_query = '''
+            UPDATE peak_track_position SET
+                first_added = ?,
+                last_seen = ?,
+                peak_rank = ?,
+                peak_date = ?
+            WHERE
+                service_id = ?
+            AND
+                territory_id = ?
+            AND
+                track_id = ?
+        '''
+
         stats_query = '''
-            INSERT OR REPLACE INTO stats
+            INSERT OR IGNORE INTO peak_track_position
             (service_id, territory_id, track_id, first_added, last_seen, peak_rank, peak_date)
             VALUES
             (?, ?, ?, ?, ?, ?, ?)
@@ -610,6 +649,7 @@ class TrackDatabase(object):
         first_added = self.order_dates(first_added, date_str)[0] if stats else date_str
         # finds the later of the current last_seen and the current date query
         last_seen = self.order_dates(last_seen, date_str)[1] if stats else date_str
+
         if stats and position < peak_rank:
             # track is ranked higher (has a lower numbered position) when current position is less than old now
             peak_rank = position
@@ -617,11 +657,20 @@ class TrackDatabase(object):
         else:
             # track was higher then, or doesn't have stats
             peak_rank = peak_rank if stats else position
-            peak_date = self.order_dates(peak_date, date_str) if stats else date_str # use the earliest peak date for the peak rank
+            peak_date = self.order_dates(peak_date, date_str)[0] if stats else date_str # use the earliest peak date for the peak rank
+
+        # -- Try to update any existing row
+        self.c.execute(
+            stats_update_query,
+            [first_added, last_seen, peak_rank, peak_date, service_id, territory_id, track_id]
+        )
+
+        # -- Make sure it exists
         self.c.execute(
             stats_query,
             [service_id, territory_id, track_id, first_added, last_seen, peak_rank, peak_date]
         )
+
     def add_tracks(self, track_list, date_str, service_name):
         """
         input:
@@ -635,13 +684,13 @@ class TrackDatabase(object):
             territory_id = self.get_territory_id(track['region'])
             position = track['Position']
 
-            # if db_id is populated, the track is already in the DB
+            # if db id is populated, the track is already in the DB
             if 'track_id_db' in track:
                 track_id_db = track['track_id_db']
+                isrc = self.get_isrc_from_db(track_id_db)
 
             # track doesn't have track.id and the data for the track and album were retrieved from Spotify API
             else:
-                row = self.track_to_tuple(track)
 
                 try:
                     # check if artist or album are in the db
@@ -649,6 +698,7 @@ class TrackDatabase(object):
                     artist_name = str(track['Artist'])
                     artist_id = self.get_artist_id(service_id, service_artist_id)
                     album_id = self.get_album_id(service_id, str(track['albumId']))
+                    isrc = str(track['isrc'])
 
                     # add artist if not in the db
                     if not artist_id:
@@ -666,7 +716,7 @@ class TrackDatabase(object):
                         for genre in track['genres']:
                             self.c.execute('''
                                 INSERT OR IGNORE INTO artist_genre
-                                (artist_id, genre)
+                                (service_id, artist_id, genre)
                                 VALUES
                                 (?, ?, ?)
                             ''', (service_id, artist_id, genre))
@@ -679,7 +729,7 @@ class TrackDatabase(object):
                             INSERT OR IGNORE INTO album
                             (service_id, artist_id, service_album_id, album, release_date, label)
                             VALUES
-                            (?, ?, ?, ?, ?)
+                            (?, ?, ?, ?, ?, ?)
                         ''', (service_id, artist_id, str(track['albumId']), str(track['album_name']), str(track['release_date']), str(track['label']) )
                         )
                         print('Added {} for {}'.format(str(track['album_name']), artist_name))
@@ -693,31 +743,31 @@ class TrackDatabase(object):
                         VALUES
                         (?, ?, ?, ?, ?)
                     ''',
-                    (service_id, track_id, service_artist_id), str(track['Track Name']), str(track['isrc']))
-
+                        (service_id, track_id, service_artist_id, str(track['Track Name']), isrc )
+                    )
                     # NOTE: unreliable way to find rowid
-                    # db_id = self.c.execute('''
+                    # track_id_db = self.c.execute('''
                     #     SELECT LAST_INSERT_ROWID()
                     # ''').fetchone()[0]
 
                     track_id_db = self.c.lastrowid
 
-                    logging.debug('THE NEWLY INSERTED ROW IS: {}'.format(db_id))
+                    logging.debug('THE NEWLY INSERTED ROW IS: {}'.format(track_id_db))
 
                 except Exception as e:
                     print(e)
                     raise
 
-            # update stats table
-            self.update_track_stats(db_id, service_id, territory_id,  position, date_str)
+            # update peak_track_position table
+            self.update_track_stats(service_id, territory_id, track_id_db, position, date_str)
 
             # update track_position table
             self.c.execute('''
                 INSERT OR IGNORE INTO track_position
-                (service_id, territory_id, track_id,  position, stream_count, date_str)
+                (service_id, territory_id, track_id, isrc, position, stream_count, date_str)
                 VALUES
-                (?, ?, ?, ?, ?, ?)
-            ''', [service_id, territory_id, track_id_db, position, track['Streams'], date_str]
+                (?, ?, ?, ?, ?, ?, ?)
+            ''', (service_id, territory_id, track_id_db, isrc, position, track['Streams'], date_str)
             )
 
             self.db.commit()
@@ -725,14 +775,17 @@ class TrackDatabase(object):
 
         return True
 
-    def track_to_tuple(self, track):
+    def get_isrc_from_db(self, track_id):
+        # RETRIEVE ISRC
+        query = """
+            SELECT isrc
+            FROM track
+            WHERE id = ?
         """
-        Convert a track dict into a tuple
-        """
-        return (
-            str(track['Track Name']),
-            str(track['isrc'])
-        )
+        # NOTE: there should be a one-to-one relationship between spotify trackId and db id
+        row = db.c.execute(query, [track_id]).fetchone()
+        return row[0] if row else False
+
     def get_territory_id(self, code):
         """
         Retrieve territory_id from region code
@@ -781,7 +834,7 @@ class TrackDatabase(object):
         ''', (str(service_id), service_album_id)
         )
         row = query.fetchone()
-        return row[0] if query else False
+        return row[0] if row else False
 def process(mode):
     """
     Process each region for "date" mode
@@ -827,7 +880,7 @@ def process(mode):
                 print('-' * 40)
                 continue
             region_data = load_spotify_csv_data(region, date_str)
-            # logging.debug(region_data)
+
             if not region_data:
                 print('No download available, skipping...')
                 print('-' * 40)
