@@ -739,8 +739,6 @@ class TrackDatabase(object):
                             VALUES
                             (?, ?, ?)
                         ''', (service_id, artist_id, genre))
-                        print('Added {} for {}'.format(genre, artist_name))
-
 
                     # update track table
                     #
@@ -752,6 +750,7 @@ class TrackDatabase(object):
                     ''',
                         (service_id, track_id, artist_id, album_id, str(track['Track Name']), isrc)
                     )
+                    print('Track added: {} by {}'.format(str(track['Track Name']), artist_name))
 
                     track_id_db = self.c.lastrowid
 
