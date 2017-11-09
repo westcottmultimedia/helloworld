@@ -403,7 +403,8 @@ class TrackDatabase(object):
                 id integer PRIMARY KEY,
                 service_id integer NOT NULL,
                 service_track_id text NOT NULL,
-                service_artist_id text NOT NULL,
+                artist_id integer NOT NULL,
+                album_id integer NOT NULL,
                 track text NOT NULL,
                 isrc text NOT NULL
             )
@@ -423,8 +424,8 @@ class TrackDatabase(object):
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS artist_genre (
                 id integer PRIMARY KEY,
-                service_id text NOT NULL,
-                artist_id text NOT NULL,
+                service_id integer NOT NULL,
+                artist_id integer NOT NULL,
                 genre text NOT NULL
             )
         ''')
@@ -434,11 +435,11 @@ class TrackDatabase(object):
             CREATE TABLE IF NOT EXISTS album (
                 id integer PRIMARY KEY,
                 service_id integer NOT NULL,
-                artist_id integer NOT NULL,
                 service_album_id text NOT NULL,
+                artist_id integer NOT NULL,
                 album text NOT NULL,
-                release_date text NOT NULL,
-                label text NOT NULL
+                label text NOT NULL,
+                release_date text NOT NULL
             )
         ''')
 
@@ -695,11 +696,13 @@ class TrackDatabase(object):
 
                 try:
                     # check if artist or album are in the db
-                    service_artist_id = str(track['artistId'])
                     artist_name = str(track['Artist'])
-                    artist_id = self.get_artist_id(service_id, service_artist_id)
-                    album_id = self.get_album_id(service_id, str(track['albumId']))
+                    service_album_id = str(track['albumId'])
+                    service_artist_id = str(track['artistId'])
                     isrc = str(track['isrc'])
+                    artist_id = self.get_artist_id(service_id, service_artist_id)
+                    album_id = self.get_album_id(service_id, service_album_id)
+
 
                     # add artist if not in the db
                     if not artist_id:
@@ -730,20 +733,21 @@ class TrackDatabase(object):
                             (service_id, artist_id, service_album_id, album, release_date, label)
                             VALUES
                             (?, ?, ?, ?, ?, ?)
-                        ''', (service_id, artist_id, str(track['albumId']), str(track['album_name']), str(track['release_date']), str(track['label']) )
+                        ''', (service_id, artist_id, service_album_id, str(track['album_name']), str(track['release_date']), str(track['label']) )
                         )
-                        print('Added {} for {}'.format(str(track['album_name']), artist_name))
+                        albumId = self.c.lastrowid
+                        print('Album added: {} for {}'.format(str(track['album_name']), artist_name))
 
 
                     # update track table
                     # add the new track
                     self.c.execute('''
                         INSERT OR IGNORE INTO track
-                        (service_id, service_track_id, service_artist_id, track, isrc)
+                        (service_id, service_track_id, artist_id, album_id, track, isrc)
                         VALUES
-                        (?, ?, ?, ?, ?)
+                        (?, ?, ?, ?, ?, ?)
                     ''',
-                        (service_id, track_id, service_artist_id, str(track['Track Name']), isrc )
+                        (service_id, track_id, artist_id, album_id, str(track['Track Name']), isrc )
                     )
                     # NOTE: unreliable way to find rowid
                     # track_id_db = self.c.execute('''
@@ -904,7 +908,7 @@ def process(mode):
             endtime = datetime.datetime.now()
             processtime = endtime - starttime
             processtime_running_total = endtime - starttime_total
-            print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%y'))
+            print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%Y'))
             print('Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
             print('Running processing time: %i minutes, %i seconds' % divmod(processtime_running_total.days *86400 + processtime_running_total.seconds, 60))
             print('-' * 40)
