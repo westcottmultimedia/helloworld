@@ -430,6 +430,10 @@ class TrackDatabase(object):
             )
         ''')
 
+        self.c.execute('''
+            CREATE UNIQUE INDEX IF NOT EXISTS artist_genre_serviceId_artistId_genre ON artist_genre (service_id, artist_id, genre)
+        ''')
+
         # album table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS album (
@@ -715,17 +719,6 @@ class TrackDatabase(object):
                         ''', (service_id, service_artist_id, artist_name))
                         artist_id = self.c.lastrowid
 
-                        # add genres for artist
-                        for genre in track['genres']:
-                            self.c.execute('''
-                                INSERT OR IGNORE INTO artist_genre
-                                (service_id, artist_id, genre)
-                                VALUES
-                                (?, ?, ?)
-                            ''', (service_id, artist_id, genre))
-                            print('Added {} for {}'.format(genre, artist_name))
-
-
                     # add album if not in the db
                     if not album_id:
                         self.c.execute('''
@@ -735,24 +728,30 @@ class TrackDatabase(object):
                             (?, ?, ?, ?, ?, ?)
                         ''', (service_id, artist_id, service_album_id, str(track['album_name']), str(track['release_date']), str(track['label']) )
                         )
-                        albumId = self.c.lastrowid
+                        album_id = self.c.lastrowid
                         print('Album added: {} for {}'.format(str(track['album_name']), artist_name))
+
+                    # add genres for artist
+                    for genre in track['genres']:
+                        self.c.execute('''
+                            INSERT OR IGNORE INTO artist_genre
+                            (service_id, artist_id, genre)
+                            VALUES
+                            (?, ?, ?)
+                        ''', (service_id, artist_id, genre))
+                        print('Added {} for {}'.format(genre, artist_name))
 
 
                     # update track table
-                    # add the new track
+                    #
                     self.c.execute('''
                         INSERT OR IGNORE INTO track
                         (service_id, service_track_id, artist_id, album_id, track, isrc)
                         VALUES
                         (?, ?, ?, ?, ?, ?)
                     ''',
-                        (service_id, track_id, artist_id, album_id, str(track['Track Name']), isrc )
+                        (service_id, track_id, artist_id, album_id, str(track['Track Name']), isrc)
                     )
-                    # NOTE: unreliable way to find rowid
-                    # track_id_db = self.c.execute('''
-                    #     SELECT LAST_INSERT_ROWID()
-                    # ''').fetchone()[0]
 
                     track_id_db = self.c.lastrowid
 
