@@ -400,7 +400,7 @@ class TrackDatabase(object):
         #track table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS track (
-                id integer PRIMARY KEY AUTOINCREMENT,
+                id integer PRIMARY KEY,
                 service_id integer NOT NULL,
                 service_track_id text NOT NULL,
                 service_artist_id text NOT NULL,
@@ -412,7 +412,7 @@ class TrackDatabase(object):
         # artist table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS artist (
-                id integer PRIMARY KEY AUTOINCREMENT,
+                id integer PRIMARY KEY,
                 service_id integer NOT NULL,
                 service_artist_id text NOT NULL,
                 artist text NOT NULL
@@ -422,7 +422,7 @@ class TrackDatabase(object):
         # artist_genre mapping table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS artist_genre (
-                id integer PRIMARY KEY AUTOINCREMENT,
+                id integer PRIMARY KEY,
                 service_id text NOT NULL,
                 artist_id text NOT NULL,
                 genre text NOT NULL
@@ -432,7 +432,7 @@ class TrackDatabase(object):
         # album table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS album (
-                id integer PRIMARY KEY AUTOINCREMENT,
+                id integer PRIMARY KEY,
                 service_id integer NOT NULL,
                 artist_id integer NOT NULL,
                 service_album_id text NOT NULL,
@@ -445,7 +445,7 @@ class TrackDatabase(object):
         # music video table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS music_video (
-                id integer PRIMARY KEY AUTOINCREMENT,
+                id integer PRIMARY KEY,
                 service_id integer NOT NULL,
                 service_music_video_id integer NOT NULL,
                 music_video text NOT NULL
@@ -462,7 +462,7 @@ class TrackDatabase(object):
         # service table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS service (
-                id integer PRIMARY KEY AUTOINCREMENT,
+                id integer PRIMARY KEY,
                 service_name text NOT NULL
             )
         ''')
@@ -472,7 +472,7 @@ class TrackDatabase(object):
         # stats table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS peak_track_position (
-                id integer PRIMARY KEY AUTOINCREMENT,
+                id integer PRIMARY KEY,
                 service_id integer NOT NULL,
                 territory_id integer NOT NULL,
                 track_id integer NOT NULL,
@@ -490,7 +490,7 @@ class TrackDatabase(object):
         # isrc is denormalized duplicated from track table for better lookup
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS track_position (
-                id integer PRIMARY KEY AUTOINCREMENT,
+                id integer PRIMARY KEY,
                 service_id integer NOT NULL,
                 territory_id integer NOT NULL,
                 track_id integer NOT NULL,
@@ -504,7 +504,7 @@ class TrackDatabase(object):
         # territory table
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS territory (
-                id integer PRIMARY KEY AUTOINCREMENT,
+                id integer PRIMARY KEY,
                 code varchar(10) NOT NULL,
                 name text NOT NULL
             )
@@ -643,6 +643,7 @@ class TrackDatabase(object):
             VALUES
             (?, ?, ?, ?, ?, ?, ?)
         '''
+
         # finds the earlier of the two dates, the current added and the current date query
         # this is important because of the asynchronous nature of collecting the data - the script can download
         # any date from spotify at any time, it is not necessarily in chronological order of when the data is processed
@@ -710,7 +711,6 @@ class TrackDatabase(object):
                             (?, ?, ?)
                         ''', (service_id, service_artist_id, artist_name))
                         artist_id = self.c.lastrowid
-                        logging.debug('THE NEWLY INSERTED artistid  IS: {}'.format(artist_id))
 
                         # add genres for artist
                         for genre in track['genres']:
@@ -751,8 +751,6 @@ class TrackDatabase(object):
                     # ''').fetchone()[0]
 
                     track_id_db = self.c.lastrowid
-
-                    logging.debug('THE NEWLY INSERTED ROW IS: {}'.format(track_id_db))
 
                 except Exception as e:
                     print(e)
