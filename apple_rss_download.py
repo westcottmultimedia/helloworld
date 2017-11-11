@@ -2,6 +2,16 @@ import requests
 import json
 from datetime import date
 import os.path
+import logging
+
+# setup logging
+logger = logging.getLogger('apple_rss_scraper')
+hdlr = logging.FileHandler('./apple/apple_rss_scraper.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+logger.setLevel(logging.WARNING)
+
 
 RSS_url = 'https://rss.itunes.apple.com/api/v1/{region}/{media}/{chart}/{genre}/{limit}/{explicit}.json'
 # limit can be 10, 50, 100, 200 or all (usually 200 results)
@@ -29,6 +39,8 @@ MEDIA_CHARTS = [
     ('music-videos', 'top-music-videos')
 ]
 
+retry_paths = [] # TODO: retry these paths. Recursively?
+
 for region in REGIONS:
     for media_chart in MEDIA_CHARTS:
 
@@ -41,15 +53,28 @@ for region in REGIONS:
         if not os.path.exists(total_path):
             # Get URL to download
             data_url = RSS_url.format(region=region, media=media_chart[0], chart=media_chart[1], genre='all', limit=200, explicit='explicit')
+            r = requests.get(data_url)
 
             try:
-                r = requests.get(data_url)
+                r.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                print('Error: {} for {}'.format(str(e), file_path))
+                if e.response.status_code == 502:
+                    print('Error 502. Server issue with {} {} chart for region {}'.format(media_chart[0], media_chart[1], region))
+                    logger.warning('502: Could not download {} {} chart for region {}: {}'.format(media_chart[0], media_chart[1], region, data_url))
+                    print('Will retry {} later'.format(data_url))
+                    retry_paths.append(data_url)
+
+                elif e.response.status_code == 404:
+                    logger.warning('404: No {} {} chart for region {}: {}'.format(media_chart[0], media_chart[1], region, data_url))
+                else:
+                    print('Error: {} for {}'.format(str(e), file_path))
+
+                continue
             except requests.exceptions.RequestException as e:
-                print(err)
+                print(str(e))
                 continue
-            except requests.exceptions.HTTPError as err:
-                print(err)
-                continue
+
 
             # Create the file and write to it
             with open(PATH.format(folder_path, file_path), 'w') as f:
@@ -58,3 +83,5 @@ for region in REGIONS:
 
         else:
             print('{} {} in {} file already exists! Moving on... '.format(media_chart[0], media_chart[1], region, TODAY))
+
+logger.warning(str(retry_paths))
