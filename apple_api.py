@@ -129,21 +129,6 @@ class Apple(object):
             data = urlopen(q).read().decode('utf8')
             response = json.loads(data)
 
-            # Debug: did you receive anything?
-            pprint(response, depth=3)
-
-            # write data to file
-            # file = open(cache_file, 'w+')
-            # file.write(data)
-            # print('written!')
-
-            # debug:
-            # pprint(response['results']['songs'][0]['data'][0]['attributes'], depth=2)
-            # test
-            # songs = response['results']['songs'][0]['data']
-            # for song in songs:
-            #     print(song['attributes']['name'])
-
             return response
         except HTTPError as err:
             if err.code == 400:
@@ -216,7 +201,7 @@ def append_track_id_from_db(items):
         row = db.c.execute(query, [apple_track_id]).fetchone()
         if row:
             items[apple_track_id]['track_id_db'] = row[0]
-        logging.debug('track id db is {}'.format(row[0]))
+            logging.debug('track id db is {}'.format(row[0]))
     return items
 
 def append_track_data(items, region):
@@ -484,7 +469,7 @@ class TrackDatabase(object):
 
                     if (collectionName != album_name):
                         logging.debug('Album name inconsistency: {}, {}'.format(collectionName, album_name))
-                    else
+                    else:
                         logging.debug('Album Names are the same as Collection Names')
 
                     if (track_release_date != album_release_date):
@@ -730,27 +715,26 @@ if __name__ == '__main__':
 
     # prompt for date/mode
     # while True:
-    #     mode = input('\nEnter a date (YYYY-MM-DD) or use "all|watch|latest": ')
+    #     mode = input('\n"Use: all|watch|latest": ')
     #     mode = mode.lower()
+    #     # does it match a date, all, watch or latest?
     #     if re.match(r'\d{4}-\d{2}-\d{2}|all|watch|latest', mode):
     #         break
     #     else:
     #         print('Invalid date, try again.')
-    #
+    # #
     # print('-' * 40)
     # print()
 
     mode = 'test'
     while True:
         process(mode)
-
-    #
-    #     if mode == 'watch':
-    #         print()
-    #         print('=' * 40)
-    #         print('\033[95mWatch cycle complete for all regions, starting over...\033[0m')
-    #         print('=' * 40)
-    #         print()
-    #     else:
-            # break
+        if mode == 'watch':
+            print()
+            print('=' * 40)
+            # print('\033[95mWatch cycle complete for all regions, starting over...\033[0m')
+            print('=' * 40)
+            print()
+        else:
+            break
     print('Finished')
