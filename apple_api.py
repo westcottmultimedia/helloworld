@@ -28,11 +28,11 @@ from datetime import date
 CACHE_ENABLED = False
 
 # sqlite database filename/path
-DATABASE_FILE = '../test.db'
+DATABASE_FILE = '../test-apple.db'
 
 # the Apple API url
 # ie. https://api.music.apple.com/v1/catalog/{storefront}/genres/{id}
-API_url = 'https://api.music.apple.com/v1/catalog/{}/{}?limit=50&types={}'
+API_url = 'https://api.music.apple.com/v1/catalog/{region}/{media}'
 # https://api.music.apple.com/v1/catalog/us/charts?types=songs&limit=50
 
 # Apple RSS Feed url
@@ -124,18 +124,19 @@ class Apple(object):
             response = json.loads(data)
 
             # Debug: did you receive anything?
-            pprint(response, depth=2)
+            pprint(response, depth=3)
 
             # write data to file
-            file = open(cache_file, 'w+')
-            file.write(data)
+            # file = open(cache_file, 'w+')
+            # file.write(data)
             # print('written!')
 
+            # debug:
             # pprint(response['results']['songs'][0]['data'][0]['attributes'], depth=2)
             # test
-            songs = response['results']['songs'][0]['data']
-            for song in songs:
-                print(song['attributes']['name'])
+            # songs = response['results']['songs'][0]['data']
+            # for song in songs:
+            #     print(song['attributes']['name'])
 
             return response
         except HTTPError as err:
@@ -187,106 +188,99 @@ def get_artist_by_id(tracks, track_id):
                 print('artist ID not available for track ID %s' % track_id)
     return False
 
-def append_track_hash_from_db(tracks):
+def append_track_id_from_db(items):
     """
     Input:
         tracks: dict
     Output:
         tracks: dict
-    Appends key 'track_hash' key with db lookup value.
-    This removes redundancy from spotify API calls to retrieve info already in the DB.
+    Appends key 'track_id_db' key with db lookup value.
+    This removes redundancy from apple API calls to retrieve info already in the DB.
     """
-    for track_id in tracks:
+    # NOTE: hardcoded in service_id = 2 for Apple, may want to change to lookup from service table on join
+    # service_id = self.get_service_id(service_name)
+    for apple_track_id in items:
         query = """
-            SELECT
-            tracks.track_hash,
-            spotify_trackId
-            FROM track_service_info
-            INNER JOIN tracks ON track_service_info.track_hash = tracks.track_hash
-            WHERE spotify_trackId = (?)
+            SELECT id
+            FROM track
+            WHERE service_id = 2
+            AND service_track_id = (?)
         """
-        # NOTE: may need to fetch more than one, for example, "Trinidad"
-        row = db.c.execute(query, [tracks[track_id]['trackId']]).fetchone()
+        # NOTE: there should be a one-to-one relationship between apple track_id and db id
+        row = db.c.execute(query, [items[apple_track_id]['track_id']]).fetchone()
         if row:
-            tracks[track_id]['track_hash'] = row[0]
+            items[apple_track_id]['track_id_db'] = row[0]
 
-    # NOTE: Debug
     # for key in tracks:
-    #     print("TRACKS--------", tracks[key])
+    #     logging.debug("TRACKS--------", tracks[key])
 
-    return tracks
+    return items
 
-def append_track_data(tracks, batch_size=50):
+def append_track_data(items, region, batch_size=50):
     """
     Input:
         tracks: dict
     Output:
         tracks: dict +
-            { 'isrc': xx, 'artistId': xx, 'albumId': xx} for any track without a 'track_hash'
-    Append the isrc, artist ID, and album ID to tracks_list using the Spotify tracks API
-    See: https://developer.spotify.com/web-api/console/get-several-tracks/
-    Returns track_list with "isrc", "artistID" and "albumId" appended
+            { 'isrc': xx, 'album_id': xx, 'artist_id'; ''} for any track without a 'track_id_db'
     """
-    spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
-    endpoint = "https://api.spotify.com/v1/tracks?ids={}"
+    apple = Apple()
+    endpoint = API_url.format(region=region, media ='songs') + '?ids={}'
 
-    tracks_to_lookup = []
-    for track_id in tracks:
-        # 'track_hash' key would be appended to the track if it exists in the db
-        if 'track_hash' not in tracks[track_id]:
-            tracks_to_lookup.append(track_id)
-    # api supports up to 50 ids at a time
-    batches = [tracks_to_lookup[i:i + batch_size] for i in range(0, len(tracks_to_lookup), batch_size)]
-    for i, batch in enumerate(batches):
-        id_str = ','.join(map(str, batch))
-        r_dict = spotify.request(endpoint.format(id_str))
-        for track_id in batch:
-            tracks[track_id]['isrc'] = get_isrc_by_id(r_dict['tracks'], track_id)
-            tracks[track_id]['albumId'] = get_album_by_id(r_dict['tracks'], track_id)
-            tracks[track_id]['artistId'] = get_artist_by_id(r_dict['tracks'], track_id)
-        print('Appended track data for batch %d of %d' % (i+1, len(batches)) )
-    print('Added %i tracks to the DB' % len(tracks_to_lookup) )
-    return tracks
+    tracks_to_lookup = [apple_id for apple_id, item in items.items() if 'track_id_db' not in item]
+
+    id_str = ','.join(map(str, tracks_to_lookup))
+
+    # retrieve API data and convert to easy lookup format
+    r = apple.request(endpoint.format(id_str))
+    data = r['data']
+    r_dict = {item['id']: item for item in data} # construct dictionary with id as key
+
+    for apple_id in r_dict:
+        items[apple_id]['isrc'] = r_dict[apple_id]['attributes']['isrc']
+        # NOTE: assumption is one album and one artist, thus choosing just first item
+        items[apple_id]['album_id'] = r_dict[apple_id]['relationships']['albums']['data'][0]['id']
+        items[apple_id]['artist_id'] = r_dict[apple_id]['relationships']['artists']['data'][0]['id']
+
+    count = 0
+
+    # diagnostics and statistics for printing
+    for apple_id in items:
+        if all (key in items[apple_id] for key in ('isrc', 'album_id', 'artist_id')):
+            count += 1
+        print('{} new items with isrc, albumid and appleid'.format(count))
+
+    return items
 
 def append_track_album_data(tracks, batch_size=20):
     """
     Input:
-        tracks: dict (with 'albumId' key, which refers to spotify albumId)
+        tracks: dict (with 'album_id' key, which refers to apple albumId)
     Output:
         tracks: dict +
-            { 'released': xx, 'label': xx} for any track with 'albumId' key
-    Append the label and release date to tracks using the Spotify albums API
-    See: https://developer.spotify.com/web-api/console/get-several-albums/
+            {'label': xx} for any track with 'albumId' key
+    Append the label to tracks using the Apple albums API
     Returns tracks with "label" and "released" appended
     """
-    spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
-    endpoint_album = "https://api.spotify.com/v1/albums/{}"
-    endpoint_albums = "https://api.spotify.com/v1/albums?ids={}"
+    apple = Apple()
+    endpoint = API_url.format(region=region, media ='albums') + '?ids={}'
 
-    # api supports up to 20 ids at a time
-    albums = [t['albumId'] for k,t in tracks.items() if 'albumId' in t]
+    # filter out apple album ids that need to be into the db
+    albums_to_lookup = [item['album_id'] for k,item in tracks.items() if 'album_id' in item]
 
-    if len(albums) != 1:
-        batches = [albums[i:i + batch_size] for i in range(0, len(albums), batch_size)]
-        for i, batch in enumerate(batches):
-            id_str = ','.join(batch)
-            r_dict = spotify.request(endpoint_albums.format(id_str))
-            for album in r_dict['albums']:
-                released = album['release_date']
-                label = album['label']
-                for track_id, track in tracks.items():
-                    if 'albumId' in track and track['albumId'] == album['id']:
-                        tracks[track_id]['released'] = released
-                        tracks[track_id]['label'] = label
-            print('Appended album data for batch %d of %d' % (i+1, len(batches)) )
-    else:
-        album_id = albums[0]
-        album = spotify.request(endpoint_album.format(album_id))
-        for track_id, track in tracks.items():
-            if 'albumId' in track and track['albumId'] == album['id']:
-                tracks[track_id]['released'] = album['release_date']
-                tracks[track_id]['label'] = album['label']
-        print('Appended album data for album_id %s' % album_id )
+    id_str = ','.join(map(str, albums_to_lookup))
+
+    # retrieve API data and convert to easy lookup format
+    r = apple.request(endpoint.format(id_str))
+    data = r['data']
+    r_dict = {item['id']: item for item in data} # construct dictionary with id as key
+
+    for apple_id in r_dict:
+        items[apple_id]['isrc'] = r_dict[apple_id]['attributes']['isrc']
+        # NOTE: assumption is one album and one artist, thus choosing just first item
+        items[apple_id]['album_id'] = r_dict[apple_id]['relationships']['albums']['data'][0]['id']
+        items[apple_id]['artist_id'] = r_dict[apple_id]['relationships']['artists']['data'][0]['id']
+
     return tracks
 
 def append_artist_data(tracks, batch_size=50):
@@ -318,113 +312,7 @@ class TrackDatabase(object):
     def __init__(self, db_file='test.db'):
         super(TrackDatabase, self).__init__()
         self.db_file = db_file
-        self.init_database()
-    def init_database(self):
-        print('Initializing database...')
-        self.db = sqlite3.connect(self.db_file)
-        self.c = self.db.cursor()
 
-        #tracks table
-        self.c.execute('''
-            CREATE TABLE IF NOT EXISTS tracks (
-                track_hash text PRIMARY KEY,
-                track_name text NOT NULL,
-                artist text NOT NULL,
-                label text NOT NULL,
-                isrc varchar(255) NOT NULL,
-                release_date varchar(255) NOT NULL,
-                genres varchar(255) NULL
-            )
-        ''')
-
-        # processed table
-        self.c.execute('''
-            CREATE TABLE IF NOT EXISTS processed (
-                url text PRIMARY KEY
-            )
-        ''')
-
-        # service table
-        self.c.execute('''
-            CREATE TABLE IF NOT EXISTS service (
-                serviceId integer PRIMARY KEY,
-                service_name varchar(255) NOT NULL
-            )
-        ''')
-
-        # seed service table
-        self.c.execute('''
-            INSERT OR IGNORE INTO service
-            (serviceId, service_name)
-            VALUES
-            (?, ?)
-        ''', (1111, 'Spotify')
-        )
-
-        # stats table
-        self.c.execute('''
-            CREATE TABLE IF NOT EXISTS stats (
-                track_hash text PRIMARY KEY,
-                territoryId integer NOT NULL,
-                serviceId integer NOT NULL,
-                added varchar(255) NOT NULL,
-                last_seen varchar(255) NOT NULL,
-                peak_rank integer NOT NULL,
-                peak_date varchar(255) NOT NULL
-            )
-        ''')
-
-        # track_position table
-        self.c.execute('''
-            CREATE TABLE IF NOT EXISTS track_position (
-                hash varchar(255) PRIMARY KEY,
-                track_hash varchar(255) NOT NULL,
-                territoryId integer NOT NULL,
-                serviceId integer NOT NULL,
-                position integer NOT NULL,
-                streams integer NOT NULL,
-                date_str varchar(255) NOT NULL
-            )
-        ''')
-
-        # territory table
-        self.c.execute('''
-            CREATE TABLE IF NOT EXISTS territory (
-                territoryId integer PRIMARY KEY,
-                code varchar(10) NOT NULL,
-                name varchar(255) NOT NULL
-            )
-        ''')
-
-        self.c.execute('''
-            INSERT OR IGNORE INTO territory
-            (territoryId, code, name)
-            VALUES
-            (?, ?, ?)
-        ''', (1, 'global', 'global')
-        )
-
-        # track_service_info table
-        self.c.execute('''
-            CREATE TABLE IF NOT EXISTS track_service_info (
-                track_hash varchar(255) NOT NULL PRIMARY KEY,
-                spotify_url text NOT NULL,
-                spotify_trackId varchar(255) NOT NULL,
-                spotify_albumId varchar(255) NOT NULL
-            )
-        ''')
-
-        stat = os.stat(self.db_file)
-        print("Using Database '%s'" % self.db_file)
-        print("# Bytes: %r" % stat.st_size)
-        bq = self.c.execute("SELECT COUNT(*) FROM processed")
-        print("# urls Processed: %r" % bq.fetchone()[0])
-        tq = self.c.execute("SELECT COUNT(*) FROM tracks")
-        print("# Tracks: %r" % tq.fetchone()[0])
-        sq = self.c.execute("SELECT COUNT(*) FROM stats")
-        print("# Track Stats: %r" % sq.fetchone()[0])
-        pq = self.c.execute("SELECT COUNT(*) FROM track_position")
-        print("# Position Stats: %r\n" % pq.fetchone()[0])
     def is_processed(self, url):
         """
         Has CSV url already been processed?
@@ -575,9 +463,9 @@ class TrackDatabase(object):
         """
         Convert a track dict into a tuple
         """
-        hashed = self.get_row_hash(track)
+        # hashed = self.get_row_hash(track)
         return (
-            hashed,
+            # hashed,
             str(track['Track Name']),
             str(track['Artist']),
             str(track['label']),
@@ -585,18 +473,7 @@ class TrackDatabase(object):
             str(track['released']),
             str(track['genres'])
         )
-    def get_row_hash(self, track):
-        """
-        Return an SHA1 hash for a given track
-        """
-        hash_str = "%r-%r-%r-%r" % (track['isrc'],track['region'],track['trackId'],track['albumId'])
-        return hashlib.sha1(hash_str.encode('utf-8')).hexdigest()
-    def get_track_position_hash(self, track_hash, date_str, territoryId, serviceId):
-        """
-        Return an SHA1 hash for a given track and position
-        """
-        hash_str = "%r:%r:%r:%r" % (track_hash,date_str,territoryId,serviceId)
-        return hashlib.sha1(hash_str.encode('utf-8')).hexdigest()
+
     def get_territoryId(self, code):
         """
         Retrieve territoryId from region code
@@ -621,7 +498,7 @@ def process(mode):
     """
     Process each region
     """
-
+    service_name = 'Apple'
     number_results = 50
     limit = '&limit={}'.format(number_results)
 
@@ -637,7 +514,6 @@ def process(mode):
         'limit': 200,
     }
 
-    service_name = 'Apple'
     for region in REGIONS:
         # debug:
         starttime = datetime.datetime.now() # timestamp
@@ -653,7 +529,15 @@ def process(mode):
             raw_data = json.loads(r)
 
             results = raw_data['feed']['results']
-            print(results[0])
+
+            items = {}
+            # append position based on list index
+            # convert list to dictionary for easier lookup, key is apple id
+            for i, result in enumerate(results):
+                result['position'] = i + 1
+                items[result['id']] = result
+
+            print(items)
 
             if not raw_data:
                 no_data.append(region)
@@ -665,22 +549,25 @@ def process(mode):
 
         except HTTPError as err:
             if err.code == 400:
-                print('HTTP 400' )
+                print('HTTP 400')
             if err.code == 404:
                 no_data.append(region) # country data for the chart is not available
                 print('No RSS feed data found for {}'.format(region))
 
 
-        # append data to Spotify API response
-        # tracks = append_track_hash_from_db(region_data)
-        # print('Getting track data from Spotify "Tracks" API...')
-        # tracks = append_track_data(region_data)
-        # print('Getting label and release date from Spotify "Albums" API...')
-        # tracks = append_track_album_data(tracks)
+        # parse GENRE DATA from list
+
+        # append data to Apple data
+        print('Looking up existing id in db')
+        items = append_track_id_from_db(items)
+        print('Getting track data from Spotify "Tracks" API...')
+        items = append_track_data(items, region)
+        print('Getting label and release date from Spotify "Albums" API...')
+        # items = append_track_album_data(items)
         # print('Getting genre tags from Spotify "Artists" API...')
-        # tracks = append_artist_data(tracks)
-        # print('Processed %i tracks, adding to database' % len(tracks))
-        # added = db.add_tracks(tracks, date_str, service_name)
+        # items = append_artist_data(items)
+        # print('Processed %i items, adding to database' % len(items))
+        # added = db.add_items(items, date_str, service_name)
 
         # write data to DB
         # db.set_processed(url)
@@ -707,14 +594,17 @@ def process(mode):
 if __name__ == '__main__':
     # setup Apple api
     apple = Apple()
-
+    endpoint = API_url.format(region='us', media ='albums') + '?ids={}'.format('1285853925,1294530286')
+    r = apple.request(endpoint)
+    print(r)
+    # 1285853925 60291774
     # are http requests being cached?
     #CACHE_ENABLED = True
     cache_msg = '\033[92m enabled' if CACHE_ENABLED else '\033[91m disabled'
     print('HTTP cache is%s\033[0m' % cache_msg)
 
     # setup db
-    # db = TrackDatabase(DATABASE_FILE)
+    db = TrackDatabase(DATABASE_FILE)
 
     # prompt for date/mode
     # while True:
@@ -730,7 +620,7 @@ if __name__ == '__main__':
 
     mode = 'test'
     # while True:
-    process(mode)
+    # process(mode)
 
     #
     #     if mode == 'watch':
