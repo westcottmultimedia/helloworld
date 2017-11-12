@@ -227,7 +227,11 @@ def append_track_data(items, region, batch_size=50):
     apple = Apple()
     endpoint = API_url.format(region=region, media ='songs') + '?ids={}'
 
-    tracks_to_lookup = [apple_id for apple_id, item in items.items() if 'track_id_db' not in item]
+    tracks_to_lookup = []
+    for apple_id in items:
+        # assumption is 'track_id_db' key is appended if it exists in the db
+        if 'track_id_db' not in items[apple_id]:
+            tracks_to_lookup.append(apple_id)
 
     id_str = ','.join(map(str, tracks_to_lookup))
 
@@ -259,28 +263,36 @@ def append_track_album_data(tracks, batch_size=20):
     Output:
         tracks: dict +
             {'label': xx} for any track with 'albumId' key
-    Append the label to tracks using the Apple albums API
+    Append the label to tracks using the Spotify albums API
+    See: https://developer.spotify.com/web-api/console/get-several-albums/
     Returns tracks with "label" and "released" appended
     """
     apple = Apple()
     endpoint = API_url.format(region=region, media ='albums') + '?ids={}'
+    # api supports up to 20 ids at a time
+    albums = [t['albumId'] for k,t in tracks.items() if 'album_id' in t]
 
-    # filter out apple album ids that need to be into the db
-    albums_to_lookup = [item['album_id'] for k,item in tracks.items() if 'album_id' in item]
-
-    id_str = ','.join(map(str, albums_to_lookup))
-
-    # retrieve API data and convert to easy lookup format
-    r = apple.request(endpoint.format(id_str))
-    data = r['data']
-    r_dict = {item['id']: item for item in data} # construct dictionary with id as key
-
-    for apple_id in r_dict:
-        items[apple_id]['isrc'] = r_dict[apple_id]['attributes']['isrc']
-        # NOTE: assumption is one album and one artist, thus choosing just first item
-        items[apple_id]['album_id'] = r_dict[apple_id]['relationships']['albums']['data'][0]['id']
-        items[apple_id]['artist_id'] = r_dict[apple_id]['relationships']['artists']['data'][0]['id']
-
+    if len(albums) != 1:
+        batches = [albums[i:i + batch_size] for i in range(0, len(albums), batch_size)]
+        for i, batch in enumerate(batches):
+            id_str = ','.join(batch)
+            r_dict = spotify.request(endpoint_albums.format(id_str))
+            for album in r_dict['albums']:
+                released = album['release_date']
+                label = album['label']
+                for track_id, track in tracks.items():
+                    if 'albumId' in track and track['albumId'] == album['id']:
+                        tracks[track_id]['released'] = released
+                        tracks[track_id]['label'] = label
+            print('Appended album data for batch %d of %d' % (i+1, len(batches)) )
+    else:
+        album_id = albums[0]
+        album = spotify.request(endpoint_album.format(album_id))
+        for track_id, track in tracks.items():
+            if 'albumId' in track and track['albumId'] == album['id']:
+                tracks[track_id]['released'] = album['release_date']
+                tracks[track_id]['label'] = album['label']
+        print('Appended album data for album_id %s' % album_id )
     return tracks
 
 def append_artist_data(tracks, batch_size=50):
@@ -563,10 +575,10 @@ def process(mode):
         print('Getting track data from Spotify "Tracks" API...')
         items = append_track_data(items, region)
         print('Getting label and release date from Spotify "Albums" API...')
-        # items = append_track_album_data(items)
-        # print('Getting genre tags from Spotify "Artists" API...')
-        # items = append_artist_data(items)
-        # print('Processed %i items, adding to database' % len(items))
+        items = append_track_album_data(items)
+        print('Getting genre tags from Spotify "Artists" API...')
+        items = append_artist_data(items)
+        print('Processed %i items, adding to database' % len(items))
         # added = db.add_items(items, date_str, service_name)
 
         # write data to DB
