@@ -28,8 +28,10 @@ from dateutil import parser
 # cache http requests?
 CACHE_ENABLED = False
 
+DATABASE_NAME = 'test-apple.db'
+
 # sqlite database filename/path
-DATABASE_FILE = '../test-apple.db'
+DATABASE_FILE = '../{}'.format(DATABASE_NAME)
 
 # the Apple API url
 # ie. https://api.music.apple.com/v1/catalog/{storefront}/genres/{id}
@@ -225,7 +227,7 @@ def append_track_data(items, region):
         tracks: dict +
             { 'isrc': xx, 'album_id': xx, 'artist_id': xx} for any track without a 'track_id_db'
     """
-    apple = Apple()
+    # apple = Apple()
     endpoint = API_url.format(region=region, media ='songs') + '?ids={}'
 
     tracks_to_lookup = [apple_id for apple_id, item in items.items() if 'track_id_db' not in item]
@@ -260,7 +262,7 @@ def append_track_album_data(tracks):
             {'label': xx} for any track with 'albumId' key
     Append the label to tracks using the Apple albums API
     """
-    apple = Apple()
+    # apple = Apple()
     endpoint = API_url.format(region=region, media ='albums') + '?ids={}'
 
     albums_to_lookup = [track['album_id'] for k,track in tracks.items() if 'album_id' in track]
@@ -283,7 +285,7 @@ def append_artist_data(tracks):
     """
     Append the genre tags to tracks
     """
-    apple = Apple()
+    # apple = Apple()
     endpoint = API_url.format(region=region, media ='albums') + '?ids={}'
 
     artists_to_lookup = [track['artist_id'] for k,track in tracks.items() if 'album_id' in track]
@@ -304,7 +306,7 @@ def append_artist_data(tracks):
 #
 class TrackDatabase(object):
     """ SQLite Database Manager """
-    def __init__(self, db_file='test.db'):
+    def __init__(self, db_file='DATABASE_NAME'):
         super(TrackDatabase, self).__init__()
         self.db_file = db_file
 
@@ -404,7 +406,7 @@ class TrackDatabase(object):
         for track_id, track in track_list.items():
 
             territory_id = self.get_territory_id(track['region'])
-            position = track['Position']
+            position = track['position']
 
             # if db id is populated, the track is already in the DB
             if 'track_id_db' in track:
@@ -421,6 +423,7 @@ class TrackDatabase(object):
                     service_artist_id = str(track['artistId'])
                     track_release_date = str(track['releaseDate'])
                     collectionName = str(track['collectionName']) # Apple's proxy for album name? use this variable to answer that.
+                    track_name = str(track['name'])
 
                     # other mapping to variables
                     service_album_id = str(track['album_id'])
@@ -428,9 +431,19 @@ class TrackDatabase(object):
                     artist_id = self.get_artist_id(service_id, service_artist_id)
                     album_id = self.get_album_id(service_id, service_album_id)
                     album_name = str(track['album_name'])
+                    label = str(track['label'])
+                    genres = tracks[apple_id]['album_genres']
+                    album_release_date = tracks[apple_id]['album_release_date']
+
+                    # TODO: test if genres are consistent among artist, album and track
+                    # and from RSS and api responses.
 
                     if (collectionName != album_name):
-                        logging.debug('{}, {}', collectionName, album_name)
+                        logging.debug('Album name inconsistency: {}, {}'.format(collectionName, album_name))
+
+                    if (tracK_release_date != album_release_date):
+                        logging.debug('Release date inconsistency: {}, {}'.format(tracK_release_date, album_release_date))
+
 
                     # add artist if not in the db
                     if not artist_id:
@@ -450,13 +463,13 @@ class TrackDatabase(object):
                             (service_id, artist_id, service_album_id, album, release_date, label)
                             VALUES
                             (?, ?, ?, ?, ?, ?)
-                        ''', (service_id, artist_id, service_album_id, album_name, str(track['release_date']), str(track['label']) )
+                        ''', (service_id, artist_id, service_album_id, album_name, album_release_date, label)
                         )
                         album_id = self.c.lastrowid
                         print('Album added: {} for {}'.format(album_name, artist_name))
 
                     # add genres for artist
-                    for genre in track['genres']:
+                    for genre in genres:
                         self.c.execute('''
                             INSERT OR IGNORE INTO artist_genre
                             (service_id, artist_id, genre)
@@ -472,9 +485,9 @@ class TrackDatabase(object):
                         VALUES
                         (?, ?, ?, ?, ?, ?)
                     ''',
-                        (service_id, track_id, artist_id, album_id, str(track['Track Name']), isrc)
+                        (service_id, track_id, artist_id, album_id, track_name, isrc)
                     )
-                    print('Track added: {} by {}'.format(str(track['Track Name']), artist_name))
+                    print('Track added: {} by {}'.format(track_name, artist_name))
 
                     track_id_db = self.c.lastrowid
 
@@ -488,31 +501,16 @@ class TrackDatabase(object):
             # update track_position table
             self.c.execute('''
                 INSERT OR IGNORE INTO track_position
-                (service_id, territory_id, track_id, isrc, position, stream_count, date_str)
+                (service_id, territory_id, track_id, isrc, position, date_str)
                 VALUES
                 (?, ?, ?, ?, ?, ?, ?)
-            ''', (service_id, territory_id, track_id_db, isrc, position, track['Streams'], date_str)
+            ''', (service_id, territory_id, track_id_db, isrc, position, date_str)
             )
 
             self.db.commit()
 
 
         return True
-
-    def track_to_tuple(self, track):
-        """
-        Convert a track dict into a tuple
-        """
-        # hashed = self.get_row_hash(track)
-        return (
-            # hashed,
-            str(track['Track Name']),
-            str(track['Artist']),
-            str(track['label']),
-            str(track['isrc']),
-            str(track['released']),
-            str(track['genres'])
-        )
 
     def get_isrc_from_db(self, track_id):
         # RETRIEVE ISRC
@@ -625,10 +623,8 @@ def process(mode):
         # Process the data
         print('Loading charts for region "%s" "...' % (region))
         raw_data = json.loads(r)
-        # parse date from RSS feed's last updated timestamp, make that the date for chart
-        date_str = parser.parse(raw_data.updated).strftime('%Y-%m-%d')
-
         results = raw_data['feed']['results']
+
         items = {}
         # append position based on list index
         # convert list to dictionary for easier lookup, key is apple id
@@ -636,7 +632,10 @@ def process(mode):
             result['position'] = i + 1
             items[result['id']] = result
 
-        print(items)
+        # parse date from RSS feed's last updated timestamp, make that the date for chart
+        date_str = parser.parse(raw_data.updated).strftime('%Y-%m-%d')
+
+        logging.debug(items)
 
         # append data to Apple data
         print('Looking up existing id in db')
@@ -676,11 +675,7 @@ def process(mode):
 if __name__ == '__main__':
     # setup Apple api
     apple = Apple()
-    endpoint = API_url.format(region='us', media ='albums') + '?ids={}'.format('1285853925,1294530286')
-    r = apple.request(endpoint)
-    print(r)
-    # 1285853925 60291774
-    # are http requests being cached?
+
     #CACHE_ENABLED = True
     cache_msg = '\033[92m enabled' if CACHE_ENABLED else '\033[91m disabled'
     print('HTTP cache is%s\033[0m' % cache_msg)
@@ -701,8 +696,8 @@ if __name__ == '__main__':
     # print()
 
     mode = 'test'
-    # while True:
-    # process(mode)
+    while True:
+        process(mode)
 
     #
     #     if mode == 'watch':
