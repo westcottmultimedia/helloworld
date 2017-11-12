@@ -1,10 +1,11 @@
-import sqlite3, csv, codecs, re, json, os, base64, time, hashlib, ssl, datetime, datetime, jwt, configparser
+import sqlite3, csv, codecs, re, json, os, base64, time, hashlib, ssl, jwt, configparser
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from urllib.error import HTTPError
 from lxml import html
 from pprint import pprint
-from datetime import date
+from datetime import datetime, date
+from dateutil import parser
 
 '''BLUEPRINT
 0. Find data accuracy of API chart data and RSS feed generator
@@ -91,8 +92,8 @@ class Apple(object):
             	"alg": alg,
             	"kid": self.keyId
             }
-            time_now = datetime.datetime.now()
-            time_expired = datetime.datetime.now() + datetime.timedelta(hours=12)
+            time_now = datetime.now()
+            time_expired = datetime.now() + datetime.timedelta(hours=12)
             payload = {
             	"iss": self.teamId,
             	"iat": int(time_now.strftime("%s")),
@@ -395,75 +396,112 @@ class TrackDatabase(object):
         # finds the later of the current last_seen and the current date query
         last_seen = self.order_dates(last_seen, date_str)[1] if stats else date_str
         if stats and position < peak_rank:
-            # track is ranked higher when current position is less than old now
+            # track is ranked higher (has a lower numbered position) when current position is less than old now
             peak_rank = position
             peak_date = date_str
+        # peak rank is the same, get the earliest peak date
+        elif stats and position == peak_rank:
+            peak_date = self.order_dates(peak_date, date_str)[0]
+        # position is ranked lower or track doesn't have existing stats
         else:
-            # track was higher then, or doesn't have stats
             peak_rank = peak_rank if stats else position
-            peak_date = peak_date if stats else date_str
+            peak_date = peak_date if stats else date_str # use the earliest peak date for the peak rank
+
         self.c.execute(
             stats_query,
             [track_hash, territoryId, serviceId, added, last_seen, peak_rank, peak_date]
         )
-    def add_tracks(self, track_list, date_str, service_name):
+    def add_items(self, track_list, date_str, region, service_name):
         """
         input:
             track_list: dict of all songs to add
         Add tracks to the database
         """
-        serviceId = self.get_serviceId(service_name)
+        service_id = self.get_service_id(service_name)
 
         for track_id, track in track_list.items():
 
-            territoryId = self.get_territoryId(track['region'])
+            territory_id = self.get_territory_id(track['region'])
             position = track['Position']
 
-            # track_hash (hash from the DB) is in the track dict
-            # thus, the track is already in the DB
-            if 'track_hash' in track:
-                track_hash = track['track_hash']
-                pos_hash = self.get_track_position_hash(track_hash, date_str, territoryId, serviceId)
-            # track doesn't have track_hash and the data for the track and album were retrieved from Spotify API
+            # if db id is populated, the track is already in the DB
+            if 'track_id_db' in track:
+                track_id_db = track['track_id_db']
+                isrc = self.get_isrc_from_db(track_id_db)
 
+            # track doesn't have track.id and the data for the track and album were retrieved from Spotify API
             else:
-                row = self.track_to_tuple(track)
-                track_hash = row[0]
-                pos_hash = self.get_track_position_hash(track_hash, date_str, territoryId, serviceId)
 
                 try:
-                    # update tracks table
-                    # add the new track
-                    self.c.execute('''
-                        INSERT OR IGNORE INTO tracks
-                        (track_hash, track_name, artist, label,
-                         isrc, release_date, genres)
-                        VALUES
-                        (?, ?, ?, ?, ?, ?, ?)
-                    ''', row)
+                    # check if artist or album are in the db
+                    artist_name = str(track['Artist'])
+                    service_album_id = str(track['albumId'])
+                    service_artist_id = str(track['artistId'])
+                    isrc = str(track['isrc'])
+                    artist_id = self.get_artist_id(service_id, service_artist_id)
+                    album_id = self.get_album_id(service_id, service_album_id)
 
-                    # update track_service_info table
+
+                    # add artist if not in the db
+                    if not artist_id:
+                        # add artist
+                        self.c.execute('''
+                            INSERT OR IGNORE INTO artist
+                            (service_id, service_artist_id, artist)
+                            VALUES
+                            (?, ?, ?)
+                        ''', (service_id, service_artist_id, artist_name))
+                        artist_id = self.c.lastrowid
+
+                    # add album if not in the db
+                    if not album_id:
+                        self.c.execute('''
+                            INSERT OR IGNORE INTO album
+                            (service_id, artist_id, service_album_id, album, release_date, label)
+                            VALUES
+                            (?, ?, ?, ?, ?, ?)
+                        ''', (service_id, artist_id, service_album_id, str(track['album_name']), str(track['release_date']), str(track['label']) )
+                        )
+                        album_id = self.c.lastrowid
+                        print('Album added: {} for {}'.format(str(track['album_name']), artist_name))
+
+                    # add genres for artist
+                    for genre in track['genres']:
+                        self.c.execute('''
+                            INSERT OR IGNORE INTO artist_genre
+                            (service_id, artist_id, genre)
+                            VALUES
+                            (?, ?, ?)
+                        ''', (service_id, artist_id, genre))
+
+                    # update track table
+                    #
                     self.c.execute('''
-                        INSERT OR IGNORE INTO track_service_info
-                        (track_hash, spotify_url, spotify_trackId, spotify_albumId)
+                        INSERT OR IGNORE INTO track
+                        (service_id, service_track_id, artist_id, album_id, track, isrc)
                         VALUES
-                        (?, ?, ?, ?)
-                    ''', [track_hash, track['URL'], track['trackId'], track['albumId']])
+                        (?, ?, ?, ?, ?, ?)
+                    ''',
+                        (service_id, track_id, artist_id, album_id, str(track['Track Name']), isrc)
+                    )
+                    print('Track added: {} by {}'.format(str(track['Track Name']), artist_name))
+
+                    track_id_db = self.c.lastrowid
 
                 except Exception as e:
                     print(e)
                     raise
 
-            # update stats table
-            self.update_track_stats(track_hash, territoryId, serviceId, position, date_str)
+            # update peak_track_position table
+            self.update_track_stats(service_id, territory_id, track_id_db, position, date_str)
 
             # update track_position table
             self.c.execute('''
                 INSERT OR IGNORE INTO track_position
-                (hash, track_hash, territoryId, serviceId, position, streams, date_str)
+                (service_id, territory_id, track_id, isrc, position, stream_count, date_str)
                 VALUES
                 (?, ?, ?, ?, ?, ?, ?)
-            ''', [pos_hash, track_hash, territoryId, serviceId, position, track['Streams'], date_str]
+            ''', (service_id, territory_id, track_id_db, isrc, position, track['Streams'], date_str)
             )
 
             self.db.commit()
@@ -486,25 +524,66 @@ class TrackDatabase(object):
             str(track['genres'])
         )
 
-    def get_territoryId(self, code):
+    def get_isrc_from_db(self, track_id):
+        # RETRIEVE ISRC
+        query = """
+            SELECT isrc
+            FROM track
+            WHERE id = ?
         """
-        Retrieve territoryId from region code
-        """
-        code = code.lower()
-        query = self.c.execute('''
-            SELECT territoryId FROM territory WHERE code = ?
-        ''', [code])
-        territoryId = query.fetchone()[0]
-        return territoryId
+        # NOTE: there should be a one-to-one relationship between spotify trackId and db id
+        row = db.c.execute(query, [track_id]).fetchone()
+        return row[0] if row else False
 
-    def get_serviceId(self, service_name):
+    def get_territory_id(self, code):
         """
-        Retrieve serviceId from service name
+        Retrieve territory_id from region code
         """
         query = self.c.execute('''
-            SELECT serviceId FROM service WHERE service_name = ?
+            SELECT id FROM territory WHERE code = ?
+        ''', [code.lower()])
+
+        row = query.fetchone()
+        return row[0] if row else False
+
+    def get_service_id(self, service_name):
+        """
+        Retrieve service_id from service name
+        """
+        query = self.c.execute('''
+            SELECT id FROM service WHERE service_name = ?
         ''', [service_name])
-        return query.fetchone()[0] if query else false
+        row = query.fetchone()
+        return row[0] if row else False
+
+    def get_artist_id(self, service_id, service_artist_id):
+        """
+        Retrive service_artist_id
+        """
+        query = self.c.execute('''
+            SELECT id FROM artist
+            WHERE
+            service_id = ?
+            AND
+            service_artist_id = ?
+        ''', (str(service_id), service_artist_id)
+        )
+        row = query.fetchone()
+        return row[0] if row else False
+    def get_album_id(self, service_id, service_album_id):
+        """
+        Retrive service_album_id
+        """
+        query = self.c.execute('''
+            SELECT id FROM album
+            WHERE
+            service_id = ?
+            AND
+            service_album_id = ?
+        ''', (str(service_id), service_album_id)
+        )
+        row = query.fetchone()
+        return row[0] if row else False
 
 def process(mode):
     """
@@ -516,7 +595,7 @@ def process(mode):
 
     # DEBUG: which countries have no apple data
     no_data = []
-    starttime_total = datetime.datetime.now() # timestamp
+    starttime_total = datetime.now() # timestamp
 
     rss_params = {
         'region': '',
@@ -527,29 +606,16 @@ def process(mode):
     }
 
     for region in REGIONS:
-        # debug:
-        starttime = datetime.datetime.now() # timestamp
+        starttime = datetime.now() # timestamp
         print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y')) # timestamp
 
-        try:
-            rss_params['region'] = region
-            url = RSS_url.format(**rss_params)
+        rss_params['region'] = region
+        url = RSS_url.format(**rss_params)
 
-            print('Loading charts for region "%s" "...' % (region))
+        try:
             req = Request(url)
             r = urlopen(req).read().decode('UTF-8')
-            raw_data = json.loads(r)
 
-            results = raw_data['feed']['results']
-
-            items = {}
-            # append position based on list index
-            # convert list to dictionary for easier lookup, key is apple id
-            for i, result in enumerate(results):
-                result['position'] = i + 1
-                items[result['id']] = result
-
-            print(items)
 
             if not raw_data:
                 no_data.append(region)
@@ -566,8 +632,21 @@ def process(mode):
                 no_data.append(region) # country data for the chart is not available
                 print('No RSS feed data found for {}'.format(region))
 
+        # Process the data
+        print('Loading charts for region "%s" "...' % (region))
+        raw_data = json.loads(r)
+        # parse date from RSS feed's last updated timestamp, make that the date for chart
+        date_str = parser.parse(raw_data.updated).strftime('%Y-%m-%d')
 
-        # parse GENRE DATA from list
+        results = raw_data['feed']['results']
+        items = {}
+        # append position based on list index
+        # convert list to dictionary for easier lookup, key is apple id
+        for i, result in enumerate(results):
+            result['position'] = i + 1
+            items[result['id']] = result
+
+        print(items)
 
         # append data to Apple data
         print('Looking up existing id in db')
@@ -579,13 +658,13 @@ def process(mode):
         print('Getting genre tags from Spotify "Artists" API...')
         items = append_artist_data(items)
         print('Processed %i items, adding to database' % len(items))
-        # added = db.add_items(items, date_str, service_name)
+        added = db.add_items(items, date_str, region, service_name)
 
         # write data to DB
         # db.set_processed(url)
 
         # timestamp
-        endtime = datetime.datetime.now()
+        endtime = datetime.now()
         processtime = endtime - starttime
         processtime_running_total = endtime - starttime_total
         print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%y'))
@@ -594,7 +673,7 @@ def process(mode):
         print('-' * 40)
 
     # timestamp
-    endtime_total = datetime.datetime.now()
+    endtime_total = datetime.now()
     processtime_total = endtime_total - starttime_total
     print('Finished processing all regions at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
     print('Total processing time: %i minutes, %i seconds' % divmod(processtime_total.days *86400 + processtime_total.seconds, 60))
