@@ -26,7 +26,7 @@ from dateutil import parser
 '''
 
 # logging config
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='LOGGING: %(asctime)s - %(message)s')
 
 # cache http requests?
 CACHE_ENABLED = False
@@ -60,7 +60,7 @@ RSS_url = 'https://rss.itunes.apple.com/api/v1/{region}/{media}/{chart}/{genre}/
 #     "gh", "no", "bf", "dk", "kh", "ca", "bj", "se", "bt", "ch"]
 
 # global only to test
-REGIONS = ['us']
+REGIONS = ['kr']
 
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
@@ -197,11 +197,9 @@ def append_track_id_from_db(items):
             WHERE service_id = 2
             AND service_track_id = (?)
         """
-        # NOTE: there should be a one-to-one relationship between apple track_id and db id
         row = db.c.execute(query, [apple_track_id]).fetchone()
         if row:
             items[apple_track_id]['track_id_db'] = row[0]
-            logging.debug('track id db is {}'.format(row[0]))
     return items
 
 def append_track_data(items, region):
@@ -217,25 +215,24 @@ def append_track_data(items, region):
 
     tracks_to_lookup = [apple_id for apple_id, item in items.items() if 'track_id_db' not in item]
 
-    id_str = ','.join(map(str, tracks_to_lookup))
+    if len(tracks_to_lookup) != 0:
+        id_str = ','.join(map(str, tracks_to_lookup))
+        # retrieve API data and convert to easy lookup format
+        r = apple.request(endpoint.format(id_str))
+        data = r['data']
+        r_dict = {item['id']: item for item in data} # construct dictionary with id as key
 
-    # retrieve API data and convert to easy lookup format
-    r = apple.request(endpoint.format(id_str))
-    data = r['data']
-    r_dict = {item['id']: item for item in data} # construct dictionary with id as key
+        for apple_id in r_dict:
+            items[apple_id]['isrc'] = r_dict[apple_id]['attributes']['isrc']
+            items[apple_id]['album_id'] = r_dict[apple_id]['relationships']['albums']['data'][0]['id']
+            items[apple_id]['track_genres'] = r_dict[apple_id]['attributes']['genreNames']
 
-    for apple_id in r_dict:
-        items[apple_id]['isrc'] = r_dict[apple_id]['attributes']['isrc']
-        logging.debug('There are {} albums associated with this track.'.format(len(r_dict[apple_id]['relationships']['albums']['data'])))
-        items[apple_id]['album_id'] = r_dict[apple_id]['relationships']['albums']['data'][0]['id']
-        items[apple_id]['track_genres'] = r_dict[apple_id]['attributes']['genreNames']
-
-    # diagnostics and statistics for printing
-    count_new_items = 0
-    for apple_id in items:
-        if all (key in items[apple_id] for key in ('isrc', 'album_id')):
-            count_new_items += 1
-    print('{} new items with isrc, album_id'.format(count_new_items))
+        # diagnostics and statistics for printing
+        count_new_items = 0
+        for apple_id in items:
+            if all (key in items[apple_id] for key in ('isrc', 'album_id')):
+                count_new_items += 1
+        print('{} new items with isrc, album_id'.format(count_new_items))
 
     return items
 
@@ -253,22 +250,22 @@ def append_track_album_data(tracks, region):
 
     albums_to_lookup = [track['album_id'] for k,track in tracks.items() if 'album_id' in track]
 
-    id_str = ','.join(map(str, albums_to_lookup))
+    if len(albums_to_lookup) != 0:
+        id_str = ','.join(map(str, albums_to_lookup))
 
-    # retrieve API data and convert to easy lookup format
-    r = apple.request(endpoint.format(id_str))
-    data = r['data']
-    r_dict = {album['id']: album for album in data} # construct dictionary with id as key
+        # retrieve API data and convert to easy lookup format
+        r = apple.request(endpoint.format(id_str))
+        data = r['data']
+        r_dict = {album['id']: album for album in data} # construct dictionary with id as key
 
-    logging.debug('Looking up {} albums from Apple Music API: '.format(len(albums_to_lookup)))
+        logging.debug('Looking up {} albums from Apple Music API: '.format(len(albums_to_lookup)))
 
-    for apple_album_id in r_dict:
-        for apple_track_id, track in tracks.items():
-            if 'album_id' in track and track['album_id'] == apple_album_id:
-                tracks[apple_track_id]['album_name'] = r_dict[apple_album_id]['attributes']['name']
-                tracks[apple_track_id]['label'] = r_dict[apple_album_id]['attributes']['recordLabel']
-                tracks[apple_track_id]['album_release_date'] = r_dict[apple_album_id]['attributes']['releaseDate']
-                tracks[apple_track_id]['album_genres'] = r_dict[apple_album_id]['attributes']['genreNames']
+        for apple_album_id in r_dict:
+            for apple_track_id, track in tracks.items():
+                if 'album_id' in track and track['album_id'] == apple_album_id:
+                    tracks[apple_track_id]['label'] = r_dict[apple_album_id]['attributes']['recordLabel']
+                    tracks[apple_track_id]['album_release_date'] = r_dict[apple_album_id]['attributes']['releaseDate']
+                    tracks[apple_track_id]['album_genres'] = r_dict[apple_album_id]['attributes']['genreNames']
     return tracks
 
 def append_artist_data(tracks, region):
@@ -280,17 +277,18 @@ def append_artist_data(tracks, region):
 
     artists_to_lookup = [track['artist_id'] for k,track in tracks.items() if 'album_id' in track]
 
-    id_str = ','.join(map(str, albums_to_lookup))
+    if len(artists_to_lookup) != 0:
+        id_str = ','.join(map(str, albums_to_lookup))
 
-    # retrieve API data and convert to easy lookup format
-    r = apple.request(endpoint.format(id_str))
-    data = r['data']
-    r_dict = {artist['id']: artist for artist in data} # construct dictionary with id as key
+        # retrieve API data and convert to easy lookup format
+        r = apple.request(endpoint.format(id_str))
+        data = r['data']
+        r_dict = {artist['id']: artist for artist in data} # construct dictionary with id as key
 
-    for apple_artist_id in r_dict:
-        for apple_track_id, track in tracks.items():
-            if 'artist_id' in track and track['artist_id'] == apple_artist_id:
-                tracks[apple_id]['genres'] = r_dict[apple_id]['attributes']['genreNames']
+        for apple_artist_id in r_dict:
+            for apple_track_id, track in tracks.items():
+                if 'artist_id' in track and track['artist_id'] == apple_artist_id:
+                    tracks[apple_id]['genres'] = r_dict[apple_id]['attributes']['genreNames']
     return tracks
 
 # TrackDatabase class start
@@ -432,7 +430,6 @@ class TrackDatabase(object):
         Add tracks to the database
         """
         service_id = self.get_service_id(service_name)
-        logging.debug('INside add_items, the service_id is {}'.format(service_id))
         territory_id = self.get_territory_id(region)
 
         for track_id, track in track_list.items():
@@ -451,26 +448,50 @@ class TrackDatabase(object):
                     artist_name = str(track['artistName'])
                     service_artist_id = str(track['artistId'])
                     track_release_date = str(track['releaseDate'])
-                    collectionName = str(track['collectionName']) # Apple's proxy for album name? use this variable to answer that.
+                    album_name = str(track['collectionName']) # Apple's proxy for album name? use this variable to answer that.
                     track_name = str(track['name'])
 
                     # other mapping to variables
-                    service_album_id = str(track['album_id'])
-                    isrc = str(track['isrc'])
+                    if 'album_id' in track:
+                        service_album_id = str(track['album_id'])
+                    else:
+                        service_album_id = ''
+                        logging.warn('No apple album id for apple track id {}'.format(track['id']) )
+                    # service_album_id = str(track['album_id'])
+
+                    if 'isrc' in track:
+                        isrc = str(track['isrc'])
+                    else:
+                        isrc = ''
+                        logging.warn('No ISRC for apple track id {}'.format(track['id']) )
+
+                    if 'label' in track:
+                        label = str(track['label'])
+                    else:
+                        label = ''
+                        logging.warn('No ISRC for apple track id {}'.format(track['id']) )
+
                     artist_id = self.get_artist_id(service_id, service_artist_id)
                     album_id = self.get_album_id(service_id, service_album_id)
-                    album_name = str(track['album_name'])
-                    label = str(track['label'])
-                    genres = track['album_genres']
-                    album_release_date = track['album_release_date']
+
+                    if 'album_genres' in track:
+                        genres = track['album_genres']
+                    else:
+                        # get it from the RSS feed response
+                        genres = [g['name'] for g in track['genres']]
+                    if 'album_release_date' in track:
+                        album_release_date = track['album_release_date']
+                    else:
+                        album_release_date = track_release_date
+
 
                     # TODO: test if genres are consistent among artist, album and track
                     # and from RSS and api responses.
 
-                    if (collectionName != album_name):
-                        logging.debug('Album name inconsistency: {}, {}'.format(collectionName, album_name))
-                    else:
-                        logging.debug('Album Names are the same as Collection Names')
+                    # if (collectionName != album_name):
+                    #     logging.debug('Album name inconsistency: {}, {}'.format(collectionName, album_name))
+                    # else:
+                    #     logging.debug('Album Names are the same as Collection Names')
 
                     if (track_release_date != album_release_date):
                         logging.debug('Release date inconsistency: {}, {}'.format(track_release_date, album_release_date))
