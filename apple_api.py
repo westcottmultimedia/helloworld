@@ -38,7 +38,7 @@ logger.setLevel(logging.WARNING)
 # cache http requests?
 CACHE_ENABLED = False
 
-DATABASE_NAME = 'v5.1.backup3_with_apple.db'
+DATABASE_NAME = 'v6.db'
 
 # sqlite database filename/path
 DATABASE_FILE = '../{}'.format(DATABASE_NAME)
@@ -53,7 +53,7 @@ API_url = 'https://api.music.apple.com/v1/catalog/{region}/{media}'
 RSS_url = 'https://rss.itunes.apple.com/api/v1/{region}/{media}/{chart}/{genre}/{limit}/explicit.json'
 
 # the regions to download
-ALL_REGIONS = ["us", "gb", "vn", "mn", "za", "mz", "mr", "tw", "fm", "sg", "gw", "cn", "kg", "jp", "fj",
+REGIONS = ["us", "gb", "vn", "mn", "za", "mz", "mr", "tw", "fm", "sg", "gw", "cn", "kg", "jp", "fj",
     "hk", "gm", "mx", "co", "mw", "ru", "ve", "kr", "la", "in", "lr", "ar", "sv", "br",
     "gt", "ec", "pe", "do", "hu", "cl", "tr", "ae", "th", "id", "pg", "my", "na", "ph",
     "pw", "sa", "ni", "py", "pk", "hn", "st", "pl", "jm", "sc", "eg", "kz", "uy", "mo",
@@ -65,14 +65,19 @@ ALL_REGIONS = ["us", "gb", "vn", "mn", "za", "mz", "mr", "tw", "fm", "sg", "gw",
     "gr", "sz", "ie", "tj", "au", "td", "nz", "cg", "cv", "pt", "es", "al", "lu", "tz", "nl",
     "gh", "no", "bf", "dk", "kh", "ca", "bj", "se", "bt", "ch"]
 
-REGIONS_WITHOUT_APPLE_MUSIC_TOP_SONGS = ['mz', 'mr', 'mz', 'mr', 'mw', 'lr', 'na', 'pw', 'pk', 'st',
+# Regions that do not have apple music top songs, top albums charts or music videos.
+REGIONS_WITHOUT_APPLE_MUSIC = ['mz', 'mr', 'mw', 'lr', 'na', 'pw', 'pk', 'st',
 'jm', 'sc', 'uy', 'kw', 'hr', 'mk', 'qa', 'mg', 'sn', 'ml', 'bs', 'tn', 'lc', 'ms', 'bn', 'tc', 'gy',
 'vc', 'sr', 'is', 'ye', 'dz', 'ao', 'sl', 'sb', 'td', 'cg', 'al', 'tz', 'bf', 'bj', 'bt']
+REGIONS_WITHOUT_ITUNES_MUSIC = ['mr','cn','mw','kr','lr','pw','pk','st','jm','sc','uy','kw','hr','mk','mg',
+'sn','ml','tn','lc','ms','tc','gy','vc','sr', 'is','ye','dz','ao','sl','sb','td','cg','al','tz','bj','bt']
+REGIONS_WITHOUT_MUSIC_VIDEOS = ['mr','gw','cn','mw','kr','lr','pw','pk','st','jm','sc','uy','kw',
+'hr','np','lb','mk','qa','mg','sn','ml','tn','lc','ms','tc','gy','vc','sr','is','ye','dz','ao','om',
+'sl','sb','td','cg','al','tz','bj','bt']
 
-REGIONS_WITH_AM_TS = list(set(REGIONS).difference(REGIONS_WITHOUT_APPLE_MUSIC_TOP_SONGS))
-
-# global only to test
-# REGIONS = ['kr']
+REGIONS_WITH_APPLE_MUSIC = list(set(REGIONS).difference(REGIONS_WITHOUT_APPLE_MUSIC))
+REGIONS_WITH_ITUNES_MUSIC_ALBUMS = list(set(REGIONS).difference(REGIONS_WITHOUT_ITUNES_MUSIC))
+REGIONS_WITH_MUSIC_VIDEOS = list(set(REGIONS).difference(REGIONS_WITHOUT_MUSIC_VIDEOS))
 
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
@@ -672,7 +677,7 @@ def process(mode):
         'limit': 200,
     }
 
-    for region in REGIONS_WITH_AM_TS:
+    for region in REGIONS_WITH_APPLE_MUSIC:
         starttime = datetime.now() # timestamp
         print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y')) # timestamp
 

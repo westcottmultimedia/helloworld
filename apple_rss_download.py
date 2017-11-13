@@ -31,6 +31,20 @@ REGIONS = ["us", "gb", "vn", "mn", "za", "mz", "mr", "tw", "fm", "sg", "gw", "cn
     "gr", "sz", "ie", "tj", "au", "td", "nz", "cg", "cv", "pt", "es", "al", "lu", "tz", "nl",
     "gh", "no", "bf", "dk", "kh", "ca", "bj", "se", "bt", "ch"]
 
+# Regions that do not have apple music top songs, top albums charts or music videos.
+REGIONS_WITHOUT_APPLE_MUSIC = ['mz', 'mr', 'mw', 'lr', 'na', 'pw', 'pk', 'st',
+'jm', 'sc', 'uy', 'kw', 'hr', 'mk', 'qa', 'mg', 'sn', 'ml', 'bs', 'tn', 'lc', 'ms', 'bn', 'tc', 'gy',
+'vc', 'sr', 'is', 'ye', 'dz', 'ao', 'sl', 'sb', 'td', 'cg', 'al', 'tz', 'bf', 'bj', 'bt']
+REGIONS_WITHOUT_ITUNES_MUSIC = ['mr','cn','mw','kr','lr','pw','pk','st','jm','sc','uy','kw','hr','mk','mg',
+'sn','ml','tn','lc','ms','tc','gy','vc','sr', 'is','ye','dz','ao','sl','sb','td','cg','al','tz','bj','bt']
+REGIONS_WITHOUT_MUSIC_VIDEOS = ['mr','gw','cn','mw','kr','lr','pw','pk','st','jm','sc','uy','kw',
+'hr','np','lb','mk','qa','mg','sn','ml','tn','lc','ms','tc','gy','vc','sr','is','ye','dz','ao','om',
+'sl','sb','td','cg','al','tz','bj','bt']
+
+REGIONS_WITH_APPLE_MUSIC = list(set(REGIONS).difference(REGIONS_WITHOUT_APPLE_MUSIC))
+REGIONS_WITH_ITUNES_MUSIC_ALBUMS = list(set(REGIONS).difference(REGIONS_WITHOUT_ITUNES_MUSIC))
+REGIONS_WITH_MUSIC_VIDEOS = list(set(REGIONS).difference(REGIONS_WITHOUT_MUSIC_VIDEOS))
+
 MEDIA_CHARTS = [
     ('apple-music', 'top-songs'),
     ('apple-music', 'top-albums'),
@@ -39,11 +53,24 @@ MEDIA_CHARTS = [
     ('music-videos', 'top-music-videos')
 ]
 
+# Can associate charts with Regions. Change the for loops to acccomodate
+# MEDIA_CHARTS_REGIONS = [
+#     ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC),
+#     ('apple-music', 'top-albums', REGIONS_WITH_APPLE_MUSIC),
+#     ('itunes-music', 'top-albums', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
+#     ('itunes-music', 'top-songs', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
+#     ('music-videos', 'top-music-videos', REGIONS_WITH_MUSIC_VIDEOS)
+# ]
+
 retry_paths = [] # TODO: retry these paths. Recursively?
 
-for region in REGIONS:
-    for media_chart in MEDIA_CHARTS:
+# NOTE: This doesn't work
+# for media_chart_region in MEDIA_CHARTS_REGIONS:
+    # for media_chart in media_chart_region:
+    #     for region in media_chart[2]:
 
+for media_chart in MEDIA_CHARTS:
+    for region in REGIONS:
         # Generate the file path
         folder_path = media_chart[0] + '-' + media_chart[1]
         file_path = media_chart[0] + '_' + media_chart[1] + '_' + region + '_' + TODAY

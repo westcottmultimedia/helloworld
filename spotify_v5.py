@@ -1,7 +1,9 @@
 import sqlite3, csv, codecs, re, json, os, base64, time, hashlib, ssl, datetime
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
+from socket import error as SocketError
+import errno
 from lxml import html
 import logging
 
@@ -11,8 +13,12 @@ import logging
 # logger.warning('This is a warning message.')
 # logger.info('This is an informative message.')
 # logger.debug('This is a low-level debug message.')
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-logging.debug('Logging initiated.')
+logger = logging.getLogger('spotify_api')
+hdlr = logging.FileHandler('./spotify/spotify_api.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+logger.setLevel(logging.WARNING)
 
 # cache http requests?
 CACHE_ENABLED = False
@@ -23,23 +29,33 @@ CLIENT_ID = 'e021413b59f5430d9b1b0b46f67c9dec'
 # spotify app client secret
 CLIENT_SECRET = '1c155d57d1514944972ea4a6b7ed7554'
 
+DATABASE_NAME = 'v5.1.db'
+
 # sqlite database filename/path
-DATABASE_FILE = '../test-v5.db'
+DATABASE_FILE = '../{}'.format(DATABASE_NAME)
 
 # the daily regional CSV download link
 CSV_url = 'https://spotifycharts.com/regional/{}/daily/{}/download'
 
 # the regions to download
+# All REGIONS
 # REGIONS = [
-#     'global','gb','ad','ar','at','au','be','bg','bo','br',
-#     'ca','ch','cl','co','cr','cy','cz','de','dk','do','ec',
+#     'global', 'us', 'gb','ad','ar','at','au','be','bo','br',
+#     'ca','ch','cl','co','cr','cz','de','dk','do','ec',
 #     'ee','es','fi','fr','gr','gt','hk','hn','hu','id','ie',
 #     'is','it','jp','lt','lu','lv','mc','mt','mx','my','ni',
 #     'nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
 #     'sk','sv','th','tr','tw','uy'
 # ]
+
+REGIONS = ['nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
+'sk','sv','th','tr','tw','uy']
+
+REGIONS_WITHOUT_DAILY = ['bg', 'cy', 'ni']
+
 # global only to test
-REGIONS = ['global']
+# REGIONS = ['global', 'us', 'gb', 'au', 'br', 'hk', 'jp', 'ar', 'de', 'ca', 'tw', 'dk', 'ie', 'ph', 'se',  'es', 'fr', 'gr', 'it']
+# REGIONS = ['br', 'hk', 'jp', 'ar', 'de', 'ca', 'tw', 'dk', 'ie', 'ph', 'es', 'fr', 'gr', 'it', 'sv', 'se'  ]
 
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
@@ -56,6 +72,7 @@ def get_page(url, count=0, last_request=0, return_full=False):
     """
     if count > MAX_url_RETRIES:
         print('Failed getting page "%s", retried %i times' % (url, count))
+        logger.warning('Failed getting page {}, retried {} times'.format(url, count))
         return False
     if last_request > time.time()-1:
         time.sleep(SECONDS_BETWEEN_RETRIES)
@@ -125,10 +142,13 @@ def load_spotify_csv_data(region, date='latest'):
         track = dict(zip(fields, row))
         if len(track) == len(fields):
             track['region'] = region
-            track['trackId'] = get_track_id_from_url(track['URL'])
+            if track['URL']: # once in awhile the feed URL is empty, check to make sure, don't process if it is
+                track['trackId'] = get_track_id_from_url(track['URL'])
 
-            # set key value of dictionary to be spotify track id
-            data[track['trackId']] = track
+                # set key value of dictionary to be spotify track id
+                data[track['trackId']] = track
+            else:
+                continue
     return data
 
 # SPOTIFY CLASS START
@@ -202,15 +222,25 @@ class Spotify(object):
                 with open(cache_file, 'w', encoding='utf-8') as f:
                     f.write(data)
             return json.loads(data)
+
+        except URLError as e:
+            print('URLError = ' + str(e.reason))
+            return get_page(url, cache, count, time.time())
+        except ConnectionResetError as e:
+            print('Error 54: Connection reset error. ', str(e))
+            return get_page(url, cache, count, time.time())
         except HTTPError as err:
             if err.code == 400:
                 print('HTTP 400, said:')
                 # print(data)
             raise
+        except SocketError as e:
+            if e.errno != errno.ECONNRESET:
+                raise # Not error we are looking for
+            pass # Handle error here.
         except Exception as e:
             count += 1
             return get_page(url, cache, count, time.time())
-#
 #
 # SPOTIFY CLASS END
 
@@ -223,7 +253,8 @@ def get_isrc_by_id(tracks, track_id):
             if 'external_ids' in track and 'isrc' in track['external_ids']:
                 return track['external_ids']['isrc']
             else:
-                print('isrc data not available for track ID %s' % track_id)
+                print('ISRC data not available for track ID %s' % track_id)
+                logger.warning('ISRC data not available for track ID {}'.format(track_id))
     return False
 
 def get_album_by_id(tracks, track_id):
@@ -236,6 +267,7 @@ def get_album_by_id(tracks, track_id):
                 return track['album']['id']
             else:
                 print('Album ID not available for track ID %s' % track_id)
+                logger.warning('Album ID not available for track ID {}'.format(track_id))
     return False
 
 def get_artist_by_id(tracks, track_id):
@@ -248,6 +280,7 @@ def get_artist_by_id(tracks, track_id):
                 return track['artists'][0]['id']
             else:
                 print('artist ID not available for track ID %s' % track_id)
+                logger.warning('artist ID not available for track ID {}'.format(track_id))
     return False
 
 def append_track_id_from_db(tracks):
@@ -284,7 +317,7 @@ def append_track_data(tracks, batch_size=50):
         tracks: dict
     Output:
         tracks: dict +
-            { 'isrc': xx, 'artistId': xx, 'albumId': xx} for any track without a track.id
+            { 'isrc': xx, 'artistId': xx, 'albumId': xx} for any track without a db id
     Append the isrc, artist ID, and album ID to tracks_list using the Spotify tracks API
     See: https://developer.spotify.com/web-api/console/get-several-tracks/
     Returns track_list with "isrc", "artistID" and "albumId" appended
@@ -387,7 +420,7 @@ def get_track_id_from_url(url):
 #
 class TrackDatabase(object):
     """ SQLite Database Manager """
-    def __init__(self, db_file='test-v5.db'):
+    def __init__(self, db_file=DATABASE_NAME):
         super(TrackDatabase, self).__init__()
         self.db_file = db_file
         self.init_database()
@@ -475,6 +508,7 @@ class TrackDatabase(object):
             CREATE UNIQUE INDEX IF NOT EXISTS service_name_u ON service (service_name)
         ''')
         # stats table
+        # NOTE: may want to add isrc field as well for better query
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS peak_track_position (
                 id integer PRIMARY KEY,
@@ -660,10 +694,13 @@ class TrackDatabase(object):
             # track is ranked higher (has a lower numbered position) when current position is less than old now
             peak_rank = position
             peak_date = date_str
+        # peak rank is the same, get the earliest peak date
+        elif stats and position == peak_rank:
+            peak_date = self.order_dates(peak_date, date_str)[0]
+        # position is ranked lower or track doesn't have existing stats
         else:
-            # track was higher then, or doesn't have stats
             peak_rank = peak_rank if stats else position
-            peak_date = self.order_dates(peak_date, date_str)[0] if stats else date_str # use the earliest peak date for the peak rank
+            peak_date = peak_date if stats else date_str # use the earliest peak date for the peak rank
 
         # -- Try to update any existing row
         self.c.execute(
@@ -793,8 +830,8 @@ class TrackDatabase(object):
         query = self.c.execute('''
             SELECT id FROM territory WHERE code = ?
         ''', [code.lower()])
-        row = query.fetchone()
 
+        row = query.fetchone()
         return row[0] if row else False
 
     def get_service_id(self, service_name):
@@ -835,6 +872,7 @@ class TrackDatabase(object):
         )
         row = query.fetchone()
         return row[0] if row else False
+
 def process(mode):
     """
     Process each region for "date" mode
