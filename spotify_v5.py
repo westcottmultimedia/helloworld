@@ -39,20 +39,18 @@ CSV_url = 'https://spotifycharts.com/regional/{}/daily/{}/download'
 
 # the regions to download
 # All REGIONS
-# REGIONS = [
-#     'global', 'us', 'gb','ad','ar','at','au','be','bo','br',
-#     'ca','ch','cl','co','cr','cz','de','dk','do','ec',
-#     'ee','es','fi','fr','gr','gt','hk','hn','hu','id','ie',
-#     'is','it','jp','lt','lu','lv','mc','mt','mx','my','ni',
-#     'nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
-#     'sk','sv','th','tr','tw','uy'
-# ]
-
-REGIONS = ['nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
-'sk','sv','th','tr','tw','uy']
+REGIONS_TOTAL = [
+    'global', 'us', 'gb','ad','ar','at','au','be','bo','br',
+    'ca','ch','cl','co','cr','cz','de','dk','do','ec',
+    'ee','es','fi','fr','gr','gt','hk','hn','hu','id','ie',
+    'is','it','jp','lt','lu','lv','mc','mt','mx','my','ni',
+    'nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
+    'sk','sv','th','tr','tw','uy'
+]
 
 REGIONS_WITHOUT_DAILY = ['bg', 'cy', 'ni']
 
+REGIONS = list(set(REGIONS_TOTAL).difference(REGIONS_WITHOUT_DAILY))
 # global only to test
 # REGIONS = ['global', 'us', 'gb', 'au', 'br', 'hk', 'jp', 'ar', 'de', 'ca', 'tw', 'dk', 'ie', 'ph', 'se',  'es', 'fr', 'gr', 'it']
 # REGIONS = ['br', 'hk', 'jp', 'ar', 'de', 'ca', 'tw', 'dk', 'ie', 'ph', 'es', 'fr', 'gr', 'it', 'sv', 'se'  ]

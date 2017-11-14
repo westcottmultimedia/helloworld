@@ -46,8 +46,8 @@ REGIONS_WITH_ITUNES_MUSIC_ALBUMS = list(set(REGIONS).difference(REGIONS_WITHOUT_
 REGIONS_WITH_MUSIC_VIDEOS = list(set(REGIONS).difference(REGIONS_WITHOUT_MUSIC_VIDEOS))
 
 MEDIA_CHARTS = [
-    ('apple-music', 'top-songs'),
-    ('apple-music', 'top-albums'),
+    # ('apple-music', 'top-songs'),
+    # ('apple-music', 'top-albums'),
     ('itunes-music', 'top-albums'),
     ('itunes-music', 'top-songs'),
     ('music-videos', 'top-music-videos')
@@ -70,7 +70,17 @@ retry_paths = [] # TODO: retry these paths. Recursively?
     #     for region in media_chart[2]:
 
 for media_chart in MEDIA_CHARTS:
-    for region in REGIONS:
+    if media_chart[0] == 'apple-music':
+        regions = REGIONS_WITH_APPLE_MUSIC
+    elif media_chart[0] == 'itunes-music':
+        regions = REGIONS_WITH_ITUNES_MUSIC_ALBUMS
+    elif media_chart[0] == 'music-videos':
+        regions = REGIONS_WITH_MUSIC_VIDEOS
+    else:
+        print('Media chart and corresponding regions do not exist. Skipping...')
+        continue
+
+    for region in regions:
         # Generate the file path
         folder_path = media_chart[0] + '-' + media_chart[1]
         file_path = media_chart[0] + '_' + media_chart[1] + '_' + region + '_' + TODAY
