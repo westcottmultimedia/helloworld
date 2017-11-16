@@ -3,29 +3,31 @@ DATABASE_NAME = 'v8.db'
 
 # sqlite database filename/path
 DATABASE_FILE = '../{}'.format(DATABASE_NAME)
-OUTPUT_FILE = './deliverables/{}_{}.csv'
+OUTPUT_FILE = './deliverables/{}_{}_{}.csv'
 CLIENT_NAME = 'border_city'
 
-db = sqlite3.connect(DATABASE_FILE)
-c = db.cursor()
 
-def getReportDate():
-    row = c.execute('''
+def getReportDate(service_id):
+    query = '''
         SELECT max(date_str)
         FROM client_border_city_latest_table
+        WHERE service_id = ?
         LIMIT 1
-    ''').fetchone()
+    '''
+    row = c.execute(query, [service_id]).fetchone()
     return row[0] if row else datetime.date.today().isoformat()
 
 
-def writeToFile():
-    report_date = getReportDate()
-    output = OUTPUT_FILE.format(CLIENT_NAME, report_date)
+def writeToFile(service_id):
+    report_date = getReportDate(service_id)
+    output = OUTPUT_FILE.format(CLIENT_NAME, report_date, service_id)
 
-    c.execute('''
+    query = '''
         SELECT *
         FROM client_border_city_latest_table
-    ''')
+        WHERE service_id = ?
+    '''
+    c.execute(query, [service_id])
 
     rows = c.fetchall()
 
@@ -41,7 +43,7 @@ def writeToFile():
         for row in rows:
             writer.writerow(row)
 
-def generateReporting():
+def generateReporting(service_id, date_to_process):
 
     # NOTE: Don't need to drop and recreate all these views.
     #
@@ -168,12 +170,12 @@ def generateReporting():
         CASE when T2.position is NULL then "add" else NULL END add_drop
         FROM track_position T1
         LEFT JOIN track_position T2
-        ON T1.isrc = T2.isrc AND T1.territory_id = T2.territory_id
-        AND T1.service_id = T2.service_id
-        AND julianday(T1.date_str) - julianday(T2.date_str) = 1
-        where T1.date_str in (SELECT max(date_str) from track_position)
+            ON T1.isrc = T2.isrc AND T1.territory_id = T2.territory_id
+            AND T1.service_id = T2.service_id
+            AND julianday(T1.date_str) - julianday(T2.date_str) = 1
+        where T1.date_str in (SELECT '{}' from track_position)
         and add_drop = "add"
-    ''')
+    '''.format(date_to_process))
 
     c.execute('''
         INSERT INTO tp_add_only_table SELECT * FROM tp_add_only
@@ -191,8 +193,8 @@ def generateReporting():
         from track_position T1
         LEFT JOIN track_position T2 ON T1.isrc = T2.isrc AND T1.territory_id = T2.territory_id
         AND T1.service_id = T2.service_id AND julianday(T1.date_str) - julianday(T2.date_str) = -1
-        where T1.date_str in (SELECT date(max(date_str), '-1 day') from track_position) AND add_drop = 'drop'
-    ''')
+        where T1.date_str in (SELECT date('{}', '-1 day') from track_position) AND add_drop = 'drop'
+    '''.format(date_to_process))
 
     c.execute('''
         INSERT INTO tp_drop_only_table SELECT * FROM tp_drop_only
@@ -211,12 +213,12 @@ def generateReporting():
                 AND T1.territory_id = T2.territory_id
                 AND T1.service_id = T2.service_id
                 AND julianday(T1.date_str) - julianday(T2.date_str) = 1
-            WHERE T1.date_str in (SELECT max(date_str) from track_position)
+            WHERE T1.date_str in (SELECT '{}' from track_position)
 
             UNION
 
             select *,
-            (select date(max(date_str), '-1 day') from track_position) as previous_date,
+            (select date('{}', '-1 day') from track_position) as previous_date,
             -1 as previous_track_position,
             200 - T1.position as movement,
             'add' as add_drop from
@@ -232,15 +234,15 @@ def generateReporting():
             T1.isrc,
             -1 as position,
             -1 as stream_count,
-            (select max(date_str) from track_position) as date_str,
-            date((select max(date_str) from track_position) , '-1 day') as previous_date,
+            (select '{}' from track_position) as date_str,
+            date((select '{}' from track_position) , '-1 day') as previous_date,
             T1.position as previous_track_position, T1.position - 201 as movement,
             'drop' as add_drop
             from track_position T1
 
             where id in (select track_position_id from tp_drop_only)
             order by date_str desc, territory_id asc, position asc
-    ''')
+    '''.format(date_to_process, date_to_process, date_to_process, date_to_process))
 
     c.execute('''
         CREATE TABLE IF NOT EXISTS track_position_movement_today_all_table (
@@ -272,7 +274,14 @@ def generateReporting():
     ''')
 
     c.execute('''
-        CREATE VIEW tracks_with_multiple_labels as select album.service_id as service_id, track.isrc, track.track, count(*) from track inner join album ON album.id = track.album_id group by track.isrc having count(*) > 1
+        CREATE VIEW tracks_with_multiple_labels as
+        select
+        album.service_id as service_id,
+        track.isrc, track.track,
+        count(*) from track
+        inner join album ON album.id = track.album_id
+        group by track.isrc
+        having count(*) > 1
     ''')
 
     c.execute('''
@@ -280,7 +289,9 @@ def generateReporting():
     ''')
 
     c.execute('''
-        CREATE VIEW tracks_with_multiple_labels_merged as select *, min(release_date) as earliest_release_date from tracks_with_multiple_labels_all_data where label not like '%digital%' group by isrc
+        CREATE VIEW tracks_with_multiple_labels_merged as select *,
+        min(release_date) as earliest_release_date from tracks_with_multiple_labels_all_data
+        where label not like '%digital%' group by isrc
     ''')
     c.execute('''
         CREATE VIEW client_border_city_daily as
@@ -298,7 +309,12 @@ def generateReporting():
         ptd.peak_rank as peak_ranking,
         ptd.peak_date as peak_ranking_date,
         ('https://open.spotify.com/track/' || track.service_track_id) as url,
-        case when tp.isrc in (select isrc from tracks_with_multiple_labels_merged) then (select label from tracks_with_multiple_labels_merged where isrc = tp.isrc) else album.label end label FROM track_position_movement_today_all_table tp
+        case
+            when tp.isrc in (select isrc from tracks_with_multiple_labels_merged)
+            then (select label from tracks_with_multiple_labels_merged where isrc = tp.isrc)
+            else album.label
+        end label
+        FROM track_position_movement_today_all_table tp
         INNER JOIN peak_track_position_date_table ptd
             ON ptd.isrc = tp.isrc
             AND ptd.territory_id = tp.territory_id
@@ -308,7 +324,6 @@ def generateReporting():
         INNER JOIN track on track.id = tp.track_id
         INNER JOIN artist on track.artist_id = artist.id
         INNER JOIN album on track.album_id = album.id
-        --GROUP by tp.isrc, tp.territory_id
         ORDER BY service_id ASC, territory_id ASC, chart_position ASC
     ''')
 
@@ -337,11 +352,42 @@ def generateReporting():
     ''')
 
     db.commit()
-    writeToFile()
+    writeToFile(service_id)
+
+# Returns a dict with key of service_id and the latest date for that service_id that's available
+# ex. latest_dates = {1: '2017-11-14', 2: '2017-11-15'}
+#
+def getAndPrintStats():
+    c.execute('''
+        SELECT service_id, date_str, count(date_str)
+        FROM track_position
+        GROUP BY service_id, date_str
+        ORDER BY date_str desc
+		LIMIT 2
+    ''')
+
+    latest_dates = {}
+
+    rows = c.fetchmany(2)
+    for row in rows:
+        print('Latest date for service_id {} is {} with {} records.'.format(row[0], row[1], row[2]))
+        latest_dates[row[0]] = (row[1])
+
+    return latest_dates
 
 if __name__ == '__main__':
-    # stats
+    db = sqlite3.connect(DATABASE_FILE)
+    c = db.cursor()
 
+    # stats
+    latest_dates = getAndPrintStats()
+
+    service_id = input('\nSelect latest report for service_id: 1 for Spotify, 2 for Apple: ')
+    print('Generating report for service_id {}'.format(service_id))
+
+    latest_date_for_service = latest_dates[int(service_id)] # based on index
+
+    print(service_id, latest_date_for_service)
     # timestamping
     starttime_total = datetime.datetime.now()
     print('Starting processing at', starttime_total.strftime('%H:%M:%S %m-%d-%y'))
@@ -349,7 +395,7 @@ if __name__ == '__main__':
     # ask user for spotify or apple? or date reporting
     # or music/music video/album
     # START PROCESSING
-    generateReporting()
+    generateReporting(service_id, latest_date_for_service)
 
     # timestamping
     endtime_total = datetime.datetime.now()

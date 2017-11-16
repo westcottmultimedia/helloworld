@@ -46,8 +46,8 @@ REGIONS_WITH_ITUNES_MUSIC_ALBUMS = list(set(REGIONS).difference(REGIONS_WITHOUT_
 REGIONS_WITH_MUSIC_VIDEOS = list(set(REGIONS).difference(REGIONS_WITHOUT_MUSIC_VIDEOS))
 
 MEDIA_CHARTS = [
-    # ('apple-music', 'top-songs'),
-    # ('apple-music', 'top-albums'),
+    ('apple-music', 'top-songs'),
+    ('apple-music', 'top-albums'),
     ('itunes-music', 'top-albums'),
     ('itunes-music', 'top-songs'),
     ('music-videos', 'top-music-videos')

@@ -38,7 +38,7 @@ logger.setLevel(logging.WARNING)
 # cache http requests?
 CACHE_ENABLED = False
 
-DATABASE_NAME = 'v6.db'
+DATABASE_NAME = 'v8.db'
 
 # sqlite database filename/path
 DATABASE_FILE = '../{}'.format(DATABASE_NAME)
@@ -242,7 +242,7 @@ def append_track_data(items, region):
         r_dict = {item['id']: item for item in data} # construct dictionary with id as key
 
         for apple_id in r_dict:
-            items[apple_id]['isrc'] = r_dict[apple_id]['attributes']['isrc']
+            items[apple_id]['isrc'] = (r_dict[apple_id]['attributes']['isrc']).upper()
             items[apple_id]['album_id'] = r_dict[apple_id]['relationships']['albums']['data'][0]['id']
             items[apple_id]['track_genres'] = r_dict[apple_id]['attributes']['genreNames']
 
@@ -708,7 +708,7 @@ def process(mode):
 
         # Process the data
 
-        print('Loading charts for region "%s" "...' % (region))
+        print('Loading charts for region {}...'.format(region))
 
         try:
             raw_data = json.loads(r)
