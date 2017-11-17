@@ -29,7 +29,7 @@ CLIENT_ID = 'e021413b59f5430d9b1b0b46f67c9dec'
 # spotify app client secret
 CLIENT_SECRET = '1c155d57d1514944972ea4a6b7ed7554'
 
-DATABASE_NAME = 'v5.1.db'
+DATABASE_NAME = 'v8.db'
 
 # sqlite database filename/path
 DATABASE_FILE = '../{}'.format(DATABASE_NAME)
@@ -48,12 +48,10 @@ REGIONS_TOTAL = [
     'sk','sv','th','tr','tw','uy'
 ]
 
+# NOTE: add to this list as more regions are discovered without daily downloads
 REGIONS_WITHOUT_DAILY = ['bg', 'cy', 'ni']
 
 REGIONS = list(set(REGIONS_TOTAL).difference(REGIONS_WITHOUT_DAILY))
-# global only to test
-# REGIONS = ['global', 'us', 'gb', 'au', 'br', 'hk', 'jp', 'ar', 'de', 'ca', 'tw', 'dk', 'ie', 'ph', 'se',  'es', 'fr', 'gr', 'it']
-# REGIONS = ['br', 'hk', 'jp', 'ar', 'de', 'ca', 'tw', 'dk', 'ie', 'ph', 'es', 'fr', 'gr', 'it', 'sv', 'se'  ]
 
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
@@ -921,7 +919,7 @@ def process(mode):
                 print('No download available, skipping...')
                 print('-' * 40)
                 continue
-            print('Found %i tracks.' % len(region_data))
+            print('Found %i tracks in the list.' % len(region_data))
             print('Looking up tracks in database...')
 
             # append data to Spotify API response
@@ -959,12 +957,14 @@ if __name__ == '__main__':
     #CACHE_ENABLED = True
     cache_msg = '\033[92m enabled' if CACHE_ENABLED else '\033[91m disabled'
     print('HTTP cache is%s\033[0m' % cache_msg)
+    print('Database file is {}'.format(DATABASE_FILE))
 
     # setup db
     db = TrackDatabase(DATABASE_FILE)
 
     # prompt for date/mode
     while True:
+
         mode = input('\nEnter a date (YYYY-MM-DD) or use "all|watch|latest": ')
         mode = mode.lower()
         if re.match(r'\d{4}-\d{2}-\d{2}|all|watch|latest', mode):

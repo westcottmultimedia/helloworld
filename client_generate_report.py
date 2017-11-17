@@ -3,9 +3,10 @@ DATABASE_NAME = 'v8.db'
 
 # sqlite database filename/path
 DATABASE_FILE = '../{}'.format(DATABASE_NAME)
-OUTPUT_FILE = './deliverables/{}_{}_{}.csv'
+OUTPUT_FILE_TEMPLATE = './deliverables/{}_{}_{}.csv'
 CLIENT_NAME = 'border_city'
 
+SERVICE_MAP = {1: 'spotify', 2: 'apple_music'}
 
 def getReportDate(service_id):
     query = '''
@@ -20,7 +21,7 @@ def getReportDate(service_id):
 
 def writeToFile(service_id):
     report_date = getReportDate(service_id)
-    output = OUTPUT_FILE.format(CLIENT_NAME, report_date, service_id)
+    output_file = OUTPUT_FILE_TEMPLATE.format(CLIENT_NAME, report_date, SERVICE_MAP[int(service_id)])
 
     query = '''
         SELECT *
@@ -31,7 +32,7 @@ def writeToFile(service_id):
 
     rows = c.fetchall()
 
-    with open(output, 'w') as f:
+    with open(output_file, 'w') as f:
         writer = csv.writer(f)
         writer.writerow([
             'date_str', 'service_id', 'territory_id', 'add_drop',
@@ -42,6 +43,8 @@ def writeToFile(service_id):
 
         for row in rows:
             writer.writerow(row)
+
+    print('Finished writing file {}'.format(output_file))
 
 def generateReporting(service_id, date_to_process):
 
@@ -86,7 +89,7 @@ def generateReporting(service_id, date_to_process):
     ''')
 
     c.execute('''
-        DELETE FROM client_border_city_latest_table
+        DROP TABLE client_border_city_latest_table
     ''')
 
     c.execute('''
@@ -343,7 +346,8 @@ def generateReporting(service_id, date_to_process):
             peak_ranking integer DEFAULT -1,
             peak_ranking_date text DEFAULT '',
             url text DEFAULT '',
-            label text DEFAULT ''
+            label text DEFAULT '',
+            UNIQUE(date_str, service_id, territory_id, track_isrc, track_name, url) ON CONFLICT IGNORE
         )
     ''')
 
@@ -383,11 +387,10 @@ if __name__ == '__main__':
     latest_dates = getAndPrintStats()
 
     service_id = input('\nSelect latest report for service_id: 1 for Spotify, 2 for Apple: ')
-    print('Generating report for service_id {}'.format(service_id))
 
     latest_date_for_service = latest_dates[int(service_id)] # based on index
+    print('Generating report for {} on {}'.format(SERVICE_MAP[int(service_id)], latest_date_for_service))
 
-    print(service_id, latest_date_for_service)
     # timestamping
     starttime_total = datetime.datetime.now()
     print('Starting processing at', starttime_total.strftime('%H:%M:%S %m-%d-%y'))

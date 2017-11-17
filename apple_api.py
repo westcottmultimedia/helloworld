@@ -569,14 +569,17 @@ class TrackDatabase(object):
                         # get it from the RSS feed response
                         genres = [g['name'] for g in track['genres']]
 
+
+                    earliest_release_date = track_release_date
                     if 'album_release_date' in track:
                         album_release_date = track['album_release_date']
-                        earliest_release_date = self.order_dates(album_release_date, track_release_date)
+                        ordered_dates = self.order_dates(album_release_date, track_release_date)
 
-                        if earliest_release_date:
-                            earliest_release_date = earliest_release_date[0]
-                        else:
-                            earliest_release_date = track_release_date
+                        if ordered_dates:
+                            earliest_release_date = ordered_dates[0]
+
+                        if (track_release_date != album_release_date):
+                            logging.debug('Release date inconsistency: {}, {}'.format(track_release_date, album_release_date))
 
                     # TODO: test if genres are consistent among artist, album and track
                     # and from RSS and api responses.
@@ -584,8 +587,6 @@ class TrackDatabase(object):
                     # if (collectionName != album_name):
                     #     logging.debug('Album name inconsistency: {}, {}'.format(collectionName, album_name))
 
-                    if (track_release_date != album_release_date):
-                        logging.debug('Release date inconsistency: {}, {}'.format(track_release_date, album_release_date))
 
 
                     # add artist if not in the db
