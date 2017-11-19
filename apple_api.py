@@ -686,12 +686,7 @@ def process(mode):
         rss_params['region'] = region
         url = RSS_url.format(**rss_params)
 
-        # check if region has been processed
-        today = date.today().isoformat()
-        if db.is_processed(url + '_' + today):
-            print('Already processed, skipping...')
-            print('-' * 40)
-            continue
+
 
         try:
             req = Request(url)
@@ -721,18 +716,23 @@ def process(mode):
             print('-' * 40)
             continue
 
+        # parse date from RSS feed's last updated timestamp, make that the date for chart
+        date_str = parser.parse(raw_data['feed']['updated']).strftime('%Y-%m-%d')
 
-        items = {}
+        # check if region has been processed, if so, move to the next region in the loop
+        if db.is_processed(url + '_' + date_str):
+            print('Already processed, skipping...')
+            print('-' * 40)
+            continue
+        
         # append position based on list index
         # convert list to dictionary for easier lookup, key is apple id
+        items = {}
         for i, result in enumerate(results):
             result['position'] = i + 1
             items[result['id']] = result
 
         print('Found {} tracks.'.format(len(results)))
-
-        # parse date from RSS feed's last updated timestamp, make that the date for chart
-        date_str = parser.parse(raw_data['feed']['updated']).strftime('%Y-%m-%d')
 
         # append data to Apple data
         print('Looking up existing id in db')
