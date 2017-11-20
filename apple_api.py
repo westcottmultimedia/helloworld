@@ -171,6 +171,14 @@ class Apple(object):
 # Data processing and adding to data thru calling API
 #
 #
+def map_kind_to_db_table_name(kind):
+    if kind == 'song':
+        return 'track'
+    elif kind == 'album':
+        return 'album'
+    elif kind == 'musicVideo':
+        return 'music_video'
+
 def get_isrc_by_id(tracks, track_id):
     """
     Return the isrc data for the track matching track_id
@@ -207,27 +215,27 @@ def get_artist_by_id(tracks, track_id):
                 print('artist ID not available for track ID %s' % track_id)
     return False
 
-def append_track_id_from_db(items):
+def append_apple_id_from_db(items, db_table_name):
     """
     Input:
         tracks: dict
     Output:
         tracks: dict
-    Appends key 'track_id_db' key with db lookup value.
+    Appends key 'apple_id_db' key with db lookup value.
     This removes redundancy from apple API calls to retrieve info already in the DB.
     """
     # NOTE: hardcoded in service_id = 2 for Apple, may want to change to lookup from service table on join
     # service_id = self.get_service_id(service_name)
-    for apple_track_id in items:
+    for apple_id in items:
         query = """
             SELECT id
-            FROM track
+            FROM {}
             WHERE service_id = 2
-            AND service_track_id = (?)
-        """
-        row = db.c.execute(query, [apple_track_id]).fetchone()
+            AND service_{}_id = (?)
+        """.format(db_table_name, db_table_name)
+        row = db.c.execute(query, [apple_id]).fetchone()
         if row:
-            items[apple_track_id]['track_id_db'] = row[0]
+            items[apple_id]['apple_id_db'] = row[0]
     return items
 
 def append_track_data(items, region):
@@ -236,12 +244,12 @@ def append_track_data(items, region):
         tracks: dict
     Output:
         tracks: dict +
-            { 'isrc': xx, 'album_id': xx, 'artist_id': xx} for any track without a 'track_id_db'
+            { 'isrc': xx, 'album_id': xx, 'artist_id': xx} for any track without a 'apple_id_db'
     """
     # apple = Apple()
     endpoint = API_url.format(region=region, media ='songs') + '?ids={}'
 
-    tracks_to_lookup = [apple_id for apple_id, item in items.items() if 'track_id_db' not in item]
+    tracks_to_lookup = [apple_id for apple_id, item in items.items() if 'apple_id_db' not in item]
 
     if len(tracks_to_lookup) != 0:
         id_str = ','.join(map(str, tracks_to_lookup))
@@ -264,19 +272,23 @@ def append_track_data(items, region):
 
     return items
 
-def append_track_album_data(tracks, region):
+def append_music_video_data(items, regions):
+    logger.debug('inside append_music_video_data()')
+    return
+
+def append_album_data(items, region):
     """
     Input:
-        tracks: dict (with 'album_id' key, which refers to apple albumId)
+        items: dict (with 'album_id' key, which refers to apple albumId)
     Output:
-        tracks: dict +
+        items: dict +
             {'label': xx} for any track with 'albumId' key
-    Append the label to tracks using the Apple albums API
+    Append the label to items using the Apple albums API
     """
     # apple = Apple()
     endpoint = API_url.format(region=region, media ='albums') + '?ids={}'
 
-    albums_to_lookup = [track['album_id'] for k,track in tracks.items() if 'album_id' in track]
+    albums_to_lookup = [item['album_id'] for k,item in items.items() if 'album_id' in item]
 
     if len(albums_to_lookup) != 0:
         id_str = ','.join(map(str, albums_to_lookup))
@@ -287,13 +299,13 @@ def append_track_album_data(tracks, region):
         r_dict = {album['id']: album for album in data} # construct dictionary with id as key
 
         for apple_album_id in r_dict:
-            for apple_track_id, track in tracks.items():
+            for apple_track_id, track in items.items():
                 if 'album_id' in track and track['album_id'] == apple_album_id:
-                    tracks[apple_track_id]['label'] = r_dict[apple_album_id]['attributes']['recordLabel']
-                    tracks[apple_track_id]['album_release_date'] = r_dict[apple_album_id]['attributes']['releaseDate']
-                    tracks[apple_track_id]['album_genres'] = r_dict[apple_album_id]['attributes']['genreNames']
-                    tracks[apple_track_id]['album_name'] = r_dict[apple_album_id]['attributes']['name']
-    return tracks
+                    items[apple_track_id]['label'] = r_dict[apple_album_id]['attributes']['recordLabel']
+                    items[apple_track_id]['album_release_date'] = r_dict[apple_album_id]['attributes']['releaseDate']
+                    items[apple_track_id]['album_genres'] = r_dict[apple_album_id]['attributes']['genreNames']
+                    items[apple_track_id]['album_name'] = r_dict[apple_album_id]['attributes']['name']
+    return items
 
 def append_artist_data(tracks, region):
     """
@@ -531,9 +543,9 @@ class TrackDatabase(object):
             position = track['position']
 
             # if db id is populated, the track is already in the DB
-            if 'track_id_db' in track:
-                track_id_db = track['track_id_db']
-                isrc = self.get_isrc_from_db(track_id_db)
+            if 'apple_id_db' in track:
+                apple_id_db = track['apple_id_db']
+                isrc = self.get_isrc_from_db(apple_id_db)
 
             # track doesn't have track.id and the data for the track and album were retrieved from Apple API
             else:
@@ -641,14 +653,14 @@ class TrackDatabase(object):
                     )
                     print('Track added: {} by {}'.format(track_name, artist_name))
 
-                    track_id_db = self.c.lastrowid
+                    apple_id_db = self.c.lastrowid
 
                 except Exception as e:
                     print(e)
                     raise
 
             # update peak_track_position table
-            self.update_track_stats(service_id, territory_id, track_id_db, position, date_str)
+            self.update_track_stats(service_id, territory_id, apple_id_db, position, date_str)
 
             # update track_position table
             self.c.execute('''
@@ -656,7 +668,7 @@ class TrackDatabase(object):
                 (service_id, territory_id, track_id, isrc, position, date_str)
                 VALUES
                 (?, ?, ?, ?, ?, ?)
-            ''', (service_id, territory_id, track_id_db, isrc, position, date_str)
+            ''', (service_id, territory_id, apple_id_db, isrc, position, date_str)
             )
 
             self.db.commit()
@@ -723,6 +735,7 @@ def process(mode):
                 raw_data = json.loads(r)
                 results = raw_data['feed']['results']
                 date_str = parser.parse(raw_data['feed']['updated']).strftime('%Y-%m-%d')
+
             except ValueError:
                 no_apple_data.append(region)
                 print('Decoding JSON failed')
@@ -736,22 +749,44 @@ def process(mode):
                 print('-' * 40)
                 continue
 
+            # setup the data structure
+            items = {}
+
+            # the kind of resource from Apple RSS feed
+            # kind is 'song', 'album', 'musicVideo' - labels from Apple's feed
+            kind = results[0]['kind']
+            db_table_name = map_kind_to_db_table_name(kind)
+            items['kind'] = kind
+            items['db_table_name'] = db_table_name
+
             # append position based on list index
             # convert list to dictionary for easier lookup, key is apple id
-            items = {}
             for i, result in enumerate(results):
                 result['position'] = i + 1
-                items[result['id']] = result
+                apple_id = result['id']
+                items[apple_id] = result
+
+                # add album_id key for consistency with appending it in the track items dict
+                if kind = 'album':
+                    items[apple_id]['album_id'] = result['id']
 
             print('Found {} tracks.'.format(len(results)))
 
             # append data to Apple data
             print('Looking up existing id in db')
-            items = append_track_id_from_db(items)
-            print('Getting track data from Apple "Tracks" API...')
-            items = append_track_data(items, region)
+            items = append_apple_id_from_db(items, db_table_name)
+
+            if kind == 'track':
+                print('Getting track data from Apple "Tracks" API...')
+                items = append_track_data(items, region)
+
+            if kind == 'musicVideo':
+                # TODO: append_music_video_data(items, region)
+
+            if kind == 'track' or kind == 'album'
+
             print('Getting label and release date from Apple "Albums" API...')
-            items = append_track_album_data(items, region)
+            items = append_album_data(items, region)
             # NOTE: no need to append genres here. They exist in RSS feed response
             # print('Getting genre tags from Apple "Artists" API...')
             # items = append_artist_data(items, region)
