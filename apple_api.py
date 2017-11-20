@@ -33,7 +33,7 @@ hdlr = logging.FileHandler('./apple/apple_api.log')
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.DEBUG)
 
 # cache http requests?
 CACHE_ENABLED = False
@@ -78,6 +78,8 @@ REGIONS_WITHOUT_MUSIC_VIDEOS = ['mr','gw','cn','mw','kr','lr','pw','pk','st','jm
 REGIONS_WITH_APPLE_MUSIC = list(set(REGIONS).difference(REGIONS_WITHOUT_APPLE_MUSIC))
 REGIONS_WITH_ITUNES_MUSIC_ALBUMS = list(set(REGIONS).difference(REGIONS_WITHOUT_ITUNES_MUSIC))
 REGIONS_WITH_MUSIC_VIDEOS = list(set(REGIONS).difference(REGIONS_WITHOUT_MUSIC_VIDEOS))
+
+REGIONS_ONE_OFF = ['sg', 'id']
 
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
@@ -277,8 +279,6 @@ def append_track_album_data(tracks, region):
         data = r['data']
         r_dict = {album['id']: album for album in data} # construct dictionary with id as key
 
-        logging.debug('Looking up {} albums from Apple Music API: '.format(len(albums_to_lookup)))
-
         for apple_album_id in r_dict:
             for apple_track_id, track in tracks.items():
                 if 'album_id' in track and track['album_id'] == apple_album_id:
@@ -348,6 +348,7 @@ class TrackDatabase(object):
             SELECT * FROM processed WHERE url = ?
         '''
         for row in self.c.execute(query, [url]):
+            print(row)
             return True
         return False
     def set_processed(self, url):
@@ -668,6 +669,7 @@ def process(mode):
 
     # DEBUG: which countries have no apple data
     no_apple_data = []
+
     starttime_total = datetime.now() # timestamp
 
     rss_params = {
@@ -679,6 +681,7 @@ def process(mode):
     }
 
     for region in REGIONS_WITH_APPLE_MUSIC:
+    # for region in REGIONS_ONE_OFF: # use when need be to check only a few regions
         starttime = datetime.now() # timestamp
         print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y')) # timestamp
 
@@ -691,6 +694,7 @@ def process(mode):
         try:
             req = Request(url)
             r = urlopen(req).read().decode('UTF-8')
+
 
         except HTTPError as err:
             if err.code == 400:
@@ -709,6 +713,7 @@ def process(mode):
         try:
             raw_data = json.loads(r)
             results = raw_data['feed']['results']
+            date_str = parser.parse(raw_data['feed']['updated']).strftime('%Y-%m-%d')
         except ValueError:
             no_apple_data.append(region)
             print('Decoding JSON failed')
@@ -716,15 +721,12 @@ def process(mode):
             print('-' * 40)
             continue
 
-        # parse date from RSS feed's last updated timestamp, make that the date for chart
-        date_str = parser.parse(raw_data['feed']['updated']).strftime('%Y-%m-%d')
-
         # check if region has been processed, if so, move to the next region in the loop
         if db.is_processed(url + '_' + date_str):
             print('Already processed, skipping...')
             print('-' * 40)
             continue
-        
+
         # append position based on list index
         # convert list to dictionary for easier lookup, key is apple id
         items = {}
@@ -757,6 +759,7 @@ def process(mode):
         print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%y'))
         print('Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
         print('Running processing time: %i minutes, %i seconds' % divmod(processtime_running_total.days *86400 + processtime_running_total.seconds, 60))
+        print('Finished Apple API for {}'.format(region))
         print('-' * 40)
 
     # timestamp
@@ -769,13 +772,31 @@ def process(mode):
     # no data
     print('no data for {} countries: {}'.format(len(no_apple_data), no_apple_data))
 
+def kickoff_process():
+    print('started')
+    apple = Apple()
+    db = TrackDatabase(DATABASE_FILE)
+    mode = 'test'
+    print('db is here', db)
+    while True:
+        process(mode, db)
+        if mode == 'watch':
+            print()
+            print('=' * 40)
+            # print('\033[95mWatch cycle complete for all regions, starting over...\033[0m')
+            print('=' * 40)
+            print()
+        else:
+            break
+    print('Finished')
+
 if __name__ == '__main__':
     # setup Apple api
     apple = Apple()
 
     #CACHE_ENABLED = True
-    cache_msg = '\033[92m enabled' if CACHE_ENABLED else '\033[91m disabled'
-    print('HTTP cache is%s\033[0m' % cache_msg)
+    # cache_msg = '\033[92m enabled' if CACHE_ENABLED else '\033[91m disabled'
+    # print('HTTP cache is%s\033[0m' % cache_msg)
 
     # setup db
     db = TrackDatabase(DATABASE_FILE)

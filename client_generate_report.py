@@ -3,10 +3,12 @@ DATABASE_NAME = 'v8.db'
 
 # sqlite database filename/path
 DATABASE_FILE = '../{}'.format(DATABASE_NAME)
-OUTPUT_FILE_TEMPLATE = './deliverables/{}_{}_{}.csv'
+OUTPUT_FILE_TEMPLATE = './deliverables/client/{}_{}_{}_{}.csv'
 CLIENT_NAME = 'border_city'
 
+#
 SERVICE_MAP = {1: 'spotify', 2: 'apple_music'}
+service_chart_id = 1 # 1 is a placeholder for Songs/Tracks Top 200 chart
 
 def getReportDate(service_id):
     query = '''
@@ -21,21 +23,42 @@ def getReportDate(service_id):
 
 def writeToFile(service_id):
     report_date = getReportDate(service_id)
-    output_file = OUTPUT_FILE_TEMPLATE.format(CLIENT_NAME, report_date, SERVICE_MAP[int(service_id)])
+    output_file = OUTPUT_FILE_TEMPLATE.format(CLIENT_NAME, report_date, "{0:0=3d}".format(int(service_chart_id)), "{0:0=3d}".format(int(service_id)) )
+
+    # set stream_count to NULL if Apple charts for client (in DB, these values are INTs)
+    #
+    query_stream_count = ''
+    if int(service_id) == 2:
+        query_stream_count = 'NULL as '
 
     query = '''
-        SELECT *
+        SELECT
+            date_str,
+            territory_id,
+            add_drop,
+            previous_track_position,
+            chart_position,
+            track_isrc,
+            track_name,
+            artist_name,
+            {}stream_count,
+            peak_ranking,
+            peak_ranking_date,
+            url,
+            label
         FROM client_border_city_latest_table
         WHERE service_id = ?
-    '''
-    c.execute(query, [service_id])
+    '''.format(query_stream_count)
 
+    print(query)
+
+    c.execute(query, [service_id])
     rows = c.fetchall()
 
     with open(output_file, 'w') as f:
         writer = csv.writer(f)
         writer.writerow([
-            'date_str', 'service_id', 'territory_id', 'add_drop',
+            'date_str', 'territory_id', 'add_drop',
             'previous_track_position','chart_position', 'track_isrc', 'track_name',
             'artist_name', 'stream_count', 'peak_ranking',
             'peak_ranking_date', 'url', 'label'
@@ -92,13 +115,7 @@ def generateReporting(service_id, date_to_process):
         DROP TABLE client_border_city_latest_table
     ''')
 
-    c.execute('''
-        DELETE FROM tp_add_only_table
-    ''')
-    #
-    c.execute('''
-        DELETE FROM tp_drop_only_table
-    ''')
+
 
     #
     c.execute('''
@@ -116,27 +133,41 @@ def generateReporting(service_id, date_to_process):
             FOREIGN KEY (track_id) REFERENCES track(id)
         )
     ''')
+
+    # Track Position Only ones that have been ADDED
     c.execute('''
         CREATE TABLE IF NOT EXISTS tp_add_only_table (
             date_str text,
             track_position_id integer,
-            track_id integer,
+            service_id integer,
             territory_id integer,
+            track_id integer,
             isrc text,
             today_position integer,
             add_drop text
         )
     ''')
+
+    # Track Position Only ones that have been REMOVED or DROPPED from tables
     c.execute('''
         CREATE TABLE IF NOT EXISTS tp_drop_only_table (
             previous_date text,
             track_position_id integer,
-            track_id integer,
+            service_id integer,
             territory_id integer,
+            track_id integer,
             isrc text,
             today_position integer,
             add_drop text
         )
+    ''')
+
+    c.execute('''
+        DELETE FROM tp_add_only_table
+    ''')
+
+    c.execute('''
+        DELETE FROM tp_drop_only_table
     ''')
 
     c.execute('''
@@ -164,20 +195,22 @@ def generateReporting(service_id, date_to_process):
     c.execute('''
         CREATE VIEW tp_add_only as
         select
-        T1.date_str as date_str,
-        T1.id as track_position_id,
-        T1.track_id as track_id,
-        T1.territory_id as territory_id,
-        T1.isrc,
-        T1.position as today_position,
-        CASE when T2.position is NULL then "add" else NULL END add_drop
+            T1.date_str as date_str,
+            T1.id as track_position_id,
+            T1.service_id as service_id,
+            T1.territory_id as territory_id,
+            T1.track_id as track_id,
+            T1.isrc,
+            T1.position as today_position,
+            CASE when T2.position is NULL then "add" else NULL END add_drop
         FROM track_position T1
         LEFT JOIN track_position T2
             ON T1.isrc = T2.isrc AND T1.territory_id = T2.territory_id
             AND T1.service_id = T2.service_id
             AND julianday(T1.date_str) - julianday(T2.date_str) = 1
-        where T1.date_str in (SELECT '{}' from track_position)
-        and add_drop = "add"
+        WHERE
+            T1.date_str in (SELECT '{}' from track_position)
+            AND add_drop = "add"
     '''.format(date_to_process))
 
     c.execute('''
@@ -188,17 +221,25 @@ def generateReporting(service_id, date_to_process):
         CREATE VIEW tp_drop_only as
         select T1.date_str as previous_date,
         T1.id as track_position_id,
-        T1.track_id as track_id,
+        T1.service_id as service_id,
         T1.territory_id as territory_id,
+        T1.track_id as track_id,
         T1.isrc,
         T1.position as today_position,
-        CASE when T2.position is NULL then 'drop' else NULL END add_drop
-        from track_position T1
-        LEFT JOIN track_position T2 ON T1.isrc = T2.isrc AND T1.territory_id = T2.territory_id
-        AND T1.service_id = T2.service_id AND julianday(T1.date_str) - julianday(T2.date_str) = -1
-        where T1.date_str in (SELECT date('{}', '-1 day') from track_position) AND add_drop = 'drop'
+        CASE
+            when T2.position is NULL then 'drop' else NULL
+        END add_drop
+        FROM track_position T1
+        LEFT JOIN track_position T2
+            ON T1.isrc = T2.isrc
+            AND T1.territory_id = T2.territory_id
+            AND T1.service_id = T2.service_id
+            AND julianday(T1.date_str) - julianday(T2.date_str) = -1
+        where T1.date_str in (SELECT date('{}', '-1 day') from track_position)
+        AND add_drop = 'drop'
     '''.format(date_to_process))
 
+    # Write to table to speed up
     c.execute('''
         INSERT INTO tp_drop_only_table SELECT * FROM tp_drop_only
     ''')
@@ -209,7 +250,10 @@ def generateReporting(service_id, date_to_process):
             T2.date_str as previous_date,
             T2.position as previous_track_position,
             T2.position - T1.position as movement,
-            CASE when T2.position is NULL then 'add' else NULL end add_drop
+            CASE
+                when T2.position is NULL
+                then 'add' else NULL
+            end add_drop
             from track_position T1
             INNER JOIN track_position T2
                 ON T1.isrc = T2.isrc
@@ -224,8 +268,9 @@ def generateReporting(service_id, date_to_process):
             (select date('{}', '-1 day') from track_position) as previous_date,
             -1 as previous_track_position,
             200 - T1.position as movement,
-            'add' as add_drop from
-            track_position T1 where id in (select track_position_id from tp_add_only)
+            'add' as add_drop
+            FROM track_position T1
+            WHERE id in (select track_position_id from tp_add_only_table)
 
             UNION
 
@@ -243,7 +288,7 @@ def generateReporting(service_id, date_to_process):
             'drop' as add_drop
             from track_position T1
 
-            where id in (select track_position_id from tp_drop_only)
+            where id in (select track_position_id from tp_drop_only_table)
             order by date_str desc, territory_id asc, position asc
     '''.format(date_to_process, date_to_process, date_to_process, date_to_process))
 
@@ -255,7 +300,7 @@ def generateReporting(service_id, date_to_process):
             track_id text NOT NULL,
             isrc text NOT NULL,
             position integer NOT NULL,
-            stream_count integer NOT NULL DEFAULT -1,
+            stream_count integer DEFAULT -1,
             date_str text NOT NULL,
             previous_date text NOT NULL,
             previous_track_position integer NOT NULL,
@@ -288,14 +333,18 @@ def generateReporting(service_id, date_to_process):
     ''')
 
     c.execute('''
-        CREATE VIEW tracks_with_multiple_labels_all_data as select * from track_album where isrc in ( select isrc from tracks_with_multiple_labels )
+        CREATE VIEW tracks_with_multiple_labels_all_data as
+        select * from track_album
+        where isrc in ( select isrc from tracks_with_multiple_labels )
     ''')
 
     c.execute('''
-        CREATE VIEW tracks_with_multiple_labels_merged as select *,
-        min(release_date) as earliest_release_date from tracks_with_multiple_labels_all_data
+        CREATE VIEW tracks_with_multiple_labels_merged as
+        select *, min(release_date) as earliest_release_date from tracks_with_multiple_labels_all_data
         where label not like '%digital%' group by isrc
     ''')
+
+
     c.execute('''
         CREATE VIEW client_border_city_daily as
         SELECT
@@ -330,6 +379,7 @@ def generateReporting(service_id, date_to_process):
         ORDER BY service_id ASC, territory_id ASC, chart_position ASC
     ''')
 
+
     # NOTE: What are sensible defaults for NULL/NOT NULL, Default values?
     c.execute('''
         CREATE TABLE IF NOT EXISTS client_border_city_latest_table (
@@ -342,7 +392,7 @@ def generateReporting(service_id, date_to_process):
             track_isrc text DEFAULT '',
             track_name text DEFAULT '',
             artist_name text DEFAULT '',
-            stream_count integer NOT NULL DEFAULT -1,
+            stream_count integer,
             peak_ranking integer DEFAULT -1,
             peak_ranking_date text DEFAULT '',
             url text DEFAULT '',
