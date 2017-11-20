@@ -293,18 +293,18 @@ def append_album_data(items, region):
     if len(albums_to_lookup) != 0:
         id_str = ','.join(map(str, albums_to_lookup))
 
-        # retrieve API data and convert to easy lookup format
+        # retrieve API data and convert to easy dict lookup format
         r = apple.request(endpoint.format(id_str))
         data = r['data']
         r_dict = {album['id']: album for album in data} # construct dictionary with id as key
 
         for apple_album_id in r_dict:
-            for apple_track_id, track in items.items():
-                if 'album_id' in track and track['album_id'] == apple_album_id:
-                    items[apple_track_id]['label'] = r_dict[apple_album_id]['attributes']['recordLabel']
-                    items[apple_track_id]['album_release_date'] = r_dict[apple_album_id]['attributes']['releaseDate']
-                    items[apple_track_id]['album_genres'] = r_dict[apple_album_id]['attributes']['genreNames']
-                    items[apple_track_id]['album_name'] = r_dict[apple_album_id]['attributes']['name']
+            for apple_id, item in items.items():
+                if 'album_id' in item and item['album_id'] == apple_album_id:
+                    items[apple_id]['label'] = r_dict[apple_album_id]['attributes']['recordLabel']
+                    items[apple_id]['album_release_date'] = r_dict[apple_album_id]['attributes']['releaseDate']
+                    items[apple_id]['album_genres'] = r_dict[apple_album_id]['attributes']['genreNames']
+                    items[apple_id]['album_name'] = r_dict[apple_album_id]['attributes']['name']
     return items
 
 def append_artist_data(tracks, region):
@@ -782,6 +782,7 @@ def process(mode):
 
             if kind == 'musicVideo':
                 # TODO: append_music_video_data(items, region)
+                # append genres... since this is normally done in 'append_album_data' and associated with an album now ONLY...
 
             if kind == 'track' or kind == 'album'
 
