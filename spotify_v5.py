@@ -45,11 +45,11 @@ REGIONS_TOTAL = [
     'ee','es','fi','fr','gr','gt','hk','hn','hu','id','ie',
     'is','it','jp','lt','lu','lv','mc','mt','mx','my','ni',
     'nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
-    'sk','sv','th','tr','tw','uy'
+    'sk','sv','th','tr','tw','uy', 'bg', 'cy', 'ni'
 ]
 
 # NOTE: add to this list as more regions are discovered without daily downloads
-REGIONS_WITHOUT_DAILY = ['bg', 'cy', 'ni']
+REGIONS_WITHOUT_DAILY = [] #['bg', 'cy', 'ni']
 
 REGIONS = list(set(REGIONS_TOTAL).difference(REGIONS_WITHOUT_DAILY))
 
@@ -877,6 +877,8 @@ def process(mode):
     starttime_total = datetime.datetime.now() # timestamping
 
     service_name = 'Spotify'
+    regions_not_processed = []
+
     for region in REGIONS:
         if mode == 'all':
             # gets all historical data for each region
@@ -916,6 +918,7 @@ def process(mode):
             region_data = load_spotify_csv_data(region, date_str)
 
             if not region_data:
+                regions_not_processed.append(region)
                 print('No download available, skipping...')
                 print('-' * 40)
                 continue
@@ -951,6 +954,9 @@ def process(mode):
     print('Finished processing all applicable dates at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
     print('Total processing time: %i minutes, %i seconds' % divmod(processtime_total.days *86400 + processtime_total.seconds, 60))
     print('-' * 40)
+
+    print('Regions not processed: {}'.format(regions_not_processed))
+
 if __name__ == '__main__':
 
     # are http requests being cached?

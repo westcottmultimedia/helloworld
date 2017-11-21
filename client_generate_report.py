@@ -34,7 +34,10 @@ def writeToFile(service_id):
     query = '''
         SELECT
             date_str,
-            territory_id,
+            CASE
+                WHEN territory_id = 'global' THEN 'zz'
+                ELSE territory_id
+            END territory_id,
             add_drop,
             previous_track_position,
             chart_position,
@@ -57,6 +60,8 @@ def writeToFile(service_id):
 
     with open(output_file, 'w') as f:
         writer = csv.writer(f)
+
+        # write the header row
         writer.writerow([
             'date_str', 'territory_id', 'add_drop',
             'previous_track_position','chart_position', 'track_isrc', 'track_name',
@@ -65,6 +70,7 @@ def writeToFile(service_id):
         ])
 
         for row in rows:
+            # write to file!
             writer.writerow(row)
 
     print('Finished writing file {}'.format(output_file))
