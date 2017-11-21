@@ -539,6 +539,12 @@ class TrackDatabase(object):
         service_id = self.get_service_id(service_name)
         territory_id = self.get_territory_id(region)
 
+        # TODO: make generalizable for both albums and kinds...
+        # also for itunes sales charts vs. apple-music/spotify streaming charts
+        # self.update_track_stats and updating track_position will need to be conditional
+        # also this .get_isrc_from_db() function call is only for tracks (kind == 'song')
+        # will need to setup another table (already in create_db.py file)
+        #
         for track_id, track in track_list.items():
             position = track['position']
 
@@ -658,6 +664,7 @@ class TrackDatabase(object):
                 except Exception as e:
                     print(e)
                     raise
+
 
             # update peak_track_position table
             self.update_track_stats(service_id, territory_id, apple_id_db, position, date_str)
@@ -784,10 +791,10 @@ def process(mode):
                 # TODO: append_music_video_data(items, region)
                 # append genres... since this is normally done in 'append_album_data' and associated with an album now ONLY...
 
-            if kind == 'track' or kind == 'album'
+            if kind == 'track' or kind == 'album':
+                print('Getting label and release date from Apple "Albums" API...')
+                items = append_album_data(items, region)
 
-            print('Getting label and release date from Apple "Albums" API...')
-            items = append_album_data(items, region)
             # NOTE: no need to append genres here. They exist in RSS feed response
             # print('Getting genre tags from Apple "Artists" API...')
             # items = append_artist_data(items, region)
