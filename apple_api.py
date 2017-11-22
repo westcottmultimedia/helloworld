@@ -570,6 +570,7 @@ class TrackDatabase(object):
                     if db_table == 'track':
                         track_name = str(item['name'])
                         album_name = str(item['collectionName'])
+                        service_track_id = str(item['id'])
                     elif db_table == 'album':
                         album_name = str(item['collectionName'])
                         # album_upc =
@@ -587,25 +588,31 @@ class TrackDatabase(object):
                     #
                     artist_id = self.get_artist_id(service_id, service_artist_id)
 
-                    if db_table == 'album' or db_table == 'track':
+                    if db_table == 'track':
                         album_id = self.get_album_id(service_id, service_album_id)
+
 
                     # Override album name if API name is different than the RSS feed
                     if ('album_name' in item) and (item['album_name'] != album_name):
                         album_name = item['album_name']
 
+                    # Assign metadata to variables if they exist
+                    #
+                    # albums don't have isrc
                     if 'isrc' in item:
                         isrc = str(item['isrc'])
-                        if db_table == 'song':
+
+                        if db_table != 'album':
                             isrc = ''
-                            logger.warn('No ISRC for apple track id {}'.format(item['id']) )
+                            logger.warn('No ISRC for apple {} id {}'.format(db_table, item['id']) )
 
                     # Note: Music videos don't have a label.
                     if 'label' in item:
                         label = str(item['label'])
-                    else:
-                        label = ''
-                        logging.warn('No label for apple track id {}'.format(item['id']) )
+
+                        if db_table != 'music_video':
+                            label = ''
+                            logging.warn('No label for apple {} id {}'.format(db_table, item['id']) )
 
                     if 'album_genres' in item:
                         genres = item['album_genres']
@@ -632,7 +639,8 @@ class TrackDatabase(object):
                     #     logging.debug('Album name inconsistency: {}, {}'.format(collectionName, album_name))
 
 
-
+                    # Update Database
+                    #
                     # add artist if not in the db
                     if not artist_id:
                         # add artist
@@ -645,7 +653,7 @@ class TrackDatabase(object):
                         artist_id = self.c.lastrowid
 
                     # add album if not in the db
-                    if not album_id:
+                    if not album_id and db_table != 'music_video':
                         self.c.execute('''
                             INSERT OR IGNORE INTO album
                             (service_id, artist_id, service_album_id, album, release_date, label)
@@ -655,6 +663,16 @@ class TrackDatabase(object):
                         )
                         album_id = self.c.lastrowid
                         print('Album added: {} for {}'.format(album_name, artist_name))
+
+                    if not music_video_id:
+                        self.c.execute('''
+                            INSERT OR IGNORE INTO album
+                            (service_id, service_music_video_id, artist_id, music_video, release_date, isrc)
+                            VALUES
+                            (?, ?, ?, ?, ?, ?)
+                        ''', (service_id, service_music_video_id, artist_id, music_video_name, earliest_release_date, isrc)
+                        )
+                        music_video_id = self.c.lastrowid
 
                     # add genres for artist
                     for genre in genres:
@@ -687,7 +705,7 @@ class TrackDatabase(object):
                             VALUES
                             (?, ?, ?, ?, ?, ?)
                         ''',
-                            (service_id, track_id, artist_id, album_id, track_name, isrc)
+                            (service_id, track_id, artist_id, album_id, music_video_name, isrc)
                         )
                         print('Track added: {} by {}'.format(track_name, artist_name))
 
