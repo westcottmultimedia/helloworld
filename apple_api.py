@@ -274,6 +274,8 @@ def append_track_data(items, region):
 
 def append_music_video_data(items, regions):
     logger.debug('inside append_music_video_data()')
+    endpoint = API_url.format(region=region, media ='music-videos') + '?ids={}'
+    videos_to_lookup = [apple_id for apple_id, item in items.items() if 'apple_id_db' not in item]
     return
 
 def append_album_data(items, region):
@@ -427,15 +429,14 @@ class TrackDatabase(object):
             return (a, b)
         return (b, a)
 
-    def get_isrc_from_db(self, track_id):
+    def get_isrc_from_db(self, db_id, db_table):
         # RETRIEVE ISRC
         query = """
             SELECT isrc
-            FROM track
+            FROM {}
             WHERE id = ?
-        """
-        # NOTE: there should be a one-to-one relationship between spotify trackId and db id
-        row = db.c.execute(query, [track_id]).fetchone()
+        """.format(db_table)
+        row = db.c.execute(query, [db_id]).fetchone()
         return row[0] if row else False
 
     def get_territory_id(self, code):
@@ -530,82 +531,99 @@ class TrackDatabase(object):
         )
 
     # main function to add data to database
-    def add_items(self, track_list, date_str, region, service_name):
+    def add_items(self, items, date_str, region, service_name):
         """
         input:
-            track_list: dict of all songs to add
+            items: dict of all songs to add
         Add tracks to the database
         """
         service_id = self.get_service_id(service_name)
         territory_id = self.get_territory_id(region)
+        db_table = items['db_table_name']
+        media = items['media']
 
         # TODO: make generalizable for both albums and kinds...
         # also for itunes sales charts vs. apple-music/spotify streaming charts
         # self.update_track_stats and updating track_position will need to be conditional
         # also this .get_isrc_from_db() function call is only for tracks (kind == 'song')
         # will need to setup another table (already in create_db.py file)
-        #
-        for track_id, track in track_list.items():
-            position = track['position']
+        # change items name to item_list
 
-            # if db id is populated, the track is already in the DB
-            if 'apple_id_db' in track:
-                apple_id_db = track['apple_id_db']
-                isrc = self.get_isrc_from_db(apple_id_db)
+        for track_id, item in items.items():
+            position = item['position']
 
-            # track doesn't have track.id and the data for the track and album were retrieved from Apple API
+            if 'apple_id_db' in item:
+                apple_id_db = item['apple_id_db']
+
+                if db_table == 'track' or db_table == 'music_video':
+                    isrc = self.get_isrc_from_db(apple_id_db, db_table)
+
+            # item isn't in DB, other attributes must be added to db
             else:
                 try:
-                    # mapping from API response keys to values to input to db
-                    artist_name = str(track['artistName'])
-                    service_artist_id = str(track['artistId'])
-                    track_release_date = str(track['releaseDate'])
-                    album_name = str(track['collectionName'])
-                    track_name = str(track['name'])
+                    # Map from RSS/API response to variables
+                    #
+                    artist_name = str(item['artistName'])
+                    service_artist_id = str(item['artistId'])
+                    release_date = str(item['releaseDate'])
 
-                    if 'album_id' in track:
-                        service_album_id = str(track['album_id'])
-                    else:
-                        service_album_id = ''
-                        logging.warn('No apple album id for apple track id {}'.format(track['id']) )
+                    if db_table == 'track':
+                        track_name = str(item['name'])
+                        album_name = str(item['collectionName'])
+                    elif db_table == 'album':
+                        album_name = str(item['collectionName'])
+                        # album_upc =
+                    elif db_table == 'music_video':
+                        music_video_name = str(item['name'])
 
-                    # other mapping to variables
+                    if 'album_id' in item:
+                        service_album_id = str(item['album_id'])
+
+                        if db_table != 'music_video':
+                            service_album_id = ''
+                            logging.warn('No apple album id for apple track id {}'.format(item['id']) )
+
+                    # Lookup Artist, Album or Track db ids
+                    #
                     artist_id = self.get_artist_id(service_id, service_artist_id)
-                    album_id = self.get_album_id(service_id, service_album_id)
 
-                    # override album name if API different than the RSS feed
-                    if ('album_name' in track) and (track['album_name'] != album_name):
-                        album_name = track['album_name']
+                    if db_table == 'album' or db_table == 'track':
+                        album_id = self.get_album_id(service_id, service_album_id)
 
-                    if 'isrc' in track:
-                        isrc = str(track['isrc'])
-                    else:
-                        isrc = ''
-                        logger.warn('No ISRC for apple track id {}'.format(track['id']) )
+                    # Override album name if API name is different than the RSS feed
+                    if ('album_name' in item) and (item['album_name'] != album_name):
+                        album_name = item['album_name']
 
-                    if 'label' in track:
-                        label = str(track['label'])
+                    if 'isrc' in item:
+                        isrc = str(item['isrc'])
+                        if db_table == 'song':
+                            isrc = ''
+                            logger.warn('No ISRC for apple track id {}'.format(item['id']) )
+
+                    # Note: Music videos don't have a label.
+                    if 'label' in item:
+                        label = str(item['label'])
                     else:
                         label = ''
-                        logging.warn('No label for apple track id {}'.format(track['id']) )
+                        logging.warn('No label for apple track id {}'.format(item['id']) )
 
-                    if 'album_genres' in track:
-                        genres = track['album_genres']
+                    if 'album_genres' in item:
+                        genres = item['album_genres']
                     else:
                         # get it from the RSS feed response
-                        genres = [g['name'] for g in track['genres']]
+                        genres = [g['name'] for g in item['genres']]
 
 
-                    earliest_release_date = track_release_date
-                    if 'album_release_date' in track:
-                        album_release_date = track['album_release_date']
-                        ordered_dates = self.order_dates(album_release_date, track_release_date)
+                    earliest_release_date = release_date
+                    if 'album_release_date' in item:
+                        album_release_date = item['album_release_date']
+                        ordered_dates = self.order_dates(album_release_date, release_date)
 
                         if ordered_dates:
                             earliest_release_date = ordered_dates[0]
 
-                        if (track_release_date != album_release_date):
-                            logging.debug('Release date inconsistency: {}, {}'.format(track_release_date, album_release_date))
+                        if (release_date != album_release_date):
+                            logging.debug('Release date inconsistency: {}, {}'.format(release_date, album_release_date))
 
                     # TODO: test if genres are consistent among artist, album and track
                     # and from RSS and api responses.
@@ -649,34 +667,59 @@ class TrackDatabase(object):
 
                     # update track table
                     #
-                    self.c.execute('''
-                        INSERT OR IGNORE INTO track
-                        (service_id, service_track_id, artist_id, album_id, track, isrc)
-                        VALUES
-                        (?, ?, ?, ?, ?, ?)
-                    ''',
-                        (service_id, track_id, artist_id, album_id, track_name, isrc)
-                    )
-                    print('Track added: {} by {}'.format(track_name, artist_name))
+                    if db_table == 'track':
+                        self.c.execute('''
+                            INSERT OR IGNORE INTO track
+                            (service_id, service_track_id, artist_id, album_id, track, isrc)
+                            VALUES
+                            (?, ?, ?, ?, ?, ?)
+                        ''',
+                            (service_id, track_id, artist_id, album_id, track_name, isrc)
+                        )
+                        print('Track added: {} by {}'.format(track_name, artist_name))
 
-                    apple_id_db = self.c.lastrowid
+                        apple_id_db = self.c.lastrowid
+
+                    elif db_table == 'music_video':
+                        self.c.execute('''
+                            INSERT OR IGNORE INTO music_video
+                            (service_id, service_music_video_id, artist_id, music_video, isrc)
+                            VALUES
+                            (?, ?, ?, ?, ?, ?)
+                        ''',
+                            (service_id, track_id, artist_id, album_id, track_name, isrc)
+                        )
+                        print('Track added: {} by {}'.format(track_name, artist_name))
+
+                        apple_id_db = self.c.lastrowid
 
                 except Exception as e:
                     print(e)
                     raise
 
+            if db_table == 'track' and media = 'apple-music':
+                # update peak_track_position table
+                self.update_track_stats(service_id, territory_id, apple_id_db, position, date_str)
 
-            # update peak_track_position table
-            self.update_track_stats(service_id, territory_id, apple_id_db, position, date_str)
+                # update track_position table
+                self.c.execute('''
+                    INSERT OR IGNORE INTO track_position
+                    (service_id, territory_id, track_id, isrc, position, date_str)
+                    VALUES
+                    (?, ?, ?, ?, ?, ?)
+                ''', (service_id, territory_id, apple_id_db, isrc, position, date_str)
+                )
+            elif chart == 'itunes-music':
+                self.update_sales_stats(service_id, territory_id, apple_id_db, kind, position, date_str)
 
-            # update track_position table
-            self.c.execute('''
-                INSERT OR IGNORE INTO track_position
-                (service_id, territory_id, track_id, isrc, position, date_str)
-                VALUES
-                (?, ?, ?, ?, ?, ?)
-            ''', (service_id, territory_id, apple_id_db, isrc, position, date_str)
-            )
+                self.c.execute('''
+                    INSERT OR IGNORE INTO sales_position
+                    (service_id, territory_id, service_media_id, resource, position, date_str)
+                    VALUES
+                    (?, ?, ?, ?, ?, ?)
+                ''', (service_id, territory_id, apple_id_db, kind, position, date_str)
+                )
+
 
             self.db.commit()
 
@@ -765,6 +808,8 @@ def process(mode):
             db_table_name = map_kind_to_db_table_name(kind)
             items['kind'] = kind
             items['db_table_name'] = db_table_name
+            items['media']: chart[0]
+            items['chart']: chart[1]
 
             # append position based on list index
             # convert list to dictionary for easier lookup, key is apple id
@@ -788,6 +833,7 @@ def process(mode):
                 items = append_track_data(items, region)
 
             if kind == 'musicVideo':
+                items = append_music_video_data(items, region)
                 # TODO: append_music_video_data(items, region)
                 # append genres... since this is normally done in 'append_album_data' and associated with an album now ONLY...
 
