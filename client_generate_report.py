@@ -1,5 +1,5 @@
 import sqlite3, csv, datetime
-DATABASE_NAME = 'v8.db'
+DATABASE_NAME = 'v8.playground.db'
 
 # sqlite database filename/path
 DATABASE_FILE = '../{}'.format(DATABASE_NAME)
@@ -34,7 +34,10 @@ def writeToFile(service_id):
     query = '''
         SELECT
             date_str,
-            territory_id,
+            CASE
+                WHEN territory_id = 'global' THEN 'zz'
+                ELSE territory_id
+            END territory_id,
             add_drop,
             previous_track_position,
             chart_position,
@@ -57,6 +60,8 @@ def writeToFile(service_id):
 
     with open(output_file, 'w') as f:
         writer = csv.writer(f)
+
+        # write the header row
         writer.writerow([
             'date_str', 'territory_id', 'add_drop',
             'previous_track_position','chart_position', 'track_isrc', 'track_name',
@@ -115,8 +120,6 @@ def generateReporting(service_id, date_to_process):
         DROP TABLE client_border_city_latest_table
     ''')
 
-
-
     #
     c.execute('''
         CREATE TABLE IF NOT EXISTS peak_track_position_date_table (
@@ -157,6 +160,33 @@ def generateReporting(service_id, date_to_process):
             territory_id integer,
             track_id integer,
             isrc text,
+            previous_position integer,
+            add_drop text
+        )
+    ''')
+
+    # Sales position ADD and DROP only tables
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS sp_add_only_table (
+            date_str text,
+            sales_position_id integer,
+            service_id integer,
+            territory_id integer,
+            media_id integer,
+            media_type text,
+            today_position integer,
+            add_drop text
+        )
+    ''')
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS sp_drop_only_table (
+            previous_date text,
+            sales_position_id integer,
+            service_id integer,
+            territory_id integer,
+            media_id integer,
+            media_type text,
             today_position integer,
             add_drop text
         )
@@ -225,7 +255,7 @@ def generateReporting(service_id, date_to_process):
         T1.territory_id as territory_id,
         T1.track_id as track_id,
         T1.isrc,
-        T1.position as today_position,
+        T1.position as previous_position,
         CASE
             when T2.position is NULL then 'drop' else NULL
         END add_drop
@@ -320,6 +350,54 @@ def generateReporting(service_id, date_to_process):
             service_id, territory_id, track_id, isrc, position, stream_count, date_str, previous_date, previous_track_position, movement, add_drop
         FROM track_position_movement_today_all
     ''')
+
+    # Sales Position
+    #
+    c.execute('''
+        CREATE VIEW sp_add_only as
+        select
+            T1.date_str as date_str,
+            T1.id as sales_position_id,
+            T1.service_id as service_id,
+            T1.territory_id as territory_id,
+            T1.media_id as media_id,
+            T1.media_type as media_type,
+            T1.position as today_position,
+            CASE when T2.position is NULL then "add" else NULL END add_drop
+        FROM sales_position T1
+        LEFT JOIN sales_position T2
+            ON T1.media_id = T2.media_id
+            AND T1.territory_id = T2.territory_id
+            AND T1.service_id = T2.service_id
+            AND T1.media_type = T2.media_type
+            AND julianday(T1.date_str) - julianday(T2.date_str) = 1
+        WHERE
+            T1.date_str in (SELECT '{}' from track_position)
+            AND add_drop = "add"
+    '''.format(date_to_process))
+
+    c.execute('''
+        CREATE VIEW sp_drop_only as
+        select T1.date_str as previous_date,
+        T1.id as sales_position_id,
+        T1.service_id as service_id,
+        T1.territory_id as territory_id,
+        T1.media_id as media_id,
+        T1.media_type as media_type,
+        T1.position as previous_position,
+        CASE
+            when T2.position is NULL then 'drop' else NULL
+        END add_drop
+        FROM track_position T1
+        LEFT JOIN track_position T2
+            ON T1.media_id = T2.media_id
+            AND T1.media_type = T2.media_type
+            AND T1.territory_id = T2.territory_id
+            AND T1.service_id = T2.service_id
+            AND julianday(T1.date_str) - julianday(T2.date_str) = -1
+        where T1.date_str in (SELECT date('{}', '-1 day') from track_position)
+        AND add_drop = 'drop'
+    '''.format(date_to_process))
 
     c.execute('''
         CREATE VIEW tracks_with_multiple_labels as
