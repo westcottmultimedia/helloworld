@@ -81,12 +81,12 @@ REGIONS_WITH_MUSIC_VIDEOS = list(set(REGIONS).difference(REGIONS_WITHOUT_MUSIC_V
 
 REGIONS_ONE_OFF = ['us']
 
-# CHARTS = [
-#     ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC),
-#     ('itunes-music', 'top-songs', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
-#     ('itunes-music', 'top-albums', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
-#     ('music-videos', 'top-music-videos', REGIONS_WITH_MUSIC_VIDEOS)
-# ]
+CHARTS = [
+    ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC)
+    # ('itunes-music', 'top-songs', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
+    # ('itunes-music', 'top-albums', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
+    # ('music-videos', 'top-music-videos', REGIONS_WITH_MUSIC_VIDEOS)
+]
 
 # (media, chart, regions)
 CHARTS = [
@@ -902,7 +902,7 @@ class TrackDatabase(object):
 
                 if 'apple_id_db' in item:
                     music_video_id = item['apple_id_db']
-                    isrc = self.get_isrc_from_db(apple_id_db, db_table)
+                    isrc = self.get_isrc_from_db(music_video_id, db_table)
 
                 # item isn't in DB, other attributes must be added to db
                 else:
@@ -948,7 +948,7 @@ class TrackDatabase(object):
                         raise
 
                 if media == 'music-videos':
-                    self.update_sales_stats(service_id, territory_id, album_id, 'music_video', position, date_str)
+                    self.update_sales_stats(service_id, territory_id, music_video_id, 'music_video', position, date_str)
 
                     self.c.execute('''
                         INSERT OR IGNORE INTO sales_position
