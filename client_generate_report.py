@@ -165,33 +165,6 @@ def generateReporting(service_id, date_to_process):
         )
     ''')
 
-    # Sales position ADD and DROP only tables
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS sp_add_only_table (
-            date_str text,
-            sales_position_id integer,
-            service_id integer,
-            territory_id integer,
-            media_id integer,
-            media_type text,
-            today_position integer,
-            add_drop text
-        )
-    ''')
-
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS sp_drop_only_table (
-            previous_date text,
-            sales_position_id integer,
-            service_id integer,
-            territory_id integer,
-            media_id integer,
-            media_type text,
-            today_position integer,
-            add_drop text
-        )
-    ''')
-
     c.execute('''
         DELETE FROM tp_add_only_table
     ''')
@@ -239,7 +212,7 @@ def generateReporting(service_id, date_to_process):
             AND T1.service_id = T2.service_id
             AND julianday(T1.date_str) - julianday(T2.date_str) = 1
         WHERE
-            T1.date_str in (SELECT '{}' from track_position)
+            T1.date_str = '{}'
             AND add_drop = "add"
     '''.format(date_to_process))
 
@@ -265,7 +238,7 @@ def generateReporting(service_id, date_to_process):
             AND T1.territory_id = T2.territory_id
             AND T1.service_id = T2.service_id
             AND julianday(T1.date_str) - julianday(T2.date_str) = -1
-        where T1.date_str in (SELECT date('{}', '-1 day') from track_position)
+        where T1.date_str = date('{}', '-1 day')
         AND add_drop = 'drop'
     '''.format(date_to_process))
 
@@ -350,54 +323,6 @@ def generateReporting(service_id, date_to_process):
             service_id, territory_id, track_id, isrc, position, stream_count, date_str, previous_date, previous_track_position, movement, add_drop
         FROM track_position_movement_today_all
     ''')
-
-    # Sales Position
-    #
-    c.execute('''
-        CREATE VIEW sp_add_only as
-        select
-            T1.date_str as date_str,
-            T1.id as sales_position_id,
-            T1.service_id as service_id,
-            T1.territory_id as territory_id,
-            T1.media_id as media_id,
-            T1.media_type as media_type,
-            T1.position as today_position,
-            CASE when T2.position is NULL then "add" else NULL END add_drop
-        FROM sales_position T1
-        LEFT JOIN sales_position T2
-            ON T1.media_id = T2.media_id
-            AND T1.territory_id = T2.territory_id
-            AND T1.service_id = T2.service_id
-            AND T1.media_type = T2.media_type
-            AND julianday(T1.date_str) - julianday(T2.date_str) = 1
-        WHERE
-            T1.date_str in (SELECT '{}' from track_position)
-            AND add_drop = "add"
-    '''.format(date_to_process))
-
-    c.execute('''
-        CREATE VIEW sp_drop_only as
-        select T1.date_str as previous_date,
-        T1.id as sales_position_id,
-        T1.service_id as service_id,
-        T1.territory_id as territory_id,
-        T1.media_id as media_id,
-        T1.media_type as media_type,
-        T1.position as previous_position,
-        CASE
-            when T2.position is NULL then 'drop' else NULL
-        END add_drop
-        FROM track_position T1
-        LEFT JOIN track_position T2
-            ON T1.media_id = T2.media_id
-            AND T1.media_type = T2.media_type
-            AND T1.territory_id = T2.territory_id
-            AND T1.service_id = T2.service_id
-            AND julianday(T1.date_str) - julianday(T2.date_str) = -1
-        where T1.date_str in (SELECT date('{}', '-1 day') from track_position)
-        AND add_drop = 'drop'
-    '''.format(date_to_process))
 
     c.execute('''
         CREATE VIEW tracks_with_multiple_labels as
@@ -486,6 +411,165 @@ def generateReporting(service_id, date_to_process):
     db.commit()
     writeToFile(service_id)
 
+def generateiTunesSalesReporting(service_id, date_to_process):
+    print('Generating iTunes Sales reporting')
+    # Sales Position Views
+    #
+    c.execute('''
+        DROP VIEW IF EXISTS sp_add_only
+    ''')
+    c.execute('''
+        DROP VIEW IF EXISTS sp_drop_only
+    ''')
+
+    c.execute('''
+        DROP VIEW IF EXISTS sp_movement_today_all
+    ''')
+    c.execute('''
+        CREATE VIEW sp_add_only as
+        select
+            T1.date_str as date_str,
+            T1.id as sales_position_id,
+            T1.service_id as service_id,
+            T1.territory_id as territory_id,
+            T1.media_id as media_id,
+            T1.media_type as media_type,
+            T1.position as today_position,
+            CASE
+                when T2.position is NULL then "add" else NULL
+            END add_drop
+        FROM sales_position T1
+        LEFT JOIN sales_position T2
+            ON T1.media_id = T2.media_id
+            AND T1.media_type = T2.media_type
+            AND T1.territory_id = T2.territory_id
+            AND T1.service_id = T2.service_id
+            AND julianday(T1.date_str) - julianday(T2.date_str) = 1
+        WHERE
+            T1.date_str = '{}'
+            AND add_drop = "add"
+    '''.format(date_to_process))
+
+    c.execute('''
+        CREATE VIEW sp_drop_only as
+        select T1.date_str as previous_date,
+        T1.id as sales_position_id,
+        T1.service_id as service_id,
+        T1.territory_id as territory_id,
+        T1.media_id as media_id,
+        T1.media_type as media_type,
+        T1.position as previous_position,
+        CASE
+            when T2.position is NULL then 'drop' else NULL
+        END add_drop
+        FROM sales_position T1
+        LEFT JOIN sales_position T2
+            ON T1.media_id = T2.media_id
+            AND T1.media_type = T2.media_type
+            AND T1.territory_id = T2.territory_id
+            AND T1.service_id = T2.service_id
+            AND julianday(T1.date_str) - julianday(T2.date_str) = -1
+        where T1.date_str in (SELECT date('{}', '-1 day'))
+        AND add_drop = 'drop'
+    '''.format(date_to_process))
+
+    # Sales position ADD and DROP only tables
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS sp_add_only_table (
+            date_str text,
+            sales_position_id integer,
+            service_id integer,
+            territory_id integer,
+            media_id integer,
+            media_type text,
+            today_position integer,
+            add_drop text
+        )
+    ''')
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS sp_drop_only_table (
+            previous_date text,
+            sales_position_id integer,
+            service_id integer,
+            territory_id integer,
+            media_id integer,
+            media_type text,
+            today_position integer,
+            add_drop text
+        )
+    ''')
+
+    # Clear data before inserting
+    c.execute('''
+        DELETE FROM sp_add_only_table
+    ''')
+    #
+    c.execute('''
+        DELETE FROM sp_drop_only_table
+    ''')
+
+    # Copy into Tables for faster lookups
+    print('copying add only')
+    c.execute('''
+        INSERT INTO sp_add_only_table SELECT * FROM sp_add_only
+    ''')
+    print('finished copying add only')
+
+    c.execute('''
+        INSERT INTO sp_drop_only_table SELECT * FROM sp_drop_only
+    ''')
+
+    c.execute('''
+        CREATE VIEW sp_movement_today_all as
+            select T1.*,
+            T2.date_str as previous_date,
+            T2.position as previous_sales_position,
+            T2.position - T1.position as movement,
+            CASE
+                when T2.position is NULL
+                then 'add' else NULL
+            end add_drop
+            from sales_position T1
+            INNER JOIN sales_position T2
+                ON T1.media_id = T2.media_id
+                AND T1.media_type = T2.media_type
+                AND T1.territory_id = T2.territory_id
+                AND T1.service_id = T2.service_id
+                AND julianday(T1.date_str) - julianday(T2.date_str) = 1
+            WHERE T1.date_str in (SELECT '{}' from sales_position)
+
+            UNION
+
+            select *,
+            (select date('{}', '-1 day') from sales_position) as previous_date,
+            -1 as previous_sales_position,
+            200 - T1.position as movement,
+            'add' as add_drop
+            FROM sales_position T1
+            WHERE id in (select sales_position_id from sp_add_only)
+
+            UNION
+
+            select
+            T1.id,
+            T1.service_id,
+            T1.territory_id,
+            T1.media_id,
+            T1.media_type,
+            -1 as position,
+            -1 as stream_count,
+            (select '{}' from sales_position) as date_str,
+            date((select '{}' from sales_position) , '-1 day') as previous_date,
+            T1.position as previous_sales_position, T1.position - 201 as movement,
+            'drop' as add_drop
+            from sales_position T1
+
+            where id in (select sales_position_id from sp_drop_only)
+            order by date_str desc, territory_id asc, position asc
+    '''.format(date_to_process, date_to_process, date_to_process, date_to_process))
+
+    db.commit()
 # Returns a dict with key of service_id and the latest date for that service_id that's available
 # ex. latest_dates = {1: '2017-11-14', 2: '2017-11-15'}
 #
@@ -494,8 +578,26 @@ def getAndPrintStats():
         SELECT service_id, date_str, count(date_str)
         FROM track_position
         GROUP BY service_id, date_str
-        ORDER BY date_str desc
+        ORDER BY date_str DESC
 		LIMIT 2
+    ''')
+
+    latest_dates = {}
+
+    rows = c.fetchmany(2)
+    for row in rows:
+        print('Latest date for service_id {} is {} with {} records.'.format(row[0], row[1], row[2]))
+        latest_dates[row[0]] = (row[1])
+
+    return latest_dates
+
+def getAndPrintSalesStats():
+    c.execute('''
+        SELECT service_id, date_str, count(date_str)
+        FROM sales_position
+        GROUP BY service_id, date_str
+        ORDER BY date_str DESC
+		LIMIT 1
     ''')
 
     latest_dates = {}
@@ -512,12 +614,14 @@ if __name__ == '__main__':
     c = db.cursor()
 
     # stats
-    latest_dates = getAndPrintStats()
+    # latest_dates = getAndPrintStats()
+    latest_salesDates = getAndPrintSalesStats()
 
     service_id = input('\nSelect latest report for service_id: 1 for Spotify, 2 for Apple: ')
 
-    latest_date_for_service = latest_dates[int(service_id)] # based on index
-    print('Generating report for {} on {}'.format(SERVICE_MAP[int(service_id)], latest_date_for_service))
+    # latest_date_for_service = latest_dates[int(service_id)] # based on index
+    latest_date_for_salesService = latest_salesDates[int(service_id)]
+    # print('Generating report for {} on {}'.format(SERVICE_MAP[int(service_id)], latest_date_for_service))
 
     # timestamping
     starttime_total = datetime.datetime.now()
@@ -526,7 +630,8 @@ if __name__ == '__main__':
     # ask user for spotify or apple? or date reporting
     # or music/music video/album
     # START PROCESSING
-    generateReporting(service_id, latest_date_for_service)
+    # generateReporting(service_id, latest_date_for_service)
+    generateiTunesSalesReporting(service_id, '2017-11-21')
 
     # timestamping
     endtime_total = datetime.datetime.now()
