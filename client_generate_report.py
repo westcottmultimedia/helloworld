@@ -1,5 +1,5 @@
 import sqlite3, csv, datetime
-DATABASE_NAME = 'v8.playground.db'
+DATABASE_NAME = 'v8.db'
 
 # sqlite database filename/path
 DATABASE_FILE = '../{}'.format(DATABASE_NAME)
@@ -363,12 +363,10 @@ def generateReporting(service_id, date_to_process):
         ptd.peak_rank as peak_ranking,
         ptd.peak_date as peak_ranking_date,
         CASE
-            WHEN service.id = 1
-                THEN ('https://open.spotify.com/track/' || track.service_track_id)
-            WHEN service.id = 2
-                THEN ('https://itunes.apple.com/album/' || artist.service_artist_id || '?=' || track.service_track_id)
+            WHEN service.id = 1 THEN ('https://open.spotify.com/track/' || track.service_track_id)
+            WHEN service.id = 2 THEN ('https://itunes.apple.com/album/' || album.service_album_id || '?=' || track.service_track_id)
             ELSE ''
-        END url
+        END url,
         CASE
             WHEN tp.isrc in (select isrc from tracks_with_multiple_labels_merged)
             THEN (select label from tracks_with_multiple_labels_merged where isrc = tp.isrc)
@@ -732,14 +730,14 @@ if __name__ == '__main__':
     c = db.cursor()
 
     # stats
-    # latest_dates = getAndPrintStats()
-    latest_salesDates = getAndPrintSalesStats()
+    latest_dates = getAndPrintStats()
+    # latest_salesDates = getAndPrintSalesStats()
 
     service_id = input('\nSelect latest report for service_id: 1 for Spotify, 2 for Apple: ')
 
-    # latest_date_for_service = latest_dates[int(service_id)] # based on index
-    latest_date_for_salesService = latest_salesDates[int(service_id)]
-    # print('Generating report for {} on {}'.format(SERVICE_MAP[int(service_id)], latest_date_for_service))
+    latest_date_for_service = latest_dates[int(service_id)] # based on index
+    # latest_date_for_salesService = latest_salesDates[int(service_id)]
+    print('Generating report for {} on {}'.format(SERVICE_MAP[int(service_id)], latest_date_for_service))
 
     # timestamping
     starttime_total = datetime.datetime.now()
@@ -748,8 +746,8 @@ if __name__ == '__main__':
     # ask user for spotify or apple? or date reporting
     # or music/music video/album
     # START PROCESSING
-    # generateReporting(service_id, latest_date_for_service)
-    generateiTunesSalesReporting(service_id, '2017-11-21')
+    generateReporting(service_id, latest_date_for_service)
+    # generateiTunesSalesReporting(service_id, '2017-11-21')
 
     # timestamping
     endtime_total = datetime.datetime.now()
