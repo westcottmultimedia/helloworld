@@ -15,7 +15,7 @@ archiveFolderName = 'archive' # name of folder under path where files will be ar
 host = 'smtp.gmail.com' # specify port, if required, using a colon and port number following the hostname
 
 fromaddr = 'eric.chen0121@gmail.com' # must be a vaild 'from' address in your environment
-toaddr  = ['eric.chen0121@gmail.com'] # list of email addresses
+toaddr  = ['eric.chen0121@gmail.com', 'kwestcottg@gmail.com'] # list of email addresses
 replyto = fromaddr # unless you want a different reply-to
 
 SERVER_DEBUG_LEVEL = False # set to True for verbose output
@@ -24,7 +24,7 @@ SERVER_DEBUG_LEVEL = False # set to True for verbose output
 # password = 'password' # not used in our Exchange environment
 
 gmail_user = 'eric.chen0121@gmail.com'
-gmail_password = '<<CHANGE THIS>>'
+gmail_password = 'Ch3n3r1cEricchen' # <<CHANGE THIS>>
 
 msgsubject = 'Daily feeds for top songs'
 
@@ -137,7 +137,7 @@ try:
                 if os.path.isfile(os.path.join(path, filename)):
                     f1 = os.path.join(path, filename)
                     x = filename.find('.')
-                    new_filename = filename[:x] + '_' + str(date.today()) + filename[x:]
+                    new_filename = filename[:x] + '_' + 'archived' + filename[x:]
                     f2 = os.path.join(path, new_filename)
                     os.rename(f1, f2)
                     print('-' * 40)

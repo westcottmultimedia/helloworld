@@ -122,7 +122,7 @@ def generateReporting(service_id, date_to_process):
 
     #
     c.execute('''
-        CREATE TABLE IF NOT EXISTS peak_track_position_date_table (
+        CREATE TABLE IF NOT EXISTS peak_track_date_table (
             id integer PRIMARY KEY,
             service_id integer NOT NULL,
             territory_id integer NOT NULL,
@@ -347,7 +347,6 @@ def generateReporting(service_id, date_to_process):
         where label not like '%digital%' group by isrc
     ''')
 
-
     c.execute('''
         CREATE VIEW client_border_city_daily as
         SELECT
@@ -363,11 +362,17 @@ def generateReporting(service_id, date_to_process):
         tp.stream_count as stream_count,
         ptd.peak_rank as peak_ranking,
         ptd.peak_date as peak_ranking_date,
-        ('https://open.spotify.com/track/' || track.service_track_id) as url,
-        case
-            when tp.isrc in (select isrc from tracks_with_multiple_labels_merged)
-            then (select label from tracks_with_multiple_labels_merged where isrc = tp.isrc)
-            else album.label
+        CASE
+            WHEN service.id = 1
+                THEN ('https://open.spotify.com/track/' || track.service_track_id)
+            WHEN service.id = 2
+                THEN ('https://itunes.apple.com/album/' || artist.service_artist_id || '?=' || track.service_track_id)
+            ELSE ''
+        END url
+        CASE
+            WHEN tp.isrc in (select isrc from tracks_with_multiple_labels_merged)
+            THEN (select label from tracks_with_multiple_labels_merged where isrc = tp.isrc)
+            ELSE album.label
         end label
         FROM track_position_movement_today_all_table tp
         INNER JOIN peak_track_position_date_table ptd
@@ -425,6 +430,7 @@ def generateiTunesSalesReporting(service_id, date_to_process):
     c.execute('''
         DROP VIEW IF EXISTS sp_movement_today_all
     ''')
+
     c.execute('''
         CREATE VIEW sp_add_only as
         select
@@ -510,11 +516,9 @@ def generateiTunesSalesReporting(service_id, date_to_process):
     ''')
 
     # Copy into Tables for faster lookups
-    print('copying add only')
     c.execute('''
         INSERT INTO sp_add_only_table SELECT * FROM sp_add_only
     ''')
-    print('finished copying add only')
 
     c.execute('''
         INSERT INTO sp_drop_only_table SELECT * FROM sp_drop_only
@@ -568,6 +572,116 @@ def generateiTunesSalesReporting(service_id, date_to_process):
             where id in (select sales_position_id from sp_drop_only)
             order by date_str desc, territory_id asc, position asc
     '''.format(date_to_process, date_to_process, date_to_process, date_to_process))
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS sp_movement_today_all_table (
+            id integer PRIMARY KEY,
+            service_id integer NOT NULL,
+            territory_id integer NOT NULL,
+            media_id integer NOT NULL,
+            media_type text NOT NULL,
+            position integer NOT NULL,
+            sales_count integer DEFAULT -1,
+            date_str text NOT NULL,
+            previous_date text NOT NULL,
+            previous_sales_position integer NOT NULL,
+            movement integer NOT NULL,
+            add_drop text,
+            FOREIGN KEY (service_id) REFERENCES service(id),
+            FOREIGN KEY (territory_id) REFERENCES territory(id)
+        )
+    ''')
+
+    c.execute('''
+        INSERT INTO sp_movement_today_all_table (
+            service_id, territory_id, media_id, media_type, position, sales_count, date_str, previous_date, previous_sales_position, movement, add_drop
+        )
+        SELECT
+            service_id, territory_id, media_id, media_type, position, sales_count, date_str, previous_date, previous_sales_position, movement, add_drop
+        FROM sp_movement_today_all
+    ''')
+
+    c.execute('''
+        CREATE VIEW peak_sales_date as
+        select
+            service_id,
+            territory_id,
+            media_id,
+            media_type,
+            min(position) as peak_rank,
+            earliest_date as peak_date
+        from
+        (
+            select
+                service_id,
+                territory_id,
+                media_id,
+                media_type,
+                position,
+                min(date_str) as earliest_date
+            from
+            sales_position sp
+            group by media_id, media_type, sp.position, sp.territory_id, sp.service_id
+            ORDER BY position asc
+        )
+        group by media_id, media_type, territory_id, service_id
+    ''')
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS peak_sp_date_table (
+            id integer PRIMARY KEY,
+            service_id integer NOT NULL,
+            territory_id integer NOT NULL,
+            media_id text NOT NULL,
+            media_type text NOT NULL,
+            peak_rank integer NOT NULL,
+            peak_date text NOT NULL,
+            UNIQUE(service_id, territory_id, track_id) ON CONFLICT IGNORE,
+            FOREIGN KEY (service_id) REFERENCES service(id),
+            FOREIGN KEY (territory_id) REFERENCES territory(id)
+        )
+    ''')
+
+    c.execute('''
+        INSERT INTO peak_sp_date_table (
+            service_id,
+            territory_id,
+            media_id,
+            media_type,
+            peak_rank,
+            peak_date
+        )
+        SELECT * FROM peak_sales_date
+    ''')
+
+    c.execute('''
+        CREATE VIEW bam_sales_track_daily as
+        SELECT
+            tp.date_str as date_str,
+            service.id as service_id,
+            territory.code as territory_id,
+            tp.add_drop as add_drop,
+            tp.previous_sales_position as previous_sales_position,
+            tp.position as position,
+            track.track as track_name,
+            artist.artist as artist_name,
+            sp.sales_count as sales_count,
+            pspd.peak_rank as peak_ranking,
+            pspd.peak_date as peak_ranking_date,
+            ('https://itunes.apple.com/album/' || album.service_album_id || '?=' || track.service_track_id) as url,
+            album.label as label,
+        FROM sp_movement_today_all_table sp
+        INNER JOIN peak_sales_position_date_table pspd
+            ON ptd.isrc = tp.isrc
+            AND ptd.territory_id = tp.territory_id
+            AND ptd.service_id = tp.service_id
+        INNER JOIN service on service.id = tp.service_id
+        INNER JOIN territory on territory.id = tp.territory_id
+        INNER JOIN track on track.id = tp.track_id
+        INNER JOIN artist on track.artist_id = artist.id
+        INNER JOIN album on track.album_id = album.id
+        ORDER BY service_id ASC, territory_id ASC, chart_position ASC
+    ''')
 
     db.commit()
 # Returns a dict with key of service_id and the latest date for that service_id that's available
