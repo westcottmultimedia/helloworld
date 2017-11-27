@@ -672,15 +672,19 @@ def generateiTunesSalesReporting(service_id, date_to_process):
             album.label as label,
         FROM sp_movement_today_all_table sp
         INNER JOIN peak_sales_position_date_table pspd
-            ON ptd.isrc = tp.isrc
-            AND ptd.territory_id = tp.territory_id
-            AND ptd.service_id = tp.service_id
-        INNER JOIN service on service.id = tp.service_id
-        INNER JOIN territory on territory.id = tp.territory_id
-        INNER JOIN track on track.id = tp.track_id
+            ON pspd.media_id = sp.media_id
+            AND pspd.media_type = sp.media_type
+            AND pspd.territory_id = sp.territory_id
+            AND pspd.service_id = sp.service_id
+        INNER JOIN service on service.id = sp.service_id
+        INNER JOIN territory on territory.id = sp.territory_id
+        INNER JOIN track on track.id = sp.track_id
         INNER JOIN artist on track.artist_id = artist.id
         INNER JOIN album on track.album_id = album.id
-        ORDER BY service_id ASC, territory_id ASC, chart_position ASC
+        ORDER BY
+            service_id ASC,
+            territory_id ASC,
+            chart_position ASC
     ''')
 
     db.commit()
