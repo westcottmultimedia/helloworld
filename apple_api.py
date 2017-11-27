@@ -7,24 +7,6 @@ from pprint import pprint
 from datetime import datetime, date, timedelta
 from dateutil import parser
 
-'''BLUEPRINT
-0. Find data accuracy of API chart data and RSS feed generator
-    -close but not 100% the same. The songs are generally the same, but positions can be slightly different.
-    -RSS feed json has timestamp of updated time. API feed does not.
-1. download day's RSS feed generator for apple music.
-    -for each country code
-1a. download all 200 songs...
-2. Save json data into folder.
-    -figure out naming/folder structure
-2a. For later project scope, download apple music videos, etc.for later seeding the database
-2. parse top lists for top 200
-3. per song, make api calls for album data and/or any other data needed
-    -setup apple class to make API calls
-4. get response, parse into data needed for db input
-5. test
-
-'''
-
 # logging config for writing to a log file
 # logging.basicConfig(level=logging.DEBUG, format='LOGGING: %(asctime)s - %(message)s')
 
@@ -38,7 +20,7 @@ logger.setLevel(logging.DEBUG)
 # cache http requests?
 CACHE_ENABLED = False
 
-DATABASE_NAME = 'v8.playground.db'
+DATABASE_NAME = 'v9sales.db'
 
 # sqlite database filename/path
 DATABASE_FILE = '../{}'.format(DATABASE_NAME)
@@ -79,22 +61,22 @@ REGIONS_WITH_APPLE_MUSIC = list(set(REGIONS).difference(REGIONS_WITHOUT_APPLE_MU
 REGIONS_WITH_ITUNES_MUSIC_ALBUMS = list(set(REGIONS).difference(REGIONS_WITHOUT_ITUNES_MUSIC))
 REGIONS_WITH_MUSIC_VIDEOS = list(set(REGIONS).difference(REGIONS_WITHOUT_MUSIC_VIDEOS))
 
-REGIONS_ONE_OFF = ['us']
+REGIONS_ONE_OFF = ["mz"]
 
 CHARTS = [
-    ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC)
-    # ('itunes-music', 'top-songs', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
-    # ('itunes-music', 'top-albums', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
-    # ('music-videos', 'top-music-videos', REGIONS_WITH_MUSIC_VIDEOS)
+    ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC),
+    ('itunes-music', 'top-songs', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
+    ('itunes-music', 'top-albums', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
+    ('music-videos', 'top-music-videos', REGIONS_WITH_MUSIC_VIDEOS)
 ]
 
 # (media, chart, regions)
-CHARTS = [
-    # ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC),
-    ('itunes-music', 'top-songs', REGIONS_ONE_OFF),
-    ('itunes-music', 'top-albums', REGIONS_ONE_OFF),
-    ('music-videos', 'top-music-videos', REGIONS_ONE_OFF)
-]
+# CHARTS = [
+    # ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC)
+    # ('itunes-music', 'top-songs', REGIONS_ONE_OFF),
+    # ('itunes-music', 'top-albums', REGIONS_ONE_OFF)
+    # ('music-videos', 'top-music-videos', REGIONS_ONE_OFF)
+# ]
 
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
@@ -251,6 +233,7 @@ def append_track_data(items, region):
     """
     Input:
         tracks: dict
+        If 'apple_id_db' is not in the item, then it doesn't exist in the db, and we query the Apple API for track data
     Output:
         tracks: dict +
             { 'isrc': xx, 'album_id': xx, 'artist_id': xx} for any track without a 'apple_id_db'
@@ -320,19 +303,20 @@ def append_album_data(items, region):
 
     if len(albums_to_lookup) != 0:
         id_str = ','.join(map(str, albums_to_lookup))
-
         # retrieve API data and convert to easy dict lookup format
         r = apple.request(endpoint.format(id_str))
-        data = r['data']
-        r_dict = {album['id']: album for album in data} # construct dictionary with id as key
 
-        for apple_album_id in r_dict:
-            for apple_id, item in items.items():
-                if 'album_id' in item and item['album_id'] == apple_album_id:
-                    items[apple_id]['label'] = r_dict[apple_album_id]['attributes']['recordLabel']
-                    items[apple_id]['album_release_date'] = r_dict[apple_album_id]['attributes']['releaseDate']
-                    items[apple_id]['album_genres'] = r_dict[apple_album_id]['attributes']['genreNames']
-                    items[apple_id]['album_name'] = r_dict[apple_album_id]['attributes']['name']
+        if r:
+            data = r['data']
+            r_dict = {album['id']: album for album in data} # construct dictionary with id as key
+
+            for apple_album_id in r_dict:
+                for apple_id, item in items.items():
+                    if 'album_id' in item and item['album_id'] == apple_album_id:
+                        items[apple_id]['label'] = r_dict[apple_album_id]['attributes']['recordLabel']
+                        items[apple_id]['album_release_date'] = r_dict[apple_album_id]['attributes']['releaseDate']
+                        items[apple_id]['album_genres'] = r_dict[apple_album_id]['attributes']['genreNames']
+                        items[apple_id]['album_name'] = r_dict[apple_album_id]['attributes']['name']
     return items
 
 def append_artist_data(tracks, region):
@@ -639,7 +623,7 @@ class TrackDatabase(object):
             (?, ?, ?)
         ''', (service_id, service_artist_id, artist_name))
 
-        print('Artist added: {}'.format(artist_name))
+        print('Artist {} added: {}'.format(self.c.lastrowid, artist_name))
         return self.c.lastrowid
 
     def add_album(self, service_id, artist_id, service_album_id, album_name, release_date, label):
@@ -651,7 +635,7 @@ class TrackDatabase(object):
          ''', (service_id, artist_id, service_album_id, album_name, release_date, label)
          )
 
-         print('Album added: {} by artist id {}'.format(album_name, artist_id))
+         print('Album {} added: {} by artist id {}'.format(self.c.lastrowid, album_name, artist_id))
          return self.c.lastrowid
 
     def add_track(self, service_id, track_id, artist_id, album_id, track_name, isrc):
@@ -663,7 +647,7 @@ class TrackDatabase(object):
         ''',
             (service_id, track_id, artist_id, album_id, track_name, isrc)
         )
-        print('Track added: {} by artist id {} with ISRC {}'.format(track_name, artist_id, isrc))
+        print('Track {} added: {} by artist id {} with ISRC {}'.format(self.c.lastrowid, track_name, artist_id, isrc))
 
         return self.c.lastrowid
 
@@ -683,7 +667,7 @@ class TrackDatabase(object):
             (?, ?, ?, ?, ?, ?)
         ''', (service_id, service_music_video_id, artist_id, music_video_name, release_date, isrc)
         )
-        print('Music video added: {}, by artist id {}'.format(music_video_name, artist_id))
+        print('Music video {} added: {}, by artist id {}'.format(self.c.lastrowid, music_video_name, artist_id))
         return self.c.lastrowid
 
     # main functions to add data in item lists to database
@@ -721,9 +705,11 @@ class TrackDatabase(object):
                         if 'album_id' in item:
                             service_album_id = str(item['album_id'])
 
-                            if db_table != 'music_video':
+                            if db_table == 'music_video':
                                 service_album_id = ''
-                                logging.warn('No apple album id for apple track id {}'.format(item['id']) )
+                        else:
+                            # NOTE: not sure about this...
+                            service_album_id = ''
 
                         # Lookup Artist, Album or Track db ids
                         #
@@ -749,7 +735,7 @@ class TrackDatabase(object):
                             label = str(item['label'])
                         else:
                             label = ''
-                            logging.warn('No label for apple {} id {}'.format(db_table, item['id']) )
+                            logger.warn('No label for apple {} id {}'.format(db_table, item['id']) )
 
                         if 'album_genres' in item:
                             genres = item['album_genres']
@@ -767,13 +753,13 @@ class TrackDatabase(object):
                                 earliest_release_date = ordered_dates[0]
 
                             if (release_date != album_release_date):
-                                logging.debug('Release date inconsistency: {}, {}'.format(release_date, album_release_date))
+                                logger.debug('Release date inconsistency: {}, {}'.format(release_date, album_release_date))
 
                         # TODO: test if genres are consistent among artist, album and track
                         # and from RSS and api responses.
                         #
                         # if (collectionName != album_name):
-                        #     logging.debug('Album name inconsistency: {}, {}'.format(collectionName, album_name))
+                        #     logger.debug('Album name inconsistency: {}, {}'.format(collectionName, album_name))
 
 
                         # Update Database
@@ -850,7 +836,7 @@ class TrackDatabase(object):
                             label = str(item['label'])
                         else:
                             label = ''
-                            logging.warn('No label for apple album id {}'.format(service_album_id) )
+                            logger.warn('No label for apple album id {}'.format(service_album_id) )
 
                         genres = [g['name'] for g in item['genres']]
 
@@ -1067,16 +1053,13 @@ def process(mode):
                 items = append_track_data(items, region)
                 print('Getting label and release date from Apple "Albums" API...')
                 items = append_album_data(items, region)
-                print('Processed %i items, adding to database' % len(items))
                 added = db.add_track_items(items, date_str, region, service_name)
             elif kind == 'album':
                 print('Getting label and release date from Apple "Albums" API...')
                 items = append_album_data(items, region)
-                print('Processed %i items, adding to database' % len(items))
                 added = db.add_album_items(items, date_str, region, service_name)
             elif kind == 'musicVideo':
                 items = append_music_video_data(items, region)
-                print('Processed %i items, adding to database' % len(items))
                 added = db.add_music_video_items(items, date_str, region, service_name)
 
 
