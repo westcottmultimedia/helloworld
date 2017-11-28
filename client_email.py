@@ -26,6 +26,8 @@ SERVER_DEBUG_LEVEL = False # set to True for verbose output
 gmail_user = 'eric.chen0121@gmail.com'
 gmail_password = '<<CHANGE THIS>>'
 
+# gmail_password = input('Enter password for {}: '.format(gmail_user) )
+#
 msgsubject = 'Daily feeds for streaming and sales'
 
 text = '''Daily feeds for Buzz Angle Media
