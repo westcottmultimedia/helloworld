@@ -61,7 +61,7 @@ REGIONS_WITH_APPLE_MUSIC = list(set(REGIONS).difference(REGIONS_WITHOUT_APPLE_MU
 REGIONS_WITH_ITUNES_MUSIC_ALBUMS = list(set(REGIONS).difference(REGIONS_WITHOUT_ITUNES_MUSIC))
 REGIONS_WITH_MUSIC_VIDEOS = list(set(REGIONS).difference(REGIONS_WITHOUT_MUSIC_VIDEOS))
 
-REGIONS_ONE_OFF = ["mz"]
+REGIONS_ONE_OFF = ["us", "gb", "fr"]
 
 CHARTS = [
     ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC),
@@ -72,10 +72,10 @@ CHARTS = [
 
 # (media, chart, regions)
 # CHARTS = [
-    # ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC)
-    # ('itunes-music', 'top-songs', REGIONS_ONE_OFF),
-    # ('itunes-music', 'top-albums', REGIONS_ONE_OFF)
-    # ('music-videos', 'top-music-videos', REGIONS_ONE_OFF)
+#     ('apple-music', 'top-songs', REGIONS_ONE_OFF),
+#     ('itunes-music', 'top-songs', REGIONS_ONE_OFF),
+#     ('itunes-music', 'top-albums', REGIONS_ONE_OFF),
+#     ('music-videos', 'top-music-videos', REGIONS_ONE_OFF)
 # ]
 
 # max number of times to retry http requests
