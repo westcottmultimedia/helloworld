@@ -24,7 +24,7 @@ SERVER_DEBUG_LEVEL = False # set to True for verbose output
 # password = 'password' # not used in our Exchange environment
 
 gmail_user = 'eric.chen0121@gmail.com'
-gmail_password = 'Ch3n3r1cEricchen' # <<CHANGE THIS>>
+gmail_password = '<<CHANGE THIS>>'
 
 msgsubject = 'Daily feeds for streaming and sales'
 
