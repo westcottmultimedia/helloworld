@@ -1,80 +1,36 @@
 import sqlite3, csv, datetime
-DATABASE_NAME = 'v9sales.db'
+DATABASE_NAME = 'v9a.db'
 
 # sqlite database filename/path
 DATABASE_FILE = '../{}'.format(DATABASE_NAME)
 OUTPUT_FILE_TEMPLATE = './deliverables/client/{}_{}_{}_{}.csv'
-CLIENT_NAME = 'border_city'
+CLIENT_NAME = 'bam'
 
-#
-SERVICE_MAP = {1: 'spotify', 2: 'apple_music'}
-service_chart_id = 1 # 1 is a placeholder for Songs/Tracks Top 200 chart
+# NOTE: this should mirror the db table (ie. db table for bam client)
+SERVICE_MAP = {
+    1: 'spotify',
+    2: 'apple music'
+}
 
-def getReportDate(service_id):
+SERVICE_CHARTS = {
+    1: 'track streaming',
+    2: 'track sales',
+    3: 'album sales',
+    4: 'music video sales'
+}
+
+def getLatestDateFromTable(table, service_id):
     query = '''
         SELECT max(date_str)
-        FROM client_border_city_latest_table
+        FROM {}
         WHERE service_id = ?
         LIMIT 1
-    '''
+    '''.format(table)
     row = c.execute(query, [service_id]).fetchone()
     return row[0] if row else datetime.date.today().isoformat()
 
-
-def writeToFile(service_id):
-    report_date = getReportDate(service_id)
-    output_file = OUTPUT_FILE_TEMPLATE.format(CLIENT_NAME, report_date, "{0:0=3d}".format(int(service_chart_id)), "{0:0=3d}".format(int(service_id)) )
-
-    # set stream_count to NULL if Apple charts for client (in DB, these values are INTs)
-    #
-    query_stream_count = ''
-    if int(service_id) == 2:
-        query_stream_count = 'NULL as '
-
-    query = '''
-        SELECT
-            date_str,
-            CASE
-                WHEN territory_id = 'global' THEN 'zz'
-                ELSE territory_id
-            END territory_id,
-            add_drop,
-            previous_track_position,
-            chart_position,
-            track_isrc,
-            track_name,
-            artist_name,
-            {}stream_count,
-            peak_ranking,
-            peak_ranking_date,
-            url,
-            label
-        FROM client_border_city_latest_table
-        WHERE service_id = ?
-    '''.format(query_stream_count)
-
-    print(query)
-
-    c.execute(query, [service_id])
-    rows = c.fetchall()
-
-    with open(output_file, 'w') as f:
-        writer = csv.writer(f)
-
-        # write the header row
-        writer.writerow([
-            'date_str', 'territory_id', 'add_drop',
-            'previous_track_position','chart_position', 'track_isrc', 'track_name',
-            'artist_name', 'stream_count', 'peak_ranking',
-            'peak_ranking_date', 'url', 'label'
-        ])
-
-        for row in rows:
-            writer.writerow(row)
-
-    print('Finished writing file {}'.format(output_file))
-
-def generateReporting(service_id, date_to_process):
+# Herding data
+def generateStreamingReporting(service_id, date_to_process):
 
     # NOTE: Don't need to drop and recreate all these views.
     #
@@ -412,10 +368,9 @@ def generateReporting(service_id, date_to_process):
     ''')
 
     db.commit()
-    writeToFile(service_id)
 
 def generateiTunesSalesReporting(service_id, date_to_process):
-    print('Generating iTunes Sales reporting')
+
     # Sales Position Views
     #
     c.execute('''
@@ -778,10 +733,207 @@ def generateiTunesSalesReporting(service_id, date_to_process):
     ''')
 
     db.commit()
-# Returns a dict with key of service_id and the latest date for that service_id that's available
-# ex. latest_dates = {1: '2017-11-14', 2: '2017-11-15'}
-#
-def getAndPrintStats():
+
+# Report parameters
+def getSalesTrackQuery():
+    table = 'bam_sales_track_daily'
+    query = '''
+        SELECT
+            date_str,
+            CASE
+                WHEN territory_id = 'global' THEN 'zz'
+                ELSE territory_id
+            END territory_id,
+            add_drop,
+            previous_sales_position,
+            position,
+            track_name,
+            album_name,
+            artist_name,
+            isrc,
+            NULL as sales_count,
+            peak_ranking,
+            peak_ranking_date,
+            url,
+            label
+        FROM {}
+    '''
+
+    columns = [
+        'date_str', 'territory_id', 'add_drop',
+        'previous_sales_position','position', 'track_name', 'album_name',
+        'artist_name', 'isrc', 'sales_count', 'peak_ranking',
+        'peak_ranking_date', 'url', 'label'
+    ]
+
+    service_id = 2
+    service_chart_id = 2
+
+    return (service_id, service_chart_id, table, query, columns)
+
+def getSalesAlbumQuery():
+    table = 'bam_sales_album_daily'
+    query = '''
+        SELECT
+            date_str,
+            CASE
+                WHEN territory_id = 'global' THEN 'zz'
+                ELSE territory_id
+            END territory_id,
+            add_drop,
+            previous_sales_position,
+            position,
+            artist_name,
+            album_name,
+            NULL as sales_count,
+            peak_ranking,
+            peak_ranking_date,
+            url,
+            label
+        FROM {}
+    '''
+
+    columns = [
+        'date_str', 'territory_id', 'add_drop',
+        'previous_sales_position','position', 'artist_name', 'album_name',
+        'sales_count', 'peak_ranking', 'peak_ranking_date', 'url', 'label'
+    ]
+    service_id = 2
+    service_chart_id = 3
+    return (service_id, service_chart_id, table, query, columns)
+
+def getSalesMusicVideoQuery():
+    table = 'bam_sales_music_video_daily'
+    query = '''
+        SELECT
+            date_str,
+            CASE
+                WHEN territory_id = 'global' THEN 'zz'
+                ELSE territory_id
+            END territory_id,
+            add_drop,
+            previous_sales_position,
+            position,
+            artist_name,
+            music_video_name,
+            isrc,
+            NULL as sales_count,
+            peak_ranking,
+            peak_ranking_date,
+            url
+        FROM {}
+    '''
+
+    columns = [
+        'date_str', 'territory_id', 'add_drop',
+        'previous_sales_position','position', 'artist_name', 'music_video_name',
+        'isrc', 'sales_count', 'peak_ranking', 'peak_ranking_date', 'url'
+    ]
+
+    service_chart_id = 4
+    service_id = 2
+    return (service_id, service_chart_id, table, query, columns)
+
+def getStreamingTrackAppleQuery():
+    table = 'client_border_city_latest_table'
+    query = '''
+        SELECT
+            date_str,
+            CASE
+                WHEN territory_id = 'global' THEN 'zz'
+                ELSE territory_id
+            END territory_id,
+            add_drop,
+            previous_track_position,
+            chart_position,
+            track_isrc,
+            track_name,
+            artist_name,
+            NULL as stream_count,
+            peak_ranking,
+            peak_ranking_date,
+            url,
+            label
+        FROM {}
+        WHERE service_id = 2
+    '''
+
+    columns = [
+        'date_str', 'territory_id', 'add_drop',
+        'previous_track_position','chart_position', 'track_isrc', 'track_name',
+        'artist_name', 'stream_count', 'peak_ranking',
+        'peak_ranking_date', 'url', 'label'
+    ]
+    service_id = 2
+    service_chart_id = 1
+
+    return (service_id, service_chart_id, table, query, columns)
+
+def getStreamingTrackSpotifyQuery():
+    table = 'client_border_city_latest_table'
+    query = '''
+        SELECT
+            date_str,
+            CASE
+                WHEN territory_id = 'global' THEN 'zz'
+                ELSE territory_id
+            END territory_id,
+            add_drop,
+            previous_track_position,
+            chart_position,
+            track_isrc,
+            track_name,
+            artist_name,
+            stream_count,
+            peak_ranking,
+            peak_ranking_date,
+            url,
+            label
+        FROM {}
+        WHERE service_id = 1
+    '''
+
+    columns = [
+        'date_str', 'territory_id', 'add_drop',
+        'previous_track_position','chart_position', 'track_isrc', 'track_name',
+        'artist_name', 'stream_count', 'peak_ranking',
+        'peak_ranking_date', 'url', 'label'
+    ]
+    service_id = 1
+    service_chart_id = 1
+
+    return (service_id, service_chart_id, table, query, columns)
+
+# Export files
+def exportReport(service_id, service_chart_id, table, query, columns):
+    report_date = getLatestDateFromTable(table, service_id)
+    output_file = OUTPUT_FILE_TEMPLATE.format(CLIENT_NAME, report_date, "{0:0=3d}".format(service_chart_id), "{0:0=3d}".format(service_id) )
+
+    # set stream_count to NULL if Apple charts for client (in DB, these values are INTs)
+    #
+    query = query.format(table)
+
+    c.execute(query)
+    rows = c.fetchall()
+
+    with open(output_file, 'w') as f:
+        writer = csv.writer(f)
+
+        # write the header row
+        writer.writerow(columns)
+
+        # write all rows
+        for row in rows:
+            writer.writerow(row)
+
+            #apple music track streaming report complete:
+    print('{} {} report complete: {}'.format(SERVICE_MAP[service_id], SERVICE_CHARTS[service_chart_id], output_file))
+
+
+def getAndPrintStreamingStats():
+    # Returns a dict with key of service_id and the latest date for that service_id that's available
+    # ex. latest_dates = {1: '2017-11-14', 2: '2017-11-15'}
+    #
     c.execute('''
         SELECT service_id, date_str, count(date_str)
         FROM track_position
@@ -794,7 +946,7 @@ def getAndPrintStats():
 
     rows = c.fetchmany(2)
     for row in rows:
-        print('Latest date for service_id {} is {} with {} records.'.format(row[0], row[1], row[2]))
+        print('{} streaming: {} records on {}'.format(SERVICE_MAP[row[0]], row[2], row[1]))
         latest_dates[row[0]] = (row[1])
 
     return latest_dates
@@ -802,7 +954,7 @@ def getAndPrintStats():
 def getAndPrintSalesStats():
     # select media_type, the latest date, and the number of records for the latest date
     # fetching only three for the three media types
-    #
+    # latest_dates = { 'music_video': '2017-11-21', 'track': , 'album': }
     c.execute('''
         SELECT media_type, date_str, count(date_str)
         FROM sales_position
@@ -815,33 +967,76 @@ def getAndPrintSalesStats():
 
     rows = c.fetchmany(3)
     for row in rows:
-        print('Latest date for iTunes {} sales is {} with {} records.'.format(row[0], row[1], row[2]))
+        print('iTunes {} sales: {} records on {}.'.format(row[0], row[2], row[1]))
         latest_dates[row[0]] = (row[1])
     return latest_dates
+
+def printDivider(number):
+    print('*' * number)
 
 if __name__ == '__main__':
     db = sqlite3.connect(DATABASE_FILE)
     c = db.cursor()
 
+    printDivider(40)
+
     # stats
-    # latest_dates = getAndPrintStats()
+    latest_streamingDates = getAndPrintStreamingStats()
     latest_salesDates = getAndPrintSalesStats()
 
+    if latest_salesDates['album'] == latest_salesDates['track'] and latest_salesDates['album'] == latest_salesDates['music_video']:
+        latest_date_for_salesService = latest_salesDates['album']
+    else:
+        print('Check sales dates for albums {}, tracks {} and music videos {}'. format(latest_salesDates['album'], latest_salesDates['track'], latest_salesDates['music_video']))
+
+    # # For user input of report generation
     # service_id = input('\nSelect latest report for service_id: 1 for Spotify, 2 for Apple: ')
-    report_type = input('\nSelect latest report - album, music_video or track:')
-    # latest_date_for_service = latest_dates[int(service_id)] # based on index
-    latest_date_for_salesService = latest_salesDates[report_type]
+    # report_type = input('\nSelect latest report - album, music_video or track:')
+    # latest_date_for_service = latest_streamingDates[int(service_id)] # based on index
+    # latest_date_for_salesService = latest_salesDates[report_type]
     # print('Generating report for {} on {}'.format(SERVICE_MAP[int(service_id)], latest_date_for_service))
 
+
+
     # timestamping
+    printDivider(40)
     starttime_total = datetime.datetime.now()
     print('Starting processing at', starttime_total.strftime('%H:%M:%S %m-%d-%y'))
+    printDivider(40)
 
-    # ask user for spotify or apple? or date reporting
-    # or music/music video/album
-    # START PROCESSING
-    # generateReporting(service_id, latest_date_for_service)
-    generateiTunesSalesReporting(2, latest_date_for_salesService)
+    # spotify streaming
+    print('Generating Spotify stream reports')
+    service_id = 1
+    generateStreamingReporting(service_id, latest_streamingDates[service_id])
+    service_id, service_chart_id, table, query, columns = getStreamingTrackSpotifyQuery()
+    exportReport(service_id, service_chart_id, table, query, columns)
+    printDivider(40)
+
+    # apple streaming
+    print('Generating Apple stream reports')
+    service_id = 2
+    generateStreamingReporting(service_id, latest_streamingDates[service_id])
+    service_id, service_chart_id, table, query, columns = getStreamingTrackAppleQuery()
+    exportReport(service_id, service_chart_id, table, query, columns)
+    printDivider(40)
+
+    # iTunes sales
+    print('Generating iTunes sales reports')
+    service_id = 2
+    generateiTunesSalesReporting(service_id, latest_date_for_salesService)
+    printDivider(40)
+
+    service_id, service_chart_id, table, query, columns = getSalesTrackQuery()
+    exportReport(service_id, service_chart_id, table, query, columns)
+    printDivider(40)
+
+    service_id, service_chart_id, table, query, columns = getSalesAlbumQuery()
+    exportReport(service_id, service_chart_id, table, query, columns)
+    printDivider(40)
+
+    service_id, service_chart_id, table, query, columns = getSalesMusicVideoQuery()
+    exportReport(service_id, service_chart_id, table, query, columns)
+    printDivider(40)
 
     # timestamping
     endtime_total = datetime.datetime.now()

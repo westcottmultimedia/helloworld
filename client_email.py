@@ -26,10 +26,26 @@ SERVER_DEBUG_LEVEL = False # set to True for verbose output
 gmail_user = 'eric.chen0121@gmail.com'
 gmail_password = 'Ch3n3r1cEricchen' # <<CHANGE THIS>>
 
-msgsubject = 'Daily feeds for top songs'
+msgsubject = 'Daily feeds for streaming and sales'
 
-text = 'Here you go'
-htmlmsgtext = '''<h2>Here you go!</h2>''' # text with appropriate HTML tags
+text = '''Daily feeds for Buzz Angle Media
+
+    Legend:
+    first three numbers in filename:
+    001: track streaming
+    002: iTunes track  sales
+    003: iTunes album sales
+    004: iTunes music video sales
+
+    last three numbers:
+    001: Spotify
+    002: Apple
+
+    Example:
+    bam_2017-11-25_001_001.csv : track streaming on Spotify
+    bam_2017-11-25_003_002.csv : iTunes album sales on Apple
+'''
+# htmlmsgtext = '''<h2>Daily feeds</h2>''' # text with appropriate HTML tags
 
 ######### In normal use nothing changes below this line ###############
 
@@ -68,26 +84,29 @@ def strip_tags(html):
 # ########################################################################
 #
 try:
-# Make text version from HTML - First convert tags that produce a line break to carriage returns
-    # msgtext = htmlmsgtext.replace('</br>','r').replace('<br />','r').replace('</p>','r')
-    # Then strip all the other tags out
-    # msgtext = strip_tags(msgtext)
-    #
+
     # # necessary mimey stuff
     msg = MIMEMultipart()
     msg.preamble = 'This is a multi-part message in MIME format.n'
     msg.epilogue = ''
 
+    # Make text version from HTML - First convert tags that produce a line break to carriage returns
+    # msgtext = htmlmsgtext.replace('</br>','r').replace('<br />','r').replace('</p>','r')
+    # Then strip all the other tags out
+    # msgtext = strip_tags(msgtext)
+
     body = MIMEMultipart('alternative')
     # body.attach(MIMEText(msgtext))
-    body.attach(MIMEText(htmlmsgtext, 'html'))
+    # body.attach(MIMEText(htmlmsgtext, 'html'))
+    body.attach(MIMEText(text))
     msg.attach(body)
     attachments = os.listdir(path)
+    if '.DS_Store' in attachments: attachments.remove('.DS_Store')
 
     print('ATTACHMENTS:', attachments)
     if 'attachments' in globals() and len('attachments') > 0: # are there attachments?
         for filename in attachments:
-            if os.path.isfile(os.path.join(path, filename)):
+            if os.path.isfile(os.path.join(path, filename)): # remove any folders!
                 f = os.path.join(path, filename)
                 part = MIMEBase('application', 'octet-stream')
                 part.set_payload( open(f,'rb').read() )
@@ -131,6 +150,8 @@ try:
     # server.quit() # bye bye
 
 
+    # Archive files to folder
+    #
     try:
         if 'attachments' in globals() and len('attachments') > 0: # are there attachments?
             for filename in attachments:

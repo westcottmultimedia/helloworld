@@ -20,7 +20,7 @@ logger.setLevel(logging.DEBUG)
 # cache http requests?
 CACHE_ENABLED = False
 
-DATABASE_NAME = 'v9sales.db'
+DATABASE_NAME = 'v9a.db'
 
 # sqlite database filename/path
 DATABASE_FILE = '../{}'.format(DATABASE_NAME)
@@ -64,9 +64,9 @@ REGIONS_WITH_MUSIC_VIDEOS = list(set(REGIONS).difference(REGIONS_WITHOUT_MUSIC_V
 REGIONS_ONE_OFF = ["us", "gb", "fr"]
 
 CHARTS = [
-    ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC),
-    ('itunes-music', 'top-songs', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
-    ('itunes-music', 'top-albums', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
+    # ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC),
+    # ('itunes-music', 'top-songs', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
+    # ('itunes-music', 'top-albums', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
     ('music-videos', 'top-music-videos', REGIONS_WITH_MUSIC_VIDEOS)
 ]
 
@@ -247,20 +247,23 @@ def append_track_data(items, region):
         id_str = ','.join(map(str, tracks_to_lookup))
         # retrieve API data and convert to easy lookup format
         r = apple.request(endpoint.format(id_str))
-        data = r['data']
-        r_dict = {item['id']: item for item in data} # construct dictionary with id as key
+        if r:
+            data = r['data']
+            r_dict = {item['id']: item for item in data} # construct dictionary with id as key
 
-        for apple_id in r_dict:
-            items[apple_id]['isrc'] = (r_dict[apple_id]['attributes']['isrc']).upper()
-            items[apple_id]['album_id'] = r_dict[apple_id]['relationships']['albums']['data'][0]['id']
-            items[apple_id]['track_genres'] = r_dict[apple_id]['attributes']['genreNames']
+            for apple_id in r_dict:
+                items[apple_id]['isrc'] = (r_dict[apple_id]['attributes']['isrc']).upper()
+                items[apple_id]['album_id'] = r_dict[apple_id]['relationships']['albums']['data'][0]['id']
+                items[apple_id]['track_genres'] = r_dict[apple_id]['attributes']['genreNames']
 
-        # diagnostics and statistics for printing
-        count_new_items = 0
-        for apple_id in items:
-            if all (key in items[apple_id] for key in ('isrc', 'album_id')):
-                count_new_items += 1
-        print('{} new tracks with ISRC and album_id'.format(count_new_items))
+            # diagnostics and statistics for printing
+            count_new_items = 0
+            for apple_id in items:
+                if all (key in items[apple_id] for key in ('isrc', 'album_id')):
+                    count_new_items += 1
+            print('{} new tracks with ISRC and album_id'.format(count_new_items))
+        else:
+            logger.warn("Region {} songs haven't been looked up by the API. Check for empty isrc, album_id and track_genres for these track ids: {}".format(region, tracks_to_lookup))
 
     return items
 
@@ -272,18 +275,21 @@ def append_music_video_data(items, region):
         id_str = ','.join(map(str, videos_to_lookup))
         # retrieve API data and convert to easy lookup format
         r = apple.request(endpoint.format(id_str))
-        data = r['data']
-        r_dict = {item['id']: item for item in data} # construct dictionary with id as key
+        if r:
+            data = r['data']
+            r_dict = {item['id']: item for item in data} # construct dictionary with id as key
 
-        for apple_id in r_dict:
-            items[apple_id]['isrc'] = (r_dict[apple_id]['attributes']['isrc']).upper()
+            for apple_id in r_dict:
+                items[apple_id]['isrc'] = (r_dict[apple_id]['attributes']['isrc']).upper()
 
-        # diagnostics and statistics for printing
-        count_new_items = 0
-        for apple_id in items:
-            if 'isrc' in items[apple_id]:
-                count_new_items += 1
-        print('{} new music videos with ISRC'.format(count_new_items))
+            # diagnostics and statistics for printing
+            count_new_items = 0
+            for apple_id in items:
+                if 'isrc' in items[apple_id]:
+                    count_new_items += 1
+            print('{} new music videos with ISRC'.format(count_new_items))
+    else:
+        logger.warn("Region {} music videos haven't been looked up by the API. Check for empty isrc for music video ids: {}".format(region, videos_to_lookup))
 
     return items
 
@@ -753,7 +759,7 @@ class TrackDatabase(object):
                                 earliest_release_date = ordered_dates[0]
 
                             if (release_date != album_release_date):
-                                logger.debug('Release date inconsistency: {}, {}'.format(release_date, album_release_date))
+                                logger.debug('Release date inconsistency: Apple track id: {}, artist: {}, Apple album id: {}, track release date {}, and album release date {}'.format(service_track_id, artist_name, service_album_id, release_date, album_release_date))
 
                         # TODO: test if genres are consistent among artist, album and track
                         # and from RSS and api responses.
