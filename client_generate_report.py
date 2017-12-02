@@ -481,6 +481,11 @@ def generateiTunesSalesReporting(service_id, date_to_process):
         INSERT INTO sp_drop_only_table SELECT * FROM sp_drop_only
     ''')
 
+
+    c.execute('''
+        DROP VIEW IF EXISTS sp_movement_today_all
+    ''')
+
     c.execute('''
         CREATE VIEW sp_movement_today_all as
             select T1.*,
@@ -563,6 +568,10 @@ def generateiTunesSalesReporting(service_id, date_to_process):
     ''')
 
     c.execute('''
+        DROP VIEW IF EXISTS peak_sales_date
+    ''')
+
+    c.execute('''
         CREATE VIEW IF NOT EXISTS peak_sales_date as
         select
             service_id,
@@ -582,7 +591,7 @@ def generateiTunesSalesReporting(service_id, date_to_process):
                 min(date_str) as earliest_date
             from
             sales_position sp
-            group by media_id, media_type, sp.position, sp.territory_id, sp.service_id
+            group by sp.media_id, sp.media_type, sp.position, sp.territory_id, sp.service_id
             ORDER BY position asc
         )
         group by media_id, media_type, territory_id, service_id
@@ -601,6 +610,10 @@ def generateiTunesSalesReporting(service_id, date_to_process):
             FOREIGN KEY (service_id) REFERENCES service(id),
             FOREIGN KEY (territory_id) REFERENCES territory(id)
         )
+    ''')
+
+    c.execute('''
+        DELETE FROM peak_sp_date_table
     ''')
 
     c.execute('''
@@ -1004,7 +1017,7 @@ if __name__ == '__main__':
     print('Starting processing at', starttime_total.strftime('%H:%M:%S %m-%d-%y'))
     printDivider(40)
 
-    # spotify streaming
+    # # spotify streaming
     print('Generating Spotify stream reports')
     service_id = 1
     generateStreamingReporting(service_id, latest_streamingDates[service_id])

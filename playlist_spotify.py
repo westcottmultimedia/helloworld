@@ -1,18 +1,19 @@
-import sqlite3, csv, codecs, re, json, os, base64, time, hashlib, ssl, datetime
+import sqlite3, csv, codecs, re, json, os, base64, time, hashlib, ssl, datetime, logging, errno
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
 from socket import error as SocketError
-import errno
 from lxml import html
-import logging
+from pprint import pprint as pprint
 
 logger = logging.getLogger('spotify_api')
-hdlr = logging.FileHandler('./spotify/spotify_api.log')
+hdlr = logging.FileHandler('./spotify/playlist_spotify.log')
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.DEBUG)
+
+PRINT_PREFIX = '++'
 
 # cache http requests?
 CACHE_ENABLED = False
@@ -47,6 +48,22 @@ REGIONS_WITHOUT_DAILY = ['bg', 'cy', 'ni']
 
 REGIONS = list(set(REGIONS_TOTAL).difference(REGIONS_WITHOUT_DAILY))
 
+SPOTIFY_API = 'https://api.spotify.com/v1'
+
+# Spotify Users Playlists
+SPOTIFY_USERS = ['spotify', 'topsify', 'filtr']
+UNIVERSAL_USERS = ['radioactivehits', 'digster.ee', 'digster.dk', 'dgdeccaclassics', 'digster.co.uk', 'hhheroes',
+'digster.lt', 'capitolchristianmusicgroup', 'capitolrecords', 'digsterca', '11145233736', '12150271040',
+'digsterdeutschland', 'digstercz', 'peacefulclassics', 'digster.lv', 'sinfinimusic', 'hollywdrecrds', 'record_club_umc',
+'sozoofficial', '116734391', 'digsterhu', 'getmusicasia', 'disney_pixar_', 'digstersk', 'deutschegrammophon', '11152361853',
+'100keepit', 'universal.fm', 'digsternl', '12150809594', 'thisisofficial', 'universalmusicargentina', 'universalmusicse',
+'udiscover', 'umusicnz', 'universalmusicitalia', 'progrocksmusic', 'thecompletecollection', 'digsterargentina', 'abbaspotify',
+'defjamrecordings', 'digster.fr', 'digsterno', 'digster.au', '100yearsoftheblues', 'universal.pictures.de', 'o.owner_id', '128899670',
+'digstergreece', 'universalmusica', 'digster.fi', 'digster.se', 'universalmusictaiwan', 'classicmotownrecords',
+'digster_italy', 'digster_brasil', 'thejazzlabels', 'universalmusicireland', 'wowilovechristianmusic', 'sinfinimusic.nl', 'digster.fm',
+'digsterchile', 'disney_music_uk', 'udiscovermusic', 'universal_music_rock_legends', 'digster.pt']
+TEST_USERS = SPOTIFY_USERS
+MESSEDUP_UNIVERSAL_USERS = ['el_listÃ³n', 'digstertÃ¼rkiye']
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
 
@@ -184,7 +201,7 @@ class Spotify(object):
         Request a webpage, retry on failure, cache as desired
         """
         hashedurl = hashlib.sha256(url.encode('utf-8')).hexdigest()
-        cache_file = "./cache/%s.cache" % hashedurl
+        cache_file = "./cache/{}.cache".format(hashedurl)
         if cache and os.path.isfile(cache_file):
             with open(cache_file) as f:
                 # return cached json
@@ -192,7 +209,7 @@ class Spotify(object):
                 return json.loads(data)
         if count > 3:
             # retried 3 times, giving up
-            print('Failed getting page "%s", retried %i times' % (url, count))
+            print('Failed getting page "{}", retried {} times'.format(url, count))
             return False
         if last_request > time.time()-1:
             # wait 3 seconds between retries
@@ -202,6 +219,7 @@ class Spotify(object):
             'Authorization': 'Bearer {}'.format(self.get_token()),
             'Accept': 'application/json',
         }
+
         if cache and not os.path.exists(os.path.dirname(cache_file)):
             try:
                 os.makedirs(os.path.dirname(cache_file))
@@ -217,16 +235,18 @@ class Spotify(object):
             return json.loads(data)
 
         except URLError as e:
-            print('URLError = ' + str(e.reason))
-            return get_page(url, cache, count, time.time())
+            print('URLError... ' + str(e.reason))
+            return False
         except ConnectionResetError as e:
             print('Error 54: Connection reset error. ', str(e))
             return get_page(url, cache, count, time.time())
         except HTTPError as err:
             if err.code == 400:
-                print('HTTP 400, said:')
-                # print(data)
-            raise
+                print('HTTP400 error... {}'.format(url))
+                return False
+            elif err.code == 401:
+                print('HTTP401 error... {}'.format(url))
+                return False
         except SocketError as e:
             if e.errno != errno.ECONNRESET:
                 raise # Not error we are looking for
@@ -408,65 +428,6 @@ def get_track_id_from_url(url):
     assert matches, "No track ID found for {}".format(url)
     return matches.group(1)
 
-"""
-0. Create Playlist TABLE
-0. Create Playlist Creator TABLE
-0. Create song Playlist table
-1. get list of user playlists (ids)
-    https://developer.spotify.com/web-api/get-list-users-playlists/
-    https://api.spotify.com/v1/users/{user_id}/playlists
-    r.items[id, name, tracks, ]
-
-    return 50 plalists at a time,
-        get the next set with: offset, total or next
-2. get playlist tracks
-    https://developer.spotify.com/web-api/get-playlist/
-    r.tracks.items iterate over it... figure out where to get the total list of tracks
-        add track data
-            check against existing Database
-    ...playlist position?
-3. get playlist followers
-        https://developer.spotify.com/web-api/get-playlist/
-        r.followers.total
-4. get position:
-    https://developer.spotify.com/web-api/get-playlist/
-        r.items.xxx.popularity
-
-    https://api.spotify.com/v1/users/{user_id}/playlists/{playlist_id}/tracks
-"""
-
-# recursively retrieve all playlists from a users
-#
-def getPlaylists(user, playlists=[], nextUrl=None):
-    spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
-
-    if not nextUrl:
-        endpoint = "https://api.spotify.com/v1/users/{}/playlists?limit={}".format(user, MAX_LIMIT_QUERY)
-    else:
-        endpoint = nextUrl
-
-    r = spotify.request(endpoint)
-
-    playlists = playlists
-
-    for p in r['items']:
-        playlist = {}
-        playlist['spotify_id'] = p['id']
-        playlist['owner'] = p['owner']['id']
-        playlist['owner_display_name'] = p['owner'].get('display_name', '')
-        playlist['name'] = p['name']
-        playlist['snapshot_id'] = p['snapshot_id']
-        playlist['num_tracks'] = p['tracks']['total']
-        playlist['href'] = p['href']
-        playlists.append(playlist)
-
-    # if there are more values to return, request more
-    if not r['next']:
-        print('done, total length is', len(playlists))
-        return playlists
-    else:
-        print('length of playlists is', len(playlists))
-        return getPlaylists(user, playlists, r['next'])
 
 # TrackDatabase class start
 #
@@ -926,6 +887,206 @@ class TrackDatabase(object):
         row = query.fetchone()
         return row[0] if row else False
 
+
+
+
+# recursively retrieve all playlists from a users
+#
+def get_playlists_by_user(user_id, playlists=[], nextUrl=None):
+
+    if not nextUrl:
+        endpoint = "{}/users/{}/playlists?limit={}".format(SPOTIFY_API, user_id, MAX_LIMIT_QUERY)
+    else:
+        endpoint = nextUrl
+
+    try:
+        r = spotify.request(endpoint)
+
+        playlists = playlists
+
+        for p in r['items']:
+            playlist = {}
+            playlist['playlist_id'] = p['id']
+            playlist['owner_id'] = p['owner']['id']
+            playlist['owner_display_name'] = p['owner'].get('display_name', '')
+            playlist['name'] = p['name']
+            playlist['snapshot_id'] = p['snapshot_id']
+            playlist['num_tracks'] = p['tracks']['total']
+            playlist['href'] = p['href']
+            playlist['uri'] = p['uri']
+            playlists.append(playlist)
+
+        # if there are more values to return, request more and add to the list
+        if not r['next']:
+            # NOTE: As the playlist continues growing with new users, this deprecated method does not work as expected.
+            # This playlist length validates the current user_id's playlist count with the total running count of all playlists.
+            # validate_playlist_length(user_id, len(playlists), r['total'])
+            validate_playlist_owner(playlists, user_id)
+            print('{} Retrieved all playlists for {}'.format(PRINT_PREFIX, user_id))
+            return playlists
+        else:
+            print('Retrieving more playlists for {}, running total: {}'.format(user_id, len(playlists)))
+            return get_playlists_by_user(user_id, playlists, r['next'])
+
+        return playlists
+
+    except Exception as e:
+        logger.warn(e)
+        return playlists
+
+def get_all_playlists(users):
+    all_playlists = []
+    for user in users:
+        playlists = get_playlists_by_user(user)
+        all_playlists += playlists
+
+    return all_playlists
+
+# Playlist Helper functions
+#
+def validate_playlist_length(user_id, length, expected):
+    if(length != expected):
+        logger.warn('For user {}, did not retrieve all playlists. Have {} of {}'.format(user_id, length, expected))
+    else:
+        print('{} Retrieved all {}\'s {} playlists!'.format(PRINT_PREFIX, user_id, length))
+
+def validate_playlist_owner(playlists, user_id):
+    for p in playlists:
+        if p['owner'] != user:
+            logger.warn('Spotify user {} has playlist id {} of owner {}, uri: {}'.format(user_id, p['spotify_id'], p['owner'], p['uri']))
+
+def print_playlist_names(playlists):
+    for p in playlists:
+        print(p['name'])
+
+# Add follower count for playlists
+# INPUT: playlists object
+#
+def append_playlist_data(playlists):
+    for playlist_id, playlist in playlists.items():
+        owner_id = playlist['owner_id']
+        playlists[playlist_id]['followers'] = getFollowersForPlaylist(owner_id, playlist_id)
+        print('{}: Added followers for id {}'.format(owner_id, playlist_id))
+    return playlists
+
+def getFollowersForPlaylist(user_id, playlist_id):
+    query_params = 'fields=followers.total,snapshot_id'
+    endpoint = '{}/users/{}/playlists/{}?{}'.format(SPOTIFY_API, user_id, playlist_id, query_params)
+    try:
+        r = spotify.request(endpoint)
+        if r:
+            followers = r['followers']['total']
+            return followers
+    except:
+        logger.warn('There is no follower count for user: {} and  playlist id: {}'.format(user_id, playlist_id))
+        return None
+    return None
+
+# def test_multiple_playlists(user_id, playlist_id):
+#     query_params = 'fields=followers.total,snapshot_id'
+#     endpoint = '{}/users/{}/playlists/{}?{}'.format(SPOTIFY_API, user_id, playlist_id, query_params)
+#     try:
+#         r = spotify.request(endpoint)
+
+# TODO: TO adapt or modify
+def getTracksByPlaylist(user_id, playlist_id, tracks=[], nextUrl=None):
+    '''
+    Return value example:
+    [
+        {
+            'artist_id': '21E3waRsmPlU7jZsS13rcj',
+            'artist_name': 'Ne-Yo',
+            'album_id': '1nv3KEXZPmcwOXMoLTs1vn',
+            'album_name': '1nv3KEXZPmcwOXMoLTs1vn',
+            'isrc': 'USUM70826981',
+            'track_id': '6glklpxk7EtKIdxA3kYQS5',
+            'track_name': 'Miss Independent',
+            'track_uri': 'spotify:track:6glklpxk7EtKIdxA3kYQS5',
+            'popularity': 69,
+            'position': 3
+        }, {}, {}, ...
+    ]
+    '''
+    max_query = 100
+    if not nextUrl:
+        endpoint = "{}/users/{}/playlists/{}/tracks?limit={}".format(SPOTIFY_API, user_id, playlist_id, max_query)
+    else:
+        endpoint = nextUrl
+
+    try:
+        r = spotify.request(endpoint)
+        tracks = tracks
+
+        for idx, t in enumerate(r['items']):
+            track = {}
+            track['position'] = idx
+            try:
+                track['artist_id'] = t['track']['album']['artists'][0]['id']
+            except IndexError as e:
+                logger.warn('Track {} does not has artist id attached'.format(t['track']['id']))
+                track['artist_id'] = None
+
+            try:
+                track['artist_name'] = t['track']['album']['artists'][0]['name'] # NOTE: take only first artist, as is primary artist, not all collaborators
+            except IndexError as e:
+                logger.warn('Track {} does not has artist name attached'.format(t['track']['id']))
+                track['artist_name'] = ''
+
+            track['album_id'] = t['track']['album'].get('id')
+            track['album_name'] = t['track']['album'].get('id')
+            track['isrc'] = t['track']['external_ids'].get('isrc')
+            track['track_id'] = t['track']['id']
+            track['track_name'] = t['track']['name']
+            track['track_uri'] = t['track']['uri']
+            track['popularity'] = t['track']['popularity']
+            tracks.append(track)
+
+        # if there are more values to return, request more and add to the list
+        if not r['next']:
+            print('{} {}: Retrieved all tracks for playlist {}'.format(PRINT_PREFIX, user_id, playlist_id))
+            return tracks
+        else:
+            print('Retrieving more tracks for playlist {}, running total: {}'.format(playlist_id, len(tracks)))
+            return getTracksByPlaylist(user_id, playlist_id, tracks, r['next'])
+
+        return playlists
+
+    except Exception as e:
+        logger.warn(e)
+
+
+#
+# converts a list with a attribute (usually an id value, such as spotify's track id)
+# to a dictionary with the attribute as the key of the new dictionary, and the list object as the value
+# example:
+# INPUT:
+#   list = [{'id': 123, 'data': xyz}, {'id': 234, 'data': abc}]
+#   attribute = 'id'
+# OUTPUT:
+# {
+#   123: {'id': 123, 'data': xyz},
+#   234: {'id': 234, 'data': abc}
+# }
+#
+def convert_list_to_dict_by_attribute(item_list, attribute):
+    converted = {}
+    for item in item_list:
+        key = item[attribute]
+        converted[key] = item
+    return converted
+
+"""
+0. Create Playlist TABLE
+0. Create Playlist Creator TABLE
+0. Create song Playlist table
+
+
+4. get position:
+    https://developer.spotify.com/web-api/get-playlist/
+        r.items.xxx.popularity
+
+    https://api.spotify.com/v1/users/{user_id}/playlists/{playlist_id}/tracks
+"""
 def process():
     """
     Process each region for "date" mode
@@ -933,14 +1094,66 @@ def process():
     """
     starttime_total = datetime.datetime.now() # timestamping
 
-    service_name = 'Spotify'
 
-    getPlaylists('spotify')
+    service_name = 'Spotify'
+    today = date.today().strftime('%Y-%m-%d')
+
+    # print_playlist_names(playlists)
+    # 1. DONE -GET LIST OF USER PLAYLISTS (ids)
+    playlists_list = get_all_playlists(TEST_USERS)
+
+    # 1x. DONE - CONVERT TO DICTIONARY
+    playlists = convert_list_to_dict_by_attribute(playlists_list, 'playlist_id')
+
+    # 1XX. deduplicate based on uris
+    # QUESTION: How often to re-scrape playlists from users?
+    #1a. TODO: CHECK WHETHER USER PLAYLIST IS IN DB YET
+    # -if so, get db_playlist_id, setdefault to null or None (python)
+    # -if not, insert into playlist tables
+    #       -playlist table, creator table
+    # QUESTION How often do the snapshot_ids change? Do they change with follower count too, or just on track / ordering of tracks change'''
+    # 1a. insert playlists into DB
+    #     -compare uris against database URIs or ids
+    #     -check to see if playlist snapshot ID is the same as in DB...
+
+    #2. DONE - GET ONE PLAYLIST FOLLOWERS
+    # one_playlist = playlists_list[0]
+    # print('followers is', getFollowersForPlaylist(one_playlist['owner'], one_playlist['spotify_id']))
+
+    # 3. DONE - GET PLAYLIST TRACKS FOR ONE PLAYLIST
+    # playlists[] = getTracksByPlaylist('100keepit', '6tMPgnhmsgJEODIkWc4H81')
+    # print(tracks)
+
+    # 3a. TODO: GET FOLLOWERS FOR ALL PLAYLISTS
+    # playlists = append_playlist_data(playlists)
+
+    # pprint(playlists, depth=2)
+
+    # Append tracks to each playlist
+    for playlist_id, playlist in playlists.items():
+        try:
+            tracks_list = getTracksByPlaylist(playlist['owner_id'], playlist_id)
+            tracks_dict = convert_list_to_dict_by_attribute(tracks_list, 'track_id')
+            playlists[playlist_id]['tracks'] = tracks_dict
+        except:
+            continue
+
+    pprint(playlists, depth=2)
+
+    # 4. TODO: if db_track_id doesn't extist,
+    #     input track into db
+    #     get album data: distributor, release date
+    #     input album into db
+
+    # TODO: 5. add artist to db.
+    # 5a. add album to db.
+    # 5b. add track to db
+    # 5c. add track-playlist-position to db (with date and popularity rating (?))
 
     # timestamping
     endtime_total = datetime.datetime.now()
     processtime_total = endtime_total - starttime_total
-    print('Finished processing all applicable dates at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
+    print('Finished processing at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
     print('Total processing time: %i minutes, %i seconds' % divmod(processtime_total.days *86400 + processtime_total.seconds, 60))
     print('-' * 40)
 
@@ -955,7 +1168,10 @@ if __name__ == '__main__':
     # setup db
     db = TrackDatabase(DATABASE_FILE)
 
+    # setup Spotify auth and client for API calls
+    spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
+
     # prompt for date/mode
     process()
 
-    print('Finished')
+    print('COMPLETE')
