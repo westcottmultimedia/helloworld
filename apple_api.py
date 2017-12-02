@@ -61,22 +61,25 @@ REGIONS_WITH_APPLE_MUSIC = list(set(REGIONS).difference(REGIONS_WITHOUT_APPLE_MU
 REGIONS_WITH_ITUNES_MUSIC_ALBUMS = list(set(REGIONS).difference(REGIONS_WITHOUT_ITUNES_MUSIC))
 REGIONS_WITH_MUSIC_VIDEOS = list(set(REGIONS).difference(REGIONS_WITHOUT_MUSIC_VIDEOS))
 
-REGIONS_ONE_OFF = ["us", "gb", "fr"]
+REGIONS_MISSED_APPLE_MUSIC = ['np', 'bw', 'id', 'vn', 'bm', 'lu', 'md', 'de']
+REGIONS_MISSED_ITUNES_SONGS = ['dm', 'om', 'sz', 'lb', 'ai', 'fm', 'cv', 'la', 'bh', 'jo', 'hn', 'fj', 'kn', 'co', 'zw', 'tt', 'lt', 'ni', 'bo', 'am', 'gr', 'ee', 'cy', 'th', 'mu', 'ar', 'si', 'md', 'uz', 'mn', 'pa', 'cz', 'bg', 'ky', 'sv', 'pl', 'in', 'gd', 'py', 'na', 'mz', 'bn', 'do', 'cr', 'cl', 'qa', 'ne', 'my', 'sk', 'tm', 'lk', 've', 'pg', 'bm', 'ke', 'ph', 'bz', 'bw', 'gm', 'hu', 'vg', 'gt', 'bs', 'ug', 'az', 'ec', 'bb', 'mo', 'bf', 'sa', 'lu', 'ag', 'tj', 'ae', 'kz', 'dk']
+REGIONS_MISSED_ITUNES_ALBUMS = ['na', 'gm', 'mz', 'ie', 'kh', 'kg', 'ai', 'tm', 'bf', 'jo', 'mn', 'fj', 'zw']
+REGIONS_MISSED_MUSIC_VIDEOS = ['py', 'at', 'na', 'au', 'kh', 'ua', 'tm', 'pg', 'eg', 'ke', 'ca', 'lv', 'ph', 'by', 'fj', 'co', 'ch', 'sg', 'mn', 'dk']
 
-CHARTS = [
-    # ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC),
-    # ('itunes-music', 'top-songs', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
-    # ('itunes-music', 'top-albums', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
-    ('music-videos', 'top-music-videos', REGIONS_WITH_MUSIC_VIDEOS)
-]
+# CHARTS = [
+#     ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC),
+#     ('itunes-music', 'top-songs', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
+#     ('itunes-music', 'top-albums', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
+#     ('music-videos', 'top-music-videos', REGIONS_WITH_MUSIC_VIDEOS)
+# ]
 
 # (media, chart, regions)
-# CHARTS = [
-#     ('apple-music', 'top-songs', REGIONS_ONE_OFF),
-#     ('itunes-music', 'top-songs', REGIONS_ONE_OFF),
-#     ('itunes-music', 'top-albums', REGIONS_ONE_OFF),
-#     ('music-videos', 'top-music-videos', REGIONS_ONE_OFF)
-# ]
+CHARTS = [
+    # ('apple-music', 'top-songs', REGIONS_MISSED_APPLE_MUSIC),
+    # ('itunes-music', 'top-songs', REGIONS_MISSED_ITUNES_SONGS),
+    ('itunes-music', 'top-albums', REGIONS_MISSED_ITUNES_ALBUMS)
+    # ('music-videos', 'top-music-videos', REGIONS_MISSED_MUSIC_VIDEOS)
+]
 
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
@@ -599,12 +602,13 @@ class TrackDatabase(object):
             VALUES
             (?, ?, ?, ?, ?, ?, ?, ?)
         '''
-        # finds the earlier of the two dates, the current added and the current date query
+        # finds the earlier of the two dates, for when it was first added
         first_added = self.order_dates(first_added, date_str)[0] if stats else date_str
         # finds the later of the current last_seen and the current date query
         last_seen = self.order_dates(last_seen, date_str)[1] if stats else date_str
+
         if stats and position < peak_rank:
-            # track is ranked higher (has a lower numbered position) when current position is less than old now
+            # track is ranked higher (has a lower numbered position)
             peak_rank = position
             peak_date = date_str
         # peak rank is the same, get the earliest peak date
@@ -962,12 +966,14 @@ def process(mode):
     number_results = 50
     limit = '&limit={}'.format(number_results)
 
-    # DEBUG: which countries have no apple data
-    no_apple_data = []
-
     starttime_total = datetime.now() # timestamp
 
+    # Collect missing regions data by chart
+    missed_regions = {}
+
     for chart in CHARTS:
+
+        missed_regions[chart[0]] = []
 
         # set rss url params
         #
@@ -997,7 +1003,7 @@ def process(mode):
                 if err.code == 400:
                     print('HTTP 400')
                 if err.code == 404:
-                    no_apple_data.append(region) # country data for the chart is not available
+                    missed_regions[chart].append(region) # country data for the chart is not available
                     print('No RSS feed data found for {} for {} in {}'.format(region, rss_params['media'], rss_params['chart']))
                     logger.warn('No RSS feed data found for {} for {} in {}'.format(region, rss_params['media'], rss_params['chart']))
                     print('-' * 40)
@@ -1013,7 +1019,7 @@ def process(mode):
                 date_str = parser.parse(raw_data['feed']['updated']).strftime('%Y-%m-%d')
 
             except ValueError:
-                no_apple_data.append(region)
+                missed_regions[chart].append(region)
                 print('Decoding JSON failed')
                 print('No download available, skipping...')
                 print('-' * 40)
@@ -1094,7 +1100,12 @@ def process(mode):
     print('-' * 40)
 
     # no data
-    print('no data for {} countries: {}'.format(len(no_apple_data), no_apple_data))
+    print('Rerun these regions for these charts:')
+
+    for chart, regions in missed_regions.items():
+        print('Missing {} regions: '.format(len(missed_regions[chart])))
+        print(chart, regions)
+        print('-' * 40)
 
 def kickoff_process():
     print('started')
