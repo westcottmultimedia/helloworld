@@ -62,8 +62,11 @@ UNIVERSAL_USERS = ['radioactivehits', 'digster.ee', 'digster.dk', 'dgdeccaclassi
 'digstergreece', 'universalmusica', 'digster.fi', 'digster.se', 'universalmusictaiwan', 'classicmotownrecords',
 'digster_italy', 'digster_brasil', 'thejazzlabels', 'universalmusicireland', 'wowilovechristianmusic', 'sinfinimusic.nl', 'digster.fm',
 'digsterchile', 'disney_music_uk', 'udiscovermusic', 'universal_music_rock_legends', 'digster.pt']
-TEST_USERS = SPOTIFY_USERS
+
+TEST_USERS = ['topsify']
+
 MESSEDUP_UNIVERSAL_USERS = ['el_listÃ³n', 'digstertÃ¼rkiye']
+
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
 
@@ -296,7 +299,7 @@ def get_artist_by_id(tracks, track_id):
                 logger.warning('artist ID not available for track ID {}'.format(track_id))
     return False
 
-def append_track_id_from_db(tracks):
+def append_db_track_id(tracks):
     """
     Input:
         tracks: dict
@@ -872,9 +875,13 @@ class TrackDatabase(object):
         )
         row = query.fetchone()
         return row[0] if row else False
+
     def get_album_id(self, service_id, service_album_id):
         """
         Retrive service_album_id
+        INPUT:
+            service_id: integer
+            service_album_id: text
         """
         query = self.c.execute('''
             SELECT id FROM album
@@ -887,8 +894,74 @@ class TrackDatabase(object):
         row = query.fetchone()
         return row[0] if row else False
 
+    def get_owner_id(self, service_id, service_owner_id):
+        """
+        Retrive db owner_id based on service_owner_id, ie. Spotify's owner id for the playlists
+        Or Apple's curator for their playlist
+        INPUT:
+            service_id: integer
+            service_owner_id: text
+        """
+        query = self.c.execute('''
+            SELECT id FROM playlist_owner
+            WHERE
+            service_id = ?
+            AND
+            service_owner_id = ?
+        ''', (str(service_id), service_owner_id)
+        )
+        row = query.fetchone()
+        return row[0] if row else False
 
+    def get_playlist_id(self, service_id, service_playlist_id):
+        query = self.c.execute('''
+            SELECT id FROM playlist
+            WHERE
+            service_id = ?
+            AND
+            service_playlist_id = ?
+        ''', (str(service_id), service_playlist_id)
+        )
+        row = query.fetchone()
+        return row[0] if row else False
 
+    def add_playlist_owner(self, service_id, playlist):
+        '''
+        Adds playlist owner to db, returns db owner id
+        '''
+        self.c.execute('''
+            INSERT OR IGNORE INTO playlist_owner
+            (service_id, service_owner_id, alt_name)
+            VALUES
+            (?, ?, ?)
+        ''', (service_id, playlist['owner_id'], playlist['owner_display_name']))
+        self.db.commit()
+        db_owner_id = self.c.lastrowid
+
+        return db_owner_id
+
+    def add_playlist(self, service_id, playlist):
+        '''
+        Adds playlist owner to db, returns db owner id
+        '''
+        self.c.execute('''
+            INSERT OR IGNORE INTO playlist
+            (service_id, service_playlist_id, name, owner_id, latest_version)
+            VALUES
+            (?, ?, ?, ?, ?)
+        ''', (service_id, playlist['playlist_id'], playlist['name'], playlist['db_owner_id'], playlist['snapshot_id']))
+        self.db.commit()
+        db_playlist_id = self.c.lastrowid
+        return db_playlist_id
+
+    def add_playlist_followers(self, service_id, date_str, playlist):
+        self.c.execute('''
+            INSERT OR IGNORE INTO playlist_followers
+            (service_id, playlist_id, playlist_version, followers, date_str)
+            VALUES
+            (?, ?, ?, ?, ?)
+        ''', (service_id, playlist['db_playlist_id'], playlist['snapshot_id'], playlist['followers'], date_str))
+        self.db.commit()
 
 # recursively retrieve all playlists from a users
 #
@@ -1052,8 +1125,80 @@ def getTracksByPlaylist(user_id, playlist_id, tracks=[], nextUrl=None):
         return playlists
 
     except Exception as e:
+        raise
         logger.warn(e)
 
+# returns db owner id to a playlist Object, else creates a new owner and returns the id
+#
+def get_db_owner_id(service_id, playlist):
+    try:
+        db_owner_id = db.get_owner_id(service_id, playlist['owner_id']) # spotify service_id = 1, placeholder
+
+        if db_owner_id:
+            return int(db_owner_id)
+        else:
+            return db.add_playlist_owner(service_id, playlist)
+
+    except Exception as e:
+        print(e)
+        raise
+        return None
+
+# returns playlist id from db, else creates the playlist and returns the newly created id
+def get_db_playlist_id(service_id, playlist):
+
+    try:
+        db_playlist_id = db.get_playlist_id(service_id, playlist['playlist_id']) # spotify service_id = 1, placeholder
+
+        if db_playlist_id:
+            print(type(db_playlist_id))
+            return int(db_playlist_id)
+        else:
+            return db.add_playlist(service_id, playlist)
+
+    except Exception as e:
+        print(e)
+        raise
+        return None
+
+def append_db_owner_id(service_id, playlists):
+    for playlist_id, playlist in playlists.items():
+        try:
+            # spotify service_id = 1, placeholder
+            playlist.setdefault('db_owner_id', None)
+            playlist['db_owner_id'] = get_db_owner_id(service_id, playlist)
+
+            # ORIGINAL CODE
+            # playlist['db_owner_id'] = get_owner_id(1, playlist['owner_id'])
+            #
+            # if db_owner_id:
+            #     playlist['db_owner_id'] = db_owner_id
+            # else:
+            #     db.add_playlist_owner()
+
+        except Exception:
+            raise
+    return playlists
+
+def append_db_playlist_id(service_id, playlists):
+    for playlist_id, playlist in playlists.items():
+        try:
+            playlist.setdefault('db_playlist_id', None)
+            playlist['db_playlist_id'] = get_db_playlist_id(service_id, playlist)
+
+        except Exception:
+            raise
+    return playlists
+
+def append_playlist_tracks(playlists):
+    for playlist_id, playlist in playlists.items():
+        try:
+            tracks_list = getTracksByPlaylist(playlist['owner_id'], playlist_id)
+            tracks_dict = convert_list_to_dict_by_attribute(tracks_list, 'track_id')
+            playlists[playlist_id]['tracks'] = tracks_dict
+        except:
+            continue
+    return playlists
 
 #
 # converts a list with a attribute (usually an id value, such as spotify's track id)
@@ -1096,13 +1241,14 @@ def process():
 
 
     service_name = 'Spotify'
-    today = date.today().strftime('%Y-%m-%d')
+    service_id = 1
 
-    # print_playlist_names(playlists)
-    # 1. DONE -GET LIST OF USER PLAYLISTS (ids)
+    today = datetime.date.today().strftime('%Y-%m-%d')
+
+    # 1. GET LIST OF USER PLAYLISTS (ids)
     playlists_list = get_all_playlists(TEST_USERS)
 
-    # 1x. DONE - CONVERT TO DICTIONARY
+    # 1x. CONVERT TO DICTIONARY
     playlists = convert_list_to_dict_by_attribute(playlists_list, 'playlist_id')
 
     # 1XX. deduplicate based on uris
@@ -1116,33 +1262,36 @@ def process():
     #     -compare uris against database URIs or ids
     #     -check to see if playlist snapshot ID is the same as in DB...
 
-    #2. DONE - GET ONE PLAYLIST FOLLOWERS
-    # one_playlist = playlists_list[0]
-    # print('followers is', getFollowersForPlaylist(one_playlist['owner'], one_playlist['spotify_id']))
+    # DB --- ADD OWNERS, or CREATE OWNER
+    playlists = append_db_owner_id(service_id, playlists)
+    pprint(playlists, depth = 2)
+    print('after append_db_owner_id')
+    # DB --- ADD PLAYLISTS TO DB
+    playlists = append_db_playlist_id(service_id, playlists)
 
-    # 3. DONE - GET PLAYLIST TRACKS FOR ONE PLAYLIST
-    # playlists[] = getTracksByPlaylist('100keepit', '6tMPgnhmsgJEODIkWc4H81')
-    # print(tracks)
+    pprint(playlists, depth = 2)
+    print('after append_db_playlist_id')
+    # 3a. GET FOLLOWERS FOR ALL PLAYLISTS
+    playlists = append_playlist_data(playlists)
+    pprint(playlists, depth = 2)
+    print('after append_db_playlist_id')
 
-    # 3a. TODO: GET FOLLOWERS FOR ALL PLAYLISTS
-    # playlists = append_playlist_data(playlists)
-
-    # pprint(playlists, depth=2)
+    for playlist_id, playlist in playlists.items():
+        db.add_playlist_followers(service_id, today, playlist)
 
     # Append tracks to each playlist
-    for playlist_id, playlist in playlists.items():
-        try:
-            tracks_list = getTracksByPlaylist(playlist['owner_id'], playlist_id)
-            tracks_dict = convert_list_to_dict_by_attribute(tracks_list, 'track_id')
-            playlists[playlist_id]['tracks'] = tracks_dict
-        except:
-            continue
+    # playlists = append_playlist_tracks(playlists)
 
     pprint(playlists, depth=2)
 
+
+
+
+
     # 4. TODO: if db_track_id doesn't extist,
     #     input track into db
-    #     get album data: distributor, release date
+
+    # 5. get album data: distributor, release date
     #     input album into db
 
     # TODO: 5. add artist to db.
