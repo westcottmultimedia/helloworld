@@ -63,7 +63,7 @@ UNIVERSAL_USERS = ['radioactivehits', 'digster.ee', 'digster.dk', 'dgdeccaclassi
 'digster_italy', 'digster_brasil', 'thejazzlabels', 'universalmusicireland', 'wowilovechristianmusic', 'sinfinimusic.nl', 'digster.fm',
 'digsterchile', 'disney_music_uk', 'udiscovermusic', 'universal_music_rock_legends', 'digster.pt']
 
-TEST_USERS = ['topsify']
+TEST_USERS = ['filtr']
 
 MESSEDUP_UNIVERSAL_USERS = ['el_listÃ³n', 'digstertÃ¼rkiye']
 
@@ -299,7 +299,7 @@ def get_artist_by_id(tracks, track_id):
                 logger.warning('artist ID not available for track ID {}'.format(track_id))
     return False
 
-def append_db_track_id(tracks):
+def append_db_ids(tracks):
     """
     Input:
         tracks: dict
@@ -310,56 +310,66 @@ def append_db_track_id(tracks):
     """
     # NOTE: hardcoded in service_id = 1 for Spotify, may want to change to lookup
     # service_id = self.get_service_id(service_name)
-    for track_id in tracks:
-        query = """
-            SELECT id
-            FROM track
-            WHERE service_id = 1
-            AND service_track_id = (?)
-        """
-        # NOTE: there should be a one-to-one relationship between spotify trackId and db id
-        row = db.c.execute(query, [tracks[track_id]['trackId']]).fetchone()
-        if row:
-            tracks[track_id]['track_id_db'] = row[0]
 
-    # for key in tracks:
-    #     logging.debug("TRACKS--------", tracks[key])
+    for track_id, track in tracks.items():
+        tracks[track_id] = append_db_track_id(track)
+        tracks[track_id] = append_db_artist_id(track)
+        tracks[track_id] = append_db_album_id(track)
 
     return tracks
 
-def append_track_data(tracks, batch_size=50):
-    """
-    Input:
-        tracks: dict
-    Output:
-        tracks: dict +
-            { 'isrc': xx, 'artistId': xx, 'albumId': xx} for any track without a db id
-    Append the isrc, artist ID, and album ID to tracks_list using the Spotify tracks API
-    See: https://developer.spotify.com/web-api/console/get-several-tracks/
-    Returns track_list with "isrc", "artistID" and "albumId" appended
-    """
-    spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
-    endpoint = "https://api.spotify.com/v1/tracks?ids={}"
+def append_db_track_id(track):
+    track.setdefault('db_track_id', None)
 
-    tracks_to_lookup = []
-    for track_id in tracks:
-        # db id key would be appended to the track if it exists in the db
-        if 'track_id_db' not in tracks[track_id]:
-            tracks_to_lookup.append(track_id)
-    # api supports up to 50 ids at a time
-    batches = [tracks_to_lookup[i:i + batch_size] for i in range(0, len(tracks_to_lookup), batch_size)]
-    for i, batch in enumerate(batches):
-        id_str = ','.join(map(str, batch))
-        r_dict = spotify.request(endpoint.format(id_str))
-        for track_id in batch:
-            tracks[track_id]['isrc'] = get_isrc_by_id(r_dict['tracks'], track_id)
-            tracks[track_id]['albumId'] = get_album_by_id(r_dict['tracks'], track_id)
-            tracks[track_id]['artistId'] = get_artist_by_id(r_dict['tracks'], track_id)
-        print('Appended track data for batch %d of %d' % (i+1, len(batches)) )
-    print('Added %i tracks to the DB' % len(tracks_to_lookup) )
-    return tracks
+    query = """
+        SELECT id
+        FROM track
+        WHERE service_id = 1
+        AND service_track_id = (?)
+    """
+    # NOTE: there should be a one-to-one relationship between spotify trackId and db id
+    row = db.c.execute(query, [track['track_id']]).fetchone()
 
-def append_track_album_data(tracks, batch_size=20):
+    if row:
+        track['db_track_id'] = row[0]
+
+    return track
+
+def append_db_artist_id(track):
+    track.setdefault('db_artist_id', None)
+
+    query = """
+        SELECT id
+        FROM artist
+        WHERE service_id = 1
+        AND service_artist_id = (?)
+    """
+    # NOTE: there should be a one-to-one relationship between spotify trackId and db id
+    row = db.c.execute(query, [track['artist_id']]).fetchone()
+
+    if row:
+        track['db_artist_id'] = row[0]
+
+    return track
+
+def append_db_album_id(track):
+    track.setdefault('db_album_id', None)
+
+    query = """
+        SELECT id
+        FROM album
+        WHERE service_id = 1
+        AND service_album_id = (?)
+    """
+    # NOTE: there should be a one-to-one relationship between spotify trackId and db id
+    row = db.c.execute(query, [track['album_id']]).fetchone()
+
+    if row:
+        track['db_album_id'] = row[0]
+
+    return track
+
+def append_album_data(tracks, batch_size=20):
     """
     Input:
         tracks: dict (with 'albumId' key, which refers to spotify albumId)
@@ -375,29 +385,33 @@ def append_track_album_data(tracks, batch_size=20):
     endpoint_albums = "https://api.spotify.com/v1/albums?ids={}"
 
     # api supports up to 20 ids at a time
-    albums = [t['albumId'] for k,t in tracks.items() if 'albumId' in t]
+    albums = [t['album_id'] for k,t in tracks.items() if not t['db_album_id']]
 
     if len(albums) != 1:
         batches = [albums[i:i + batch_size] for i in range(0, len(albums), batch_size)]
+
+        r_list = []
         for i, batch in enumerate(batches):
             id_str = ','.join(batch)
-            r_dict = spotify.request(endpoint_albums.format(id_str))
-            for album in r_dict['albums']:
-                for track_id, track in tracks.items():
-                    if 'albumId' in track and track['albumId'] == album['id']:
-                        tracks[track_id]['release_date'] = album['release_date']
-                        tracks[track_id]['label'] = album['label']
-                        tracks[track_id]['album_name'] = album['name']
-            print('Appended album data for batch %d of %d' % (i+1, len(batches)) )
+            r = spotify.request(endpoint_albums.format(id_str))
+            r_list += r['albums']
+            print('Retrieved album data {} of {} batches'.format(i, len(batches)))
+
+        album_data_dict = convert_list_to_dict_by_attribute(r_list, 'id')
+
+        for track_id, track in tracks.items():
+            if not track['db_album_id']:
+                tracks[track_id]['album_release_date'] = album_data_dict[track['album_id']]['release_date']
+                tracks[track_id]['album_label'] = album_data_dict[track['album_id']]['label']
+        print('Appended album data')
     else:
         album_id = albums[0]
         album = spotify.request(endpoint_album.format(album_id))
         for track_id, track in tracks.items():
-            if 'albumId' in track and track['albumId'] == album['id']:
+            if not track['db_album_id']:
                 tracks[track_id]['release_date'] = album['release_date']
                 tracks[track_id]['label'] = album['label']
-                tracks[track_id]['album_name'] = album['name']
-        print('Appended album data for album_id %s' % album_id )
+        print('Appended album data')
     return tracks
 
 def append_artist_data(tracks, batch_size=50):
@@ -409,16 +423,21 @@ def append_artist_data(tracks, batch_size=50):
     spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
     endpoint = "https://api.spotify.com/v1/artists?ids={}"
     # api supports up to 50 ids at a time
-    artists = [t['artistId'] for k,t in tracks.items() if 'artistId' in t]
+    artists = [t['artist_id'] for k,t in tracks.items() if not t['db_artist_id']]
     batches = [artists[i:i + batch_size] for i in range(0, len(artists), batch_size)]
+
+    r_list = []
     for i, batch in enumerate(batches):
         id_str = ','.join(batch)
-        r_dict = spotify.request(endpoint.format(id_str))
-        for artist in r_dict['artists']:
-            for track_id, track in tracks.items():
-                if 'artistId' in track and track['artistId'] == artist['id']:
-                    tracks[track_id]['genres'] = artist['genres']
-        print('Appended artist data for batch %d of %d' % (i+1, len(batches)) )
+        r = spotify.request(endpoint.format(id_str))
+        r_list += r['artists']
+        print('Retrieved artist data {} of {} batches'.format(i, len(batches)))
+    artist_data_dict = convert_list_to_dict_by_attribute(r_list, 'id')
+
+    for track_id, track in tracks.items():
+        if not track['db_artist_id']:
+            tracks[track_id]['genres'] = artist_data_dict[track['artist_id']]['genres']
+    print('Appended artist data' )
     return tracks
 
 def get_track_id_from_url(url):
@@ -731,22 +750,19 @@ class TrackDatabase(object):
             [service_id, territory_id, track_id, first_added, last_seen, peak_rank, peak_date]
         )
 
-    def add_tracks(self, track_list, date_str, service_name):
+    def add_playlist_tracks(self, service_id, track_list):
         """
         input:
             track_list: dict of all songs to add
         Add tracks to the database
         """
-        service_id = self.get_service_id(service_name)
-
         for track_id, track in track_list.items():
 
-            territory_id = self.get_territory_id(track['region'])
-            position = track['Position']
+            position = track['position']
 
             # if db id is populated, the track is already in the DB
-            if 'track_id_db' in track:
-                track_id_db = track['track_id_db']
+            if track.get('db_track_id'):
+                track_id_db = track['db_track_id']
                 isrc = self.get_isrc_from_db(track_id_db)
 
             # track doesn't have track.id and the data for the track and album were retrieved from Spotify API
@@ -754,13 +770,12 @@ class TrackDatabase(object):
 
                 try:
                     # check if artist or album are in the db
-                    artist_name = str(track['Artist'])
-                    service_album_id = str(track['albumId'])
-                    service_artist_id = str(track['artistId'])
+                    artist_name = str(track['artist_name'])
+                    service_album_id = str(track.get('album_id'))
+                    service_artist_id = str(track.get('artist_id'))
                     isrc = str(track['isrc'])
                     artist_id = self.get_artist_id(service_id, service_artist_id)
                     album_id = self.get_album_id(service_id, service_album_id)
-
 
                     # add artist if not in the db
                     if not artist_id:
@@ -1100,7 +1115,9 @@ def getTracksByPlaylist(user_id, playlist_id, tracks=[], nextUrl=None):
                 track['artist_id'] = None
 
             try:
+
                 track['artist_name'] = t['track']['album']['artists'][0]['name'] # NOTE: take only first artist, as is primary artist, not all collaborators
+                print('----_WHAT_--- NAME---- :', track['artist_name'])
             except IndexError as e:
                 logger.warn('Track {} does not has artist name attached'.format(t['track']['id']))
                 track['artist_name'] = ''
@@ -1151,7 +1168,6 @@ def get_db_playlist_id(service_id, playlist):
         db_playlist_id = db.get_playlist_id(service_id, playlist['playlist_id']) # spotify service_id = 1, placeholder
 
         if db_playlist_id:
-            print(type(db_playlist_id))
             return int(db_playlist_id)
         else:
             return db.add_playlist(service_id, playlist)
@@ -1196,7 +1212,8 @@ def append_playlist_tracks(playlists):
             tracks_list = getTracksByPlaylist(playlist['owner_id'], playlist_id)
             tracks_dict = convert_list_to_dict_by_attribute(tracks_list, 'track_id')
             playlists[playlist_id]['tracks'] = tracks_dict
-        except:
+        except Exception as e:
+            logger.warning('Warning %s for playlist id %s', e, playlist_id)
             continue
     return playlists
 
@@ -1253,42 +1270,51 @@ def process():
 
     # 1XX. deduplicate based on uris
     # QUESTION: How often to re-scrape playlists from users?
-    #1a. TODO: CHECK WHETHER USER PLAYLIST IS IN DB YET
-    # -if so, get db_playlist_id, setdefault to null or None (python)
-    # -if not, insert into playlist tables
-    #       -playlist table, creator table
+
     # QUESTION How often do the snapshot_ids change? Do they change with follower count too, or just on track / ordering of tracks change'''
-    # 1a. insert playlists into DB
+    # #TODO: 1a. insert playlists into DB
     #     -compare uris against database URIs or ids
     #     -check to see if playlist snapshot ID is the same as in DB...
 
     # DB --- ADD OWNERS, or CREATE OWNER
     playlists = append_db_owner_id(service_id, playlists)
-    pprint(playlists, depth = 2)
-    print('after append_db_owner_id')
+
     # DB --- ADD PLAYLISTS TO DB
     playlists = append_db_playlist_id(service_id, playlists)
 
-    pprint(playlists, depth = 2)
-    print('after append_db_playlist_id')
     # 3a. GET FOLLOWERS FOR ALL PLAYLISTS
-    playlists = append_playlist_data(playlists)
-    pprint(playlists, depth = 2)
-    print('after append_db_playlist_id')
+    # playlists = append_playlist_data(playlists)
+    #
+    # for playlist_id, playlist in playlists.items():
+    #     db.add_playlist_followers(service_id, today, playlist)
 
-    for playlist_id, playlist in playlists.items():
-        db.add_playlist_followers(service_id, today, playlist)
+    #TESTING!!!
+    import random
+    random_id = random.choice(list(playlists))
+    playlists = {random_id: playlists[random_id]}
 
     # Append tracks to each playlist
-    # playlists = append_playlist_tracks(playlists)
+    playlists = append_playlist_tracks(playlists)
 
-    pprint(playlists, depth=2)
+    # DEBUGGING:
+    # for playlist_id, playlist in playlists.items():
+    #     for track_id, track in playlist['tracks'].items():
+    #         print(track['artist_name'])
+    #         print(type(track['artist_name']))
+
+    for playlist_id, playlist in playlists.items():
+        tracks = playlists[playlist_id]['tracks']
+        tracks = append_db_ids(tracks)
+        #
+        tracks = append_album_data(tracks)
+        tracks = append_artist_data(tracks)
+        tracks = append_album_data(tracks)
+        #
+        playlists[playlist_id]['tracks'] = tracks
+        #
+    pprint(playlists, depth=4)
 
 
-
-
-
-    # 4. TODO: if db_track_id doesn't extist,
     #     input track into db
 
     # 5. get album data: distributor, release date
