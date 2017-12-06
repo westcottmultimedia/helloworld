@@ -928,9 +928,9 @@ class TrackDatabase(object):
         row = query.fetchone()
         return row[0] if row else False
 
-    def get_playlist_id(self, service_id, service_playlist_id):
+    def get_playlist_info(self, service_id, service_playlist_id):
         query = self.c.execute('''
-            SELECT id FROM playlist
+            SELECT id, latest_version FROM playlist
             WHERE
             service_id = ?
             AND
@@ -938,7 +938,7 @@ class TrackDatabase(object):
         ''', (str(service_id), service_playlist_id)
         )
         row = query.fetchone()
-        return row[0] if row else False
+        return (row[0], row[1]) if row else False
 
     def add_playlist_owner(self, service_id, playlist):
         '''
@@ -1160,20 +1160,25 @@ def get_db_owner_id(service_id, playlist):
         return None
 
 # returns playlist id from db, else creates the playlist and returns the newly created id
-def get_db_playlist_id(service_id, playlist):
+def get_db_playlist_info(service_id, playlist):
 
     try:
-        db_playlist_id = db.get_playlist_id(service_id, playlist['playlist_id']) # spotify service_id = 1, placeholder
+        db_playlist_id, playlist_version = db.get_playlist_info(service_id, playlist['playlist_id']) # spotify service_id = 1, placeholder
+
+        if playlist['snapshot_id'] == playlist_version:
+            playlist_version_same = True
+        else:
+            playlist_version_same = False
 
         if db_playlist_id:
-            return int(db_playlist_id)
+            return (int(db_playlist_id), playlist_version_same)
         else:
-            return db.add_playlist(service_id, playlist)
+            return (db.add_playlist(service_id, playlist), playlist_version_same)
 
     except Exception as e:
         print(e)
         raise
-        return None
+        return (None, False)
 
 def append_db_owner_id(service_id, playlists):
     for playlist_id, playlist in playlists.items():
@@ -1182,23 +1187,17 @@ def append_db_owner_id(service_id, playlists):
             playlist.setdefault('db_owner_id', None)
             playlist['db_owner_id'] = get_db_owner_id(service_id, playlist)
 
-            # ORIGINAL CODE
-            # playlist['db_owner_id'] = get_owner_id(1, playlist['owner_id'])
-            #
-            # if db_owner_id:
-            #     playlist['db_owner_id'] = db_owner_id
-            # else:
-            #     db.add_playlist_owner()
-
         except Exception:
             raise
     return playlists
 
-def append_db_playlist_id(service_id, playlists):
+def append_db_playlist_info(service_id, playlists):
     for playlist_id, playlist in playlists.items():
         try:
             playlist.setdefault('db_playlist_id', None)
-            playlist['db_playlist_id'] = get_db_playlist_id(service_id, playlist)
+            db_playlist_id, playlist_version_same = get_db_playlist_info(service_id, playlist)
+            playlist['db_playlist_id'] = db_playlist_id
+            playlist['playlist_version_same'] = playlist_version_same
 
         except Exception:
             raise
@@ -1292,7 +1291,7 @@ def process():
 
     # 1x. CONVERT TO DICTIONARY
     playlists = convert_list_to_dict_by_attribute(playlists_list, 'playlist_id')
-
+    print(playlists)
     # 1XX. deduplicate based on uris
     # QUESTION: How often to re-scrape playlists from users?
 
@@ -1305,7 +1304,7 @@ def process():
     playlists = append_db_owner_id(service_id, playlists)
 
     # DB --- ADD PLAYLISTS TO DB
-    playlists = append_db_playlist_id(service_id, playlists)
+    playlists = append_db_playlist_info(service_id, playlists)
 
     # NOTE: INSERT HERE:
     # take playlists from db, create object structure simulating other stuff
@@ -1321,7 +1320,6 @@ def process():
 
     #----------TESTING ONLY ------------!!!
     import random
-
     random_id = random.choice(list(playlists))
     print('TAKING A RANDOM PLAYLIST...{}'.format(random_id))
     playlists = {random_id: playlists[random_id]}
@@ -1333,9 +1331,24 @@ def process():
     for playlist_id, playlist in playlists.items():
         db.add_playlist_followers(service_id, today, playlist)
 
+    # before you append tracks, compare snapshot id (for spotify playlists only)
+    # If snapshot id si the same as latest db version,
+    #   then, don't append_playlist_tracks
+    #   rather, lookup
+    #
+    # def compare_playlist_version:
+    #
+        # select * from playlist_track_position
+        # where playlist_id = 1842
+        # and playlist_version = 'eGGwK1xGxaphCinMJm4KTleq6Y6Yc3jqnnRJGwRdpZ8vB7ffO4XhZochFrSL005I'
+
     # Append tracks to each playlist
     playlists = append_playlist_tracks(playlists)
 
+
+    # TODO: can insert these function inside the append_playlist_function
+    # if you want to lookup db ids for each playlist as you get the tracks
+    #
     for playlist_id, playlist in playlists.items():
         tracks = playlists[playlist_id].setdefault('tracks', {})
         tracks = append_db_ids(tracks)
@@ -1360,10 +1373,6 @@ def process():
 
 if __name__ == '__main__':
 
-    # are http requests being cached?
-    #CACHE_ENABLED = True
-    cache_msg = '\033[92m enabled' if CACHE_ENABLED else '\033[91m disabled'
-    print('HTTP cache is%s\033[0m' % cache_msg)
     print('Database file is {}'.format(DATABASE_FILE))
 
     # setup db
