@@ -63,7 +63,8 @@ UNIVERSAL_USERS = ['radioactivehits', 'digster.ee', 'digster.dk', 'dgdeccaclassi
 'digster_italy', 'digster_brasil', 'thejazzlabels', 'universalmusicireland', 'wowilovechristianmusic', 'sinfinimusic.nl', 'digster.fm',
 'digsterchile', 'disney_music_uk', 'udiscovermusic', 'universal_music_rock_legends', 'digster.pt']
 
-TEST_USERS = ['radioactivehits']
+TEST_USERS = ['radioactivehits', 'digster.ee', 'digster.dk', 'dgdeccaclassics', 'digster.co.uk', 'hhheroes',
+'digster.lt', 'capitolchristianmusicgroup', 'capitolrecords']
 
 MESSEDUP_UNIVERSAL_USERS = ['el_listÃ³n', 'digstertÃ¼rkiye']
 
@@ -977,51 +978,6 @@ class TrackDatabase(object):
         ''', (service_id, playlist['db_playlist_id'], playlist['snapshot_id'], playlist['followers'], date_str))
         self.db.commit()
 
-# recursively retrieve all playlists from a users
-# NOTE: This recursively adds more and more to the final list, which is why we need to use 'list(unique_everseen' method
-#
-# def get_playlists_by_user(user_id, playlists=[], nextUrl=None):
-#
-#     if not nextUrl:
-#         endpoint = "{}/users/{}/playlists?limit={}".format(SPOTIFY_API, user_id, MAX_LIMIT_QUERY)
-#     else:
-#         endpoint = nextUrl
-#
-#     try:
-#         r = spotify.request(endpoint)
-#
-#         # playlists = playlists
-#
-#         for p in r['items']:
-#             playlist = {}
-#             playlist['playlist_id'] = p['id']
-#             playlist['owner_id'] = p['owner']['id']
-#             playlist['owner_display_name'] = p['owner'].get('display_name', '')
-#             playlist['name'] = p['name']
-#             playlist['snapshot_id'] = p['snapshot_id']
-#             playlist['num_tracks'] = p['tracks']['total']
-#             playlist['href'] = p['href']
-#             playlist['uri'] = p['uri']
-#             playlists.append(playlist)
-#
-#         # if there are more values to return, request more and add to the list
-#         if not r['next']:
-#             # NOTE: As the playlist continues growing with new users, this deprecated method does not work as expected.
-#             # This playlist length validates the current user_id's playlist count with the total running count of all playlists.
-#             # validate_playlist_length(user_id, len(playlists), r['total'])
-#             validate_playlist_owner(playlists, user_id)
-#             print('{} Retrieved all playlists for {}'.format(PRINT_PREFIX, user_id))
-#             return playlists
-#         else:
-#             print('Retrieving more playlists for {}, running total: {}'.format(user_id, len(playlists)))
-#             return get_playlists_by_user(user_id, playlists, r['next'])
-#
-#         return playlists
-#
-#     except Exception as e:
-#         logger.warn(e)
-#         return playlists
-
 def get_playlists_by_user(user_id, nextUrl=None):
 
     if not nextUrl:
@@ -1048,14 +1004,11 @@ def get_playlists_by_user(user_id, nextUrl=None):
 
         # if there are more values to return, request more and add to the list
         if not r['next']:
-            # NOTE: As the playlist continues growing with new users, this deprecated method does not work as expected.
-            # This playlist length validates the current user_id's playlist count with the total running count of all playlists.
-            # validate_playlist_length(user_id, len(playlists), r['total'])
-            validate_playlist_owner(playlists, user_id)
-            print('{} Retrieved all playlists for {}'.format(PRINT_PREFIX, user_id))
+            # validate_playlist_owner(playlists, user_id)
+            print('-----{} playlists-----'.format(user_id))
             return playlists
         else:
-            print('Retrieving more playlists for {}, running total: {}'.format(user_id, len(playlists)))
+            print('...getting more playlists for {}'.format(user_id))
             return playlists + get_playlists_by_user(user_id, r['next'])
 
         return playlists
@@ -1067,29 +1020,28 @@ def get_playlists_by_user(user_id, nextUrl=None):
 def get_all_playlists(users):
     all_playlists = []
     for user in users:
-        playlists = get_playlists_by_user(user)
-        all_playlists = all_playlists + playlists
-        print('{} playlists for {}'.format(len(playlists), user))
-    print('total playlists {}'.format(len(all_playlists)))
+        user_playlists = get_playlists_by_user(user)
+        all_playlists += user_playlists
+        print('{} playlists:'.format(len(user_playlists)))
+        print_divider(len(user_playlists), '*')
+    print_divider(40)
+    print('TOTAL PLAYLISTS FOR ALL USERS {}'.format(len(all_playlists)))
     return all_playlists
 
 # Playlist Helper functions
 #
-def validate_playlist_length(user_id, length, expected):
-    if(length != expected):
-        logger.warn('For user {}, did not retrieve all playlists. Have {} of {}'.format(user_id, length, expected))
-    else:
-        print('{} Retrieved all {}\'s {} playlists!'.format(PRINT_PREFIX, user_id, length))
 
 def validate_playlist_owner(playlists, user_id):
     for p in playlists:
         if p['owner'] != user:
-            logger.warn('Spotify user {} has playlist id {} of owner {}, uri: {}'.format(user_id, p['spotify_id'], p['owner'], p['uri']))
+            logger.warning('Spotify user {} has playlist id {} of owner {}, uri: {}'.format(user_id, p['spotify_id'], p['owner'], p['uri']))
 
 def print_playlist_names(playlists):
     for p in playlists:
         print(p['name'])
 
+def print_divider(number, divider='-'):
+    print(divider * number)
 # Add follower count for playlists
 # INPUT: playlists object
 #
@@ -1176,7 +1128,7 @@ def get_tracks_by_playlist(user_id, playlist_id, tracks=[], nextUrl=None):
                 tracks_list.append(track)
 
                 # DEBUG:
-                print('https://open.spotify.com/user/{}/playlist/{}  -- {} in position {}'.format(user_id, playlist_id, track['track_name'], track['position']))
+                # print('https://open.spotify.com/user/{}/playlist/{}  -- {} in position {}'.format(user_id, playlist_id, track['track_name'], track['position']))
             print('{}:{} got all {} tracks'.format(user_id, playlist_id, len(tracks_list)))
             return tracks_list
 
@@ -1334,9 +1286,9 @@ def process():
     # 1. GET LIST OF USER PLAYLISTS (ids)
     playlists_list = get_all_playlists(TEST_USERS)
 
-    print('PLAYLIST LENGTH BEFORE UNIQUE= {}'.format(len(playlists_list)))
+    # print('PLAYLIST LENGTH BEFORE UNIQUE= {}'.format(len(playlists_list)))
     playlists_list = list(unique_everseen(playlists_list, key=lambda e: '{uri}'.format(**e)))
-    print('PLAYLIST LENGTH AFTER UNIQUE = {}'.format(len(playlists_list)))
+    print('TOTAL UNIQUE PLAYLISTS {}'.format(len(playlists_list)))
 
     # 1x. CONVERT TO DICTIONARY
     playlists = convert_list_to_dict_by_attribute(playlists_list, 'playlist_id')
