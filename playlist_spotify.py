@@ -1244,12 +1244,18 @@ def append_playlist_tracks(playlists):
         try:
             playlists[playlist_id].setdefault('tracks', {})
 
+            tracks_list = []
             if playlist['playlist_version_same']:
                 tracks_list = db.get_db_tracks_by_playlist(playlist_id, playlist['snapshot_id'])
                 tracks_dict = convert_list_to_dict_by_attribute(tracks_list, 'db_track_id')
                 # AHHHHH 'db_track_id' exists, but 'track_id' ie. service_track_id doesn't unless join tables.
-            else:
-                tracks_list = get_tracks_by_playlist(playlist['owner_id'], playlist_id)
+
+            # Validate
+            # compare db tracks length with purported number of tracks
+            # if they aren't equal, re-pull data from Spotify API
+            if len(tracks_list) != playlist['num_tracks']:
+                playlists[playlist_id]['playlist_version_same'] = False # reset flag
+                tracks_list = get_tracks_by_playlist(playlist['owner_id'], playlist_id)  # re-query API for tracks
                 tracks_dict = convert_list_to_dict_by_attribute(tracks_list, 'track_id')
 
             playlists[playlist_id]['tracks'] = tracks_dict
