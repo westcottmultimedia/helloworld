@@ -29,29 +29,11 @@ DATABASE_NAME = 'v9playlist.db'
 # sqlite database filename/path
 DATABASE_FILE = '../{}'.format(DATABASE_NAME)
 
-# the daily regional CSV download link
-CSV_url = 'https://spotifycharts.com/regional/{}/daily/{}/download'
-
-# the regions to download
-# All REGIONS
-REGIONS_TOTAL = [
-    'global', 'us', 'gb','ad','ar','at','au','be','bo','br',
-    'ca','ch','cl','co','cr','cz','de','dk','do','ec',
-    'ee','es','fi','fr','gr','gt','hk','hn','hu','id','ie',
-    'is','it','jp','lt','lu','lv','mc','mt','mx','my','ni',
-    'nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
-    'sk','sv','th','tr','tw','uy'
-]
-
-# NOTE: add to this list as more regions are discovered without daily downloads
-REGIONS_WITHOUT_DAILY = ['bg', 'cy', 'ni']
-
-REGIONS = list(set(REGIONS_TOTAL).difference(REGIONS_WITHOUT_DAILY))
-
 SPOTIFY_API = 'https://api.spotify.com/v1'
 
 # Spotify Users Playlists
-SPOTIFY_USERS = ['spotify', 'topsify', 'filtr'] # NOTE
+#
+SPOTIFY_USERS = ['spotify', 'topsify', 'filtr']
 UNIVERSAL_USERS = ['radioactivehits', 'digster.ee', 'digster.dk', 'dgdeccaclassics', 'digster.co.uk', 'hhheroes',
 'digster.lt', 'capitolchristianmusicgroup', 'capitolrecords', 'digsterca', '11145233736', '12150271040',
 'digsterdeutschland', 'digstercz', 'peacefulclassics', 'digster.lv', 'sinfinimusic', 'hollywdrecrds', 'record_club_umc',
@@ -62,9 +44,12 @@ UNIVERSAL_USERS = ['radioactivehits', 'digster.ee', 'digster.dk', 'dgdeccaclassi
 'digstergreece', 'universalmusica', 'digster.fi', 'digster.se', 'universalmusictaiwan', 'classicmotownrecords',
 'digster_italy', 'digster_brasil', 'thejazzlabels', 'universalmusicireland', 'wowilovechristianmusic', 'sinfinimusic.nl', 'digster.fm',
 'digsterchile', 'disney_music_uk', 'udiscovermusic', 'universal_music_rock_legends', 'digster.pt']
+ALL_USERS = SPOTIFY_USERS + UNIVERSAL_USERS
+
+# list to use
+USERS = ALL_USERS
 
 TEST_USERS = ['radioactivehits']
-
 MESSEDUP_UNIVERSAL_USERS = ['el_listÃ³n', 'digstertÃ¼rkiye']
 
 # max number of times to retry http requests
@@ -114,9 +99,6 @@ def get_dates_for_region(region):
         return False
     # convert M/D/Y to Y-M-D
     return [re.sub(r"(\d{2})\/(\d{2})\/(\d{4})", '\\3-\\1-\\2', d, 0) for d in rows]
-
-def get_spotify_csv_url(region, date='latest'):
-    return CSV_url.format(region, date)
 
 def load_spotify_csv_data(region, date='latest'):
     """
@@ -938,7 +920,7 @@ class TrackDatabase(object):
         ''', (str(service_id), service_playlist_id)
         )
         row = query.fetchone()
-        return (row[0], row[1]) if row else False
+        return (row[0], row[1]) if row else (False, False)
 
     def add_playlist_owner(self, service_id, playlist):
         '''
@@ -990,13 +972,16 @@ class TrackDatabase(object):
 
         query = self.c.execute('''
             SELECT
-                track_id,
-                isrc,
-                position
-            FROM playlist_track_position
-            WHERE playlist_id = ?
-            AND playlist_version = ?
-            AND date_str = (
+                ptp.track_id,
+                ptp.isrc,
+                ptp.position,
+				p.service_playlist_id
+            FROM playlist_track_position ptp
+			INNER JOIN playlist p
+				ON p.id = ptp.track_id
+            WHERE ptp.playlist_id = ?
+            AND ptp.playlist_version = ?
+            AND ptp.date_str = (
                 SELECT max(date_str) FROM playlist_track_position
                 WHERE playlist_id = ?
                 AND playlist_version = ?
@@ -1010,8 +995,8 @@ class TrackDatabase(object):
             track['db_track_id'] = row[0]
             track['isrc'] = row[1]
             track['position'] = row[2]
+            track['track_id'] = row[3]
             track_list.append(track)
-
         return track_list
 
 def get_playlists_by_user(user_id, nextUrl=None):
@@ -1083,13 +1068,14 @@ def print_divider(number, divider='-'):
 #
 def append_playlist_data(playlists):
     for playlist_id, playlist in playlists.items():
-        owner_id = playlist['owner_id']
-        followers = getFollowersForPlaylist(owner_id, playlist_id)
-        playlists[playlist_id]['followers'] = followers
-        print('{}:{} has {} followers today'.format(owner_id, playlist_id, format(followers, ',d')))
+        owner_id = playlist.get('owner_id')
+        followers = get_followers_for_playlist(owner_id, playlist_id)
+        playlists[playlist_id]['followers'] = followers # NOTE: until you change track id to be spotify track id, there will be problems finding the followers
+        print('{} followers added for {}'.format(followers, playlist_id))
+        # print('{}:{} has {} followers today'.format(str(owner_id), str(playlist_id), format(followers, ',d') ))
     return playlists
 
-def getFollowersForPlaylist(user_id, playlist_id):
+def get_followers_for_playlist(user_id, playlist_id):
     query_params = 'fields=followers.total,snapshot_id'
     endpoint = '{}/users/{}/playlists/{}?{}'.format(SPOTIFY_API, user_id, playlist_id, query_params)
     try:
@@ -1100,7 +1086,6 @@ def getFollowersForPlaylist(user_id, playlist_id):
     except:
         logger.warn('There is no follower count for user: {} and  playlist id: {}'.format(user_id, playlist_id))
         return None
-    return None
 
 # def test_multiple_playlists(user_id, playlist_id):
 #     query_params = 'fields=followers.total,snapshot_id'
@@ -1198,7 +1183,8 @@ def get_db_owner_id(service_id, playlist):
 def get_db_playlist_info(service_id, playlist):
 
     try:
-        db_playlist_id, playlist_version = db.get_playlist_info(service_id, playlist['playlist_id']) # spotify service_id = 1, placeholder
+        # Retrieve id and version from DB
+        db_playlist_id, playlist_version = db.get_playlist_info(service_id, playlist['playlist_id'])
 
         if playlist['snapshot_id'] == playlist_version:
             playlist_version_same = True
@@ -1206,7 +1192,7 @@ def get_db_playlist_info(service_id, playlist):
             playlist_version_same = False
 
         if db_playlist_id:
-            print('inside get_db_playlist_info: {}, version same: {}'.format(db_playlist_id, playlist_version_same))
+            print('{} Spotify playlist versions are the same for playlist id: {}'.format(PRINT_PREFIX, db_playlist_id))
             return (int(db_playlist_id), playlist_version_same)
         else:
             return (db.add_playlist(service_id, playlist), playlist_version_same)
@@ -1230,10 +1216,10 @@ def append_db_owner_id(service_id, playlists):
 def append_db_playlist_info(service_id, playlists):
     for playlist_id, playlist in playlists.items():
         try:
-            playlist.setdefault('db_playlist_id', None)
+            playlists[playlist_id].setdefault('db_playlist_id', None)
             db_playlist_id, playlist_version_same = get_db_playlist_info(service_id, playlist)
-            playlist['db_playlist_id'] = db_playlist_id
-            playlist['playlist_version_same'] = playlist_version_same
+            playlists[playlist_id]['db_playlist_id'] = db_playlist_id
+            playlists[playlist_id]['playlist_version_same'] = playlist_version_same
 
         except Exception:
             raise
@@ -1247,13 +1233,14 @@ def append_playlist_tracks(playlists):
             tracks_list = []
             if playlist['playlist_version_same']:
                 tracks_list = db.get_db_tracks_by_playlist(playlist_id, playlist['snapshot_id'])
-                tracks_dict = convert_list_to_dict_by_attribute(tracks_list, 'db_track_id')
-                # AHHHHH 'db_track_id' exists, but 'track_id' ie. service_track_id doesn't unless join tables.
+                tracks_dict = convert_list_to_dict_by_attribute(tracks_list, 'track_id')
 
-            # Validate
+            # Validate expected number of tracks from DB is equal to number of tracks expected from
             # compare db tracks length with purported number of tracks
             # if they aren't equal, re-pull data from Spotify API
-            if len(tracks_list) != playlist['num_tracks']:
+            # Future proofing: 'num_tracks' won't exist if playlist wasn't pulled from api, so setdefault
+            #
+            if len(tracks_list) != playlist.setdefault('num_tracks', None):
                 playlists[playlist_id]['playlist_version_same'] = False # reset flag
                 tracks_list = get_tracks_by_playlist(playlist['owner_id'], playlist_id)  # re-query API for tracks
                 tracks_dict = convert_list_to_dict_by_attribute(tracks_list, 'track_id')
@@ -1325,52 +1312,46 @@ def process():
     """
     starttime_total = datetime.datetime.now() # timestamping
 
-
+    # INITIALIZE VARIABLES
     service_name = 'Spotify'
     service_id = 1
-
     today = datetime.date.today().strftime('%Y-%m-%d')
 
-    # 1. GET LIST OF USER PLAYLISTS (ids)
-    playlists_list = get_all_playlists(TEST_USERS)
+    # 1. GET LIST OF ALL USER PLAYLISTS (ids)
+    # ---------
+    print('GETTING ALL PLAYLISTS FOR {} USERS'.format(len(USERS)))
+    print_divider('*', 40)
+    playlists_list = get_all_playlists(USERS)
+    # TODO:  Does it make sense to grab playlists not from all users? Maybe from the db?
+    # playlists = get_relevant_playlists_from_db()
 
+    # 2. DE-DUPLICATE PLAYLISTS
+    # ---------
     # print('PLAYLIST LENGTH BEFORE UNIQUE= {}'.format(len(playlists_list)))
     playlists_list = list(unique_everseen(playlists_list, key=lambda e: '{uri}'.format(**e)))
     print('TOTAL UNIQUE PLAYLISTS {}'.format(len(playlists_list)))
 
-    # 1x. CONVERT TO DICTIONARY
+    # 3. CONVERT TO USABLE DICTIONARY
+    # ---------
     playlists = convert_list_to_dict_by_attribute(playlists_list, 'playlist_id')
 
-    # 1XX. deduplicate based on uris
-    # QUESTION: How often to re-scrape playlists from users?
 
-    # QUESTION How often do the snapshot_ids change? Do they change with follower count too, or just on track / ordering of tracks change'''
-    # #TODO: 1a. insert playlists into DB
-    #     -compare uris against database URIs or ids
-    #     -check to see if playlist snapshot ID is the same as in DB...
-
-    # DB --- ADD OWNERS, or CREATE OWNER
+    # 4. ADD OWNER OR CREATE OWNER
+    # ---------
     playlists = append_db_owner_id(service_id, playlists)
 
+    #----------TESTING ONLY ------------!!!
+    # NOTE: user is TEST_USERS = ['radioactivehits']
+    # playlist_id_single = '2JmG2Y8eqoKGtDaNUcnAks'
+    # playlists = {playlist_id_single: playlists[playlist_id_single]}
 
-    playlist_id_single = '2JmG2Y8eqoKGtDaNUcnAks'
-    playlists = {playlist_id_single: playlists[playlist_id_single]}
 
-
-    # DB --- ADD PLAYLISTS TO DB
+    # 5. ADD PLAYLIST OR CREATE PLAYLIST
     playlists = append_db_playlist_info(service_id, playlists)
 
-    # NOTE: INSERT HERE:
-    # take playlists from db, create object structure simulating other stuff
-    # get tracks, append tracks key
-    # 3a append FOLLOWERS
-    # 4. add followers to db
-    # Append playlist tracks
-    # add to db
-    # playlists = get_relevant_playlists_from_db()
-
-
+    # 6. COMPARE AND UPDATE LATEST VERSION
     # NOTE: insert new 'latest_version' for playlist_track_position
+    # https://stackoverflow.com/questions/3634984/insert-if-not-exists-else-update
 
     #----------TESTING ONLY ------------!!!
     # import random
@@ -1378,31 +1359,27 @@ def process():
     # print('TAKING A RANDOM PLAYLIST...{}'.format(random_id))
     # playlists = {random_id: playlists[random_id]}
 
-    # 3a. GET FOLLOWERS FOR ALL PLAYLISTS
+    # 7. GET FOLLOWERS FOR ALL PLAYLISTS
     playlists = append_playlist_data(playlists)
 
-    # 4. ADD FOLLOWERS TO DB
+    # 8. ADD FOLLOWERS TO DB
     for playlist_id, playlist in playlists.items():
         db.add_playlist_followers(service_id, today, playlist)
+    # NOTE: see if followers exist for playlist_id, today. If so, don't re-query
+    # or see which playlist ids have followers as a list, and see if playlist_id exists in that list
+    # API calls for followers is EXPENSIVE!
 
-    # before you append tracks, compare snapshot id (for spotify playlists only)
-    # If snapshot id si the same as latest db version,
-    #   then, don't append_playlist_tracks
-    #   rather, lookup
-    #
-    # def compare_playlist_version:
-    #
-        # select * from playlist_track_position
-        # where playlist_id = 1842
-        # and playlist_version = 'eGGwK1xGxaphCinMJm4KTleq6Y6Yc3jqnnRJGwRdpZ8vB7ffO4XhZochFrSL005I'
-
-    # Append tracks to each playlist
+    # 9. APPEND TRACKS TO PLAYLIST OBJECT FROM API OR DB
     playlists = append_playlist_tracks(playlists)
 
     # TODO: can insert these function inside the append_playlist_function
     # if you want to lookup db ids for each playlist as you get the tracks
     #
-    pprint(playlists, depth=4)
+
+    #----------DEBUG ONLY ------------!!!
+    # pprint(playlists, depth=2)
+
+    # 10. ADD TRACKS TO DB, BEING SMART ABOUT WHETHER PLAYLIST VERSION EXISTS OR NOT
     for playlist_id, playlist in playlists.items():
         # if playlist version is different, append new data
         if not playlist['playlist_version_same']:
@@ -1433,8 +1410,6 @@ if __name__ == '__main__':
 
     # setup db
     db = TrackDatabase(DATABASE_FILE)
-
-        # db.get_db_tracks_by_playlist('35PN4uLrBsLw9SJqpQWA4P', '1zR2tbu0NVubBgWWwcIEMcSm304l7UldFVMuWfdvBECJt7khGiBwecrSORgIzq4i')
 
     # setup Spotify auth and client for API calls
     spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
