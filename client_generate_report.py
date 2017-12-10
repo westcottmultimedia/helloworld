@@ -1,4 +1,4 @@
-import sqlite3, csv, datetime
+import sqlite3, csv, datetime, sys
 DATABASE_NAME = 'v9a.db'
 
 # sqlite database filename/path
@@ -129,19 +129,49 @@ def generateStreamingReporting(service_id, date_to_process):
         DELETE FROM tp_drop_only_table
     ''')
 
+    # c.execute('''
+    #     CREATE VIEW peak_track_date as
+    #     select service_id, territory_id, track_id, isrc, min(position) as peak_rank, earliest_date as peak_date
+    #     from
+    #     (
+    #         select service_id, territory_id, track_id, isrc, position, min(date_str) as earliest_date
+    #         from
+    #         track_position tp
+    #         group by isrc, tp.position, tp.territory_id, tp.service_id
+    #         ORDER BY position asc
+    #     )
+    #     group by isrc, territory_id, service_id
+    # ''')
+
+    # Modified
     c.execute('''
         CREATE VIEW peak_track_date as
-        select service_id, territory_id, track_id, isrc, min(position) as peak_rank, earliest_date as peak_date
+        select
+            service_id,
+            territory_id,
+            track_id,
+            isrc,
+            min(position) as peak_rank,
+            earliest_date as peak_date
         from
         (
-            select service_id, territory_id, track_id, isrc, position, min(date_str) as earliest_date
-            from
-            track_position tp
-            group by isrc, tp.position, tp.territory_id, tp.service_id
+            select
+                service_id,
+                territory_id,
+                track_id,
+                isrc,
+                position,
+                min(date_str) as earliest_date
+            from (
+                select * from track_position
+                where julianday(date_str) <= julianday('{}')
+            )
+            group by isrc,
+                position, territory_id, service_id
             ORDER BY position asc
         )
         group by isrc, territory_id, service_id
-    ''')
+    '''.format(date_to_process))
 
     c.execute('''
         INSERT INTO peak_track_position_date_table (
@@ -571,6 +601,35 @@ def generateiTunesSalesReporting(service_id, date_to_process):
         DROP VIEW IF EXISTS peak_sales_date
     ''')
 
+    # Original peak_sales_date view which calculated best position regardless of if the peak date was after the date to processed
+    # The modified view filters out the sales position rows before or on the report date, to compute the peak date at that time
+    # c.execute('''
+    #     CREATE VIEW IF NOT EXISTS peak_sales_date as
+    #     select
+    #         service_id,
+    #         territory_id,
+    #         media_id,
+    #         media_type,
+    #         min(position) as peak_rank,
+    #         earliest_date as peak_date
+    #     from
+    #     (
+    #         select
+    #             service_id,
+    #             territory_id,
+    #             media_id,
+    #             media_type,
+    #             position,
+    #             min(date_str) as earliest_date
+    #         from
+    #         sales_position sp
+    #         group by sp.media_id, sp.media_type, sp.position, sp.territory_id, sp.service_id
+    #         ORDER BY position asc
+    #     )
+    #     group by media_id, media_type, territory_id, service_id
+    # ''')
+
+    # # The modified view filters out the sales position rows before or on the report date, to compute the peak date at that time
     c.execute('''
         CREATE VIEW IF NOT EXISTS peak_sales_date as
         select
@@ -589,13 +648,15 @@ def generateiTunesSalesReporting(service_id, date_to_process):
                 media_type,
                 position,
                 min(date_str) as earliest_date
-            from
-            sales_position sp
-            group by sp.media_id, sp.media_type, sp.position, sp.territory_id, sp.service_id
+            from (
+                select * from sales_position as sp
+                where julianday(date_str) <= julianday('{}')
+            )
+            group by media_id, media_type, position, territory_id, service_id
             ORDER BY position asc
         )
         group by media_id, media_type, territory_id, service_id
-    ''')
+    '''.format(date_to_process))
 
     c.execute('''
         CREATE TABLE IF NOT EXISTS peak_sp_date_table (
@@ -997,12 +1058,15 @@ if __name__ == '__main__':
     latest_streamingDates = getAndPrintStreamingStats()
     latest_salesDates = getAndPrintSalesStats()
 
+    # ensure all sales dates are the same for reporting
     if latest_salesDates['album'] == latest_salesDates['track'] and latest_salesDates['album'] == latest_salesDates['music_video']:
-        latest_date_for_salesService = latest_salesDates['album']
+        latest_date_for_salesService = latest_salesDates['album'] # if so, take one
     else:
         print('Check sales dates for albums {}, tracks {} and music videos {}'. format(latest_salesDates['album'], latest_salesDates['track'], latest_salesDates['music_video']))
 
-    # # For user input of report generation
+    # # TODO: For user input of report generation
+    #   -use sys.argv to get input from user on date, change latest_streamingDates
+    #    -use if else condition on if sys.argv[1] for the date to process the reportexists
     # service_id = input('\nSelect latest report for service_id: 1 for Spotify, 2 for Apple: ')
     # report_type = input('\nSelect latest report - album, music_video or track:')
     # latest_date_for_service = latest_streamingDates[int(service_id)] # based on index
@@ -1024,32 +1088,32 @@ if __name__ == '__main__':
     service_id, service_chart_id, table, query, columns = getStreamingTrackSpotifyQuery()
     exportReport(service_id, service_chart_id, table, query, columns)
     printDivider(40)
-
-    # apple streaming
-    print('Generating Apple stream reports')
-    service_id = 2
-    generateStreamingReporting(service_id, latest_streamingDates[service_id])
-    service_id, service_chart_id, table, query, columns = getStreamingTrackAppleQuery()
-    exportReport(service_id, service_chart_id, table, query, columns)
-    printDivider(40)
+    #
+    # # apple streaming
+    # print('Generating Apple stream reports')
+    # service_id = 2
+    # generateStreamingReporting(service_id, latest_streamingDates[service_id])
+    # service_id, service_chart_id, table, query, columns = getStreamingTrackAppleQuery()
+    # exportReport(service_id, service_chart_id, table, query, columns)
+    # printDivider(40)
 
     # iTunes sales
-    print('Generating iTunes sales reports')
-    service_id = 2
-    generateiTunesSalesReporting(service_id, latest_date_for_salesService)
-    printDivider(40)
-
-    service_id, service_chart_id, table, query, columns = getSalesTrackQuery()
-    exportReport(service_id, service_chart_id, table, query, columns)
-    printDivider(40)
-
-    service_id, service_chart_id, table, query, columns = getSalesAlbumQuery()
-    exportReport(service_id, service_chart_id, table, query, columns)
-    printDivider(40)
-
-    service_id, service_chart_id, table, query, columns = getSalesMusicVideoQuery()
-    exportReport(service_id, service_chart_id, table, query, columns)
-    printDivider(40)
+    # print('Generating iTunes sales reports')
+    # service_id = 2
+    # generateiTunesSalesReporting(service_id, latest_date_for_salesService) # itunes reporting views are all generated at the same time, thus need to use the same date
+    # printDivider(40)
+    #
+    # service_id, service_chart_id, table, query, columns = getSalesTrackQuery()
+    # exportReport(service_id, service_chart_id, table, query, columns)
+    # printDivider(40)
+    #
+    # service_id, service_chart_id, table, query, columns = getSalesAlbumQuery()
+    # exportReport(service_id, service_chart_id, table, query, columns)
+    # printDivider(40)
+    #
+    # service_id, service_chart_id, table, query, columns = getSalesMusicVideoQuery()
+    # exportReport(service_id, service_chart_id, table, query, columns)
+    # printDivider(40)
 
     # timestamping
     endtime_total = datetime.datetime.now()
