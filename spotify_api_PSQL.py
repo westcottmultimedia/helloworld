@@ -50,7 +50,7 @@ REGIONS_TOTAL = [
 REGIONS_WITHOUT_DAILY = ['bg', 'cy', 'ni']
 
 REGIONS = list(set(REGIONS_TOTAL).difference(REGIONS_WITHOUT_DAILY))
-REGIONS = ['lv']
+
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
 
@@ -293,11 +293,10 @@ def append_track_id_from_db(tracks):
             SELECT id
             FROM track
             WHERE service_id = 1
-            AND service_track_id = '{}'
-        """.format(tracks[track_id]['trackId'])
-        # NOTE: there should be a one-to-one relationship between spotify trackId and db id
+            AND service_track_id = %s
+        """
 
-        db.c.execute(query)
+        db.c.execute(query, [tracks[track_id]['trackId']])
         row = db.c.fetchone()
         if row:
             tracks[track_id]['track_id_db'] = row[0]
@@ -415,7 +414,7 @@ def get_track_id_from_url(url):
 #
 #
 class TrackDatabase(object):
-    """ SQLite Database Manager """
+    """ PostgreSQLDatabase Manager """
     def __init__(self):
         super(TrackDatabase, self).__init__()
         self.init_database()
@@ -443,21 +442,19 @@ class TrackDatabase(object):
                 print('Database connection closed.')
 
     def show_db_size(self):
-        q = self.c.execute('SELECT pg_size_pretty(pg_database_size(current_database()))')
-        size = self.c.fetchone()
-        print('Size: {}'.format(size[0]))
+        self.c.execute('SELECT pg_size_pretty(pg_database_size(current_database()))')
+        size = self.c.fetchone()[0]
+        print('Size: {}'.format(size))
         return
 
     def is_processed(self, url):
         """
         Has CSV url already been processed?
         """
-        query ="SELECT * FROM processed WHERE url = '{}'".format(url)
-        self.c.execute(query)
+        query ="SELECT * FROM processed WHERE url = %s"
+        self.c.execute(query, [url])
 
-        row = self.c.fetchone()
-        print(row)
-        if row:
+        if self.c.fetchone():
             return True
         return False
 
@@ -470,8 +467,8 @@ class TrackDatabase(object):
                 INSERT INTO processed
                 (url)
                 VALUES
-                ('{}')
-            """.format(url))
+                (%s)
+            """, [url])
 
         except Exception as e:
             raise e
@@ -489,12 +486,12 @@ class TrackDatabase(object):
                 peak_date
             FROM peak_track_position
             WHERE
-                service_id = {}
+                service_id = %s
             AND
-                territory_id = {}
+                territory_id = %s
             AND
-                track_id = {}
-        """.format(service_id, territory_id, track_id))
+                track_id = %s
+        """, (service_id, territory_id, track_id))
         row = self.c.fetchone()
         return row if row else False
 
@@ -528,23 +525,23 @@ class TrackDatabase(object):
 
         stats_update_query = """
             UPDATE peak_track_position SET
-                first_added = '{}',
-                last_seen = '{}',
-                peak_rank = {},
-                peak_date = '{}'
+                first_added = %s,
+                last_seen = %s,
+                peak_rank = %s,
+                peak_date = %s
             WHERE
-                service_id = {}
+                service_id = %s
             AND
-                territory_id = {}
+                territory_id = %s
             AND
-                track_id = {}
+                track_id = %s
         """
 
         stats_query = """
             INSERT INTO peak_track_position
             (service_id, territory_id, track_id, first_added, last_seen, peak_rank, peak_date)
             VALUES
-            ({}, {}, {}, '{}', '{}', {}, '{}')
+            (%s, %s, %s, %s, %s, %s, %s)
         """
 
         # finds the earlier of the two dates, the current added and the current date query
@@ -568,12 +565,14 @@ class TrackDatabase(object):
 
         # -- Try to update any existing row
         self.c.execute(
-            stats_update_query.format(first_added, last_seen, peak_rank, peak_date, service_id, territory_id, track_id)
+            stats_update_query,
+            (first_added, last_seen, peak_rank, peak_date, service_id, territory_id, track_id)
         )
 
         # -- Make sure it exists
         self.c.execute(
-            stats_query.format(service_id, territory_id, track_id, first_added, last_seen, peak_rank, peak_date)
+            stats_query,
+            (service_id, territory_id, track_id, first_added, last_seen, peak_rank, peak_date)
         )
 
     def add_tracks(self, track_list, date_str, service_name):
@@ -614,9 +613,9 @@ class TrackDatabase(object):
                             INSERT INTO artist
                             (service_id, service_artist_id, artist)
                             VALUES
-                            ({}, '{}', '{}')
+                            (%s, %s, %s)
                             RETURNING id
-                        """.format(service_id, service_artist_id, artist_name))
+                        """, (service_id, service_artist_id, artist_name))
                         artist_id = self.c.fetchone()[0]
 
                     # add album if not in the db
@@ -625,12 +624,14 @@ class TrackDatabase(object):
                             INSERT INTO album
                             (service_id, artist_id, service_album_id, album, release_date, label)
                             VALUES
-                            ({}, {}, '{}', '{}', '{}', '{}')
+                            (%s, %s, %s, %s, %s, %s)
                             RETURNING id
-                        """.format(service_id, artist_id, service_album_id, track['album_name'], track['release_date'], track['label'])
+                            """,
+                            (service_id, artist_id, service_album_id, track['album_name'], track['release_date'], track['label'])
                         )
+
                         album_id = self.c.fetchone()[0]
-                        print('Album added: {} for {}'.format(str(track['album_name']), artist_name))
+                        print('Album {} added: {} for {}'.format(album_id, track['album_name'], artist_name))
 
                     # add genres for artist
                     for genre in track['genres']:
@@ -638,8 +639,10 @@ class TrackDatabase(object):
                             INSERT INTO artist_genre
                             (service_id, artist_id, genre)
                             VALUES
-                            ({}, {}, '{}')
-                        """.format(service_id, artist_id, genre))
+                            (%s, %s, %s)
+                            """,
+                            (service_id, artist_id, genre)
+                        )
 
                     # update track table
                     #
@@ -649,11 +652,12 @@ class TrackDatabase(object):
                         VALUES
                         (%s, %s, %s, %s, %s, %s)
                         RETURNING id
-                    """, (service_id, track_id, artist_id, album_id, track['Track Name'], isrc)
+                        """,
+                        (service_id, track_id, artist_id, album_id, track['Track Name'], isrc)
                     )
-                    print('Track added: {} by {}'.format(str(track['Track Name']), artist_name))
 
                     track_id_db = self.c.fetchone()[0]
+                    print('Track {} added: {} by {}'.format(track_id_db, track['Track Name'], artist_name))
 
                 except Exception as e:
                     print(e)
@@ -667,8 +671,9 @@ class TrackDatabase(object):
                 INSERT INTO track_position
                 (service_id, territory_id, track_id, isrc, position, stream_count, date_str)
                 VALUES
-                ({}, {}, {}, '{}', '{}', {}, '{}')
-            """.format(service_id, territory_id, track_id_db, isrc, position, track['Streams'], date_str)
+                (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (service_id, territory_id, track_id_db, isrc, position, track['Streams'], date_str)
             )
 
             self.db.commit()
@@ -681,12 +686,11 @@ class TrackDatabase(object):
         query = """
             SELECT isrc
             FROM track
-            WHERE id = {}
-        """.format(track_id)
-        # NOTE: there should be a one-to-one relationship between spotify trackId and db id
+            WHERE id = %s
+        """
 
-        db.c.execute(query)
-        row = db.c.fetchone()
+        self.c.execute(query, [track_id])
+        row = self.c.fetchone()
         return row[0] if row else False
 
     def get_territory_id(self, code):
@@ -694,8 +698,10 @@ class TrackDatabase(object):
         Retrieve territory_id from region code
         """
         query = self.c.execute("""
-            SELECT id FROM territory WHERE code = '{}'
-        """.format(code.lower()))
+            SELECT id FROM territory WHERE code = %s
+            """,
+            [code.lower()]
+        )
 
         row = self.c.fetchone()
         return row[0] if row else False
@@ -705,8 +711,8 @@ class TrackDatabase(object):
         Retrieve service_id from service name
         """
         query = self.c.execute("""
-            SELECT id FROM service WHERE service_name = '{}'
-        """.format(service_name))
+            SELECT id FROM service WHERE service_name = %s
+        """, [service_name])
         row = self.c.fetchone()
         return row[0] if row else False
 
@@ -717,10 +723,11 @@ class TrackDatabase(object):
         query = self.c.execute("""
             SELECT id FROM artist
             WHERE
-            service_id = {}
+            service_id = %s
             AND
-            service_artist_id = '{}'
-        """.format(service_id, service_artist_id)
+            service_artist_id = %s
+            """,
+            (service_id, service_artist_id)
         )
         row = self.c.fetchone()
         return row[0] if row else False
@@ -731,10 +738,10 @@ class TrackDatabase(object):
         query = self.c.execute("""
             SELECT id FROM album
             WHERE
-            service_id = {}
+            service_id = %s
             AND
-            service_album_id = '{}'
-        """.format(service_id, service_album_id)
+            service_album_id = %s
+        """, (service_id, service_album_id)
         )
         row = self.c.fetchone()
         return row[0] if row else False
@@ -827,7 +834,6 @@ if __name__ == '__main__':
     #CACHE_ENABLED = True
     cache_msg = '\033[92m enabled' if CACHE_ENABLED else '\033[91m disabled'
     print('HTTP cache is%s\033[0m' % cache_msg)
-
 
     # setup db
     db = TrackDatabase()
