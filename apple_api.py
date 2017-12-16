@@ -1,7 +1,7 @@
 import sqlite3, csv, codecs, re, json, os, base64, time, hashlib, ssl, jwt, configparser, logging
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from lxml import html
 from pprint import pprint
 from datetime import datetime, date, timedelta
@@ -60,26 +60,27 @@ REGIONS_WITHOUT_MUSIC_VIDEOS = ['mr','gw','cn','mw','kr','lr','pw','pk','st','jm
 REGIONS_WITH_APPLE_MUSIC = list(set(REGIONS).difference(REGIONS_WITHOUT_APPLE_MUSIC))
 REGIONS_WITH_ITUNES_MUSIC_ALBUMS = list(set(REGIONS).difference(REGIONS_WITHOUT_ITUNES_MUSIC))
 REGIONS_WITH_MUSIC_VIDEOS = list(set(REGIONS).difference(REGIONS_WITHOUT_MUSIC_VIDEOS))
+#
+CHARTS = [
+    ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC),
+    ('itunes-music', 'top-songs', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
+    ('itunes-music', 'top-albums', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
+    ('music-videos', 'top-music-videos', REGIONS_WITH_MUSIC_VIDEOS)
+]
 
-REGIONS_MISSED_APPLE_MUSIC = ['om']
+#---------------------------------------------------
+REGIONS_MISSED_APPLE_MUSIC = ['jo']
 REGIONS_MISSED_ITUNES_SONGS = []
-REGIONS_MISSED_ITUNES_ALBUMS = ['mn']
-REGIONS_MISSED_MUSIC_VIDEOS = []
-
-# CHARTS = [
-#     ('apple-music', 'top-songs', REGIONS_WITH_APPLE_MUSIC),
-#     ('itunes-music', 'top-songs', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
-#     ('itunes-music', 'top-albums', REGIONS_WITH_ITUNES_MUSIC_ALBUMS),
-#     ('music-videos', 'top-music-videos', REGIONS_WITH_MUSIC_VIDEOS)
-# ]
+REGIONS_MISSED_ITUNES_ALBUMS = []
+REGIONS_MISSED_MUSIC_VIDEOS = ['zw', 'sz', 'kg', 'mn', 'na', 'id', 'pg', 'mz', 'tm', 'fm', 'tj', 'il', 'ky', 'vg', 'jo', 'fj']
 
 # (media, chart, regions)
-CHARTS = [
-    ('apple-music', 'top-songs', REGIONS_MISSED_APPLE_MUSIC),
-    ('itunes-music', 'top-songs', REGIONS_MISSED_ITUNES_SONGS),
-    ('itunes-music', 'top-albums', REGIONS_MISSED_ITUNES_ALBUMS),
-    ('music-videos', 'top-music-videos', REGIONS_MISSED_MUSIC_VIDEOS)
-]
+# CHARTS = [
+#     ('apple-music', 'top-songs', REGIONS_MISSED_APPLE_MUSIC),
+#     ('itunes-music', 'top-songs', REGIONS_MISSED_ITUNES_SONGS),
+#     ('itunes-music', 'top-albums', REGIONS_MISSED_ITUNES_ALBUMS),
+#     ('music-videos', 'top-music-videos', REGIONS_MISSED_MUSIC_VIDEOS)
+# ]
 
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
@@ -380,7 +381,8 @@ class TrackDatabase(object):
         pq = self.c.execute("SELECT COUNT(*) FROM track_position")
         print("# Position Stats: %r\n" % pq.fetchone()[0])
 
-    def print_region_status_stats(self, date_stats = date.today().strftime('%Y-%m-%d')):
+    def print_and_update_region_status_stats(self, date_stats = date.today().strftime('%Y-%m-%d')):
+        global CHARTS
         query_str = '''
             SELECT *
             FROM processed
@@ -388,23 +390,40 @@ class TrackDatabase(object):
             LIKE '%{}'
         '''
 
+
         start = 'https://rss.itunes.apple.com/api/v1/'
+        rerun_charts = []
+
         for chart in CHARTS:
             end = '/{}/{}/all/200/explicit.json_{}'.format(chart[0], chart[1], date_stats)
             chart_query = query_str.format(end)
+
+            # find all urls processed for the day
             query = self.c.execute(chart_query)
             rows = query.fetchall()
 
+            # get list of all processed urls for a given chart
             regions_processed = []
             for row in rows:
                 url = str(row[0])
                 region = url.split(start)[1].split(end)[0]
                 regions_processed.append(region)
+
+            # calculate all regions not processed
             regions_not_processed = list(set(chart[2]).difference(regions_processed))
+
+            # print to console.
             print('-' * 40)
             print('{}:{}: {} processed, {} missing'.format(chart[0], chart[1], len(regions_processed), len(regions_not_processed)))
             print('{}'.format(regions_not_processed))
 
+            # rewrite list of CHARTS to process:
+
+            if len(regions_not_processed) > 0:
+                chart = (chart[0], chart[1], regions_not_processed)
+                rerun_charts.append(chart)
+
+        return rerun_charts
 
     def is_processed(self, url):
         """
@@ -988,140 +1007,153 @@ def process(mode):
     """
     Process each region
     """
+    global CHARTS
+
+    print('*' * 40)
+    db.print_and_update_region_status_stats()
+    print('*' * 40)
+
     service_name = 'Apple'
     number_results = 50
     limit = '&limit={}'.format(number_results)
 
     starttime_total = datetime.now() # timestamp
 
-    for chart in CHARTS:
+    rerun_times = 0
+    while len(CHARTS) > 0 and rerun_times <= 5:
+        for chart in CHARTS:
 
-        # set rss url params
-        #
-        rss_params = {
-            'region': '',
-            'media': chart[0],
-            'chart': chart[1],
-            'genre': 'all',
-            'limit': 200,
-        }
+            # set rss url params
+            #
+            rss_params = {
+                'region': '',
+                'media': chart[0],
+                'chart': chart[1],
+                'genre': 'all',
+                'limit': 200,
+            }
 
-        for region in chart[2]:
-        # for region in REGIONS_ONE_OFF: # use when need be to check only a few regions
-            starttime = datetime.now() # timestamp
-            print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y')) # timestamp
+            for region in chart[2]:
+            # for region in REGIONS_ONE_OFF: # use when need be to check only a few regions
+                starttime = datetime.now() # timestamp
+                print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y')) # timestamp
 
-            # set variables
-            rss_params['region'] = region
-            url = RSS_url.format(**rss_params)
+                # set variables
+                rss_params['region'] = region
+                url = RSS_url.format(**rss_params)
 
-            try:
-                req = Request(url)
-                r = urlopen(req).read().decode('UTF-8')
+                try:
+                    req = Request(url)
+                    r = urlopen(req).read().decode('UTF-8')
 
+                except HTTPError as err:
+                    if err.code == 400:
+                        print('HTTP 400')
+                    if err.code == 404:
+                        print('No RSS feed data found for {} for {} in {}'.format(region, rss_params['media'], rss_params['chart']))
+                        logger.warn('No RSS feed data found for {} for {} in {}'.format(region, rss_params['media'], rss_params['chart']))
+                        print('-' * 40)
+                        continue
+                except URLError as e:
+                    print('We failed to reach a server.')
+                    print('Reason: ', e.reason)
 
-            except HTTPError as err:
-                if err.code == 400:
-                    print('HTTP 400')
-                if err.code == 404:
-                    print('No RSS feed data found for {} for {} in {}'.format(region, rss_params['media'], rss_params['chart']))
-                    logger.warn('No RSS feed data found for {} for {} in {}'.format(region, rss_params['media'], rss_params['chart']))
+                # Process the data
+
+                print('Loading charts for region {}...'.format(region))
+
+                try:
+                    raw_data = json.loads(r)
+                    results = raw_data['feed']['results']
+                    date_str = parser.parse(raw_data['feed']['updated']).strftime('%Y-%m-%d')
+                    print('Chart last updated: {}'.format(date_str))
+
+                except ValueError:
+                    print('Decoding JSON failed')
+                    print('No download available, skipping...')
                     print('-' * 40)
                     continue
 
-            # Process the data
+                # check if region has been processed, if so, move to the next region in the loop
+                if db.is_processed(url + '_' + date_str):
+                    print('Already processed, skipping...')
+                    print('-' * 40)
+                    continue
 
-            print('Loading charts for region {}...'.format(region))
+                # setup the data structure
+                items = {}
 
-            try:
-                raw_data = json.loads(r)
-                results = raw_data['feed']['results']
-                date_str = parser.parse(raw_data['feed']['updated']).strftime('%Y-%m-%d')
+                # the kind of resource from Apple RSS feed
+                # kind is 'song', 'album', 'musicVideo' - labels from Apple's feed
+                kind = results[0]['kind']
+                db_table_name = map_kind_to_db_table_name(kind)
+                items['kind'] = kind
+                items['db_table_name'] = db_table_name
+                items['media'] = chart[0]
+                items['chart'] = chart[1]
 
-            except ValueError:
-                print('Decoding JSON failed')
-                print('No download available, skipping...')
+                # append position based on list index
+                # convert list to dictionary for easier lookup, key is apple id
+                for i, result in enumerate(results):
+                    result['position'] = i + 1
+                    apple_id = result['id']
+                    items[apple_id] = result
+
+                    # add album_id key for consistency with appending it in the track items dict
+                    if kind == 'album':
+                        items[apple_id]['album_id'] = result['id']
+
+                print('Found {} results for {}, {}.'.format(len(results), chart[0], chart[1]))
+
+                # append data to Apple data
+                print('Looking up existing ids in db')
+                items = append_apple_id_from_db(items, db_table_name)
+
+                if kind == 'song':
+                    print('Getting track data from Apple "Tracks" API...')
+                    items = append_track_data(items, region)
+                    print('Getting label and release date from Apple "Albums" API...')
+                    items = append_album_data(items, region)
+                    added = db.add_track_items(items, date_str, region, service_name)
+                elif kind == 'album':
+                    print('Getting label and release date from Apple "Albums" API...')
+                    items = append_album_data(items, region)
+                    added = db.add_album_items(items, date_str, region, service_name)
+                elif kind == 'musicVideo':
+                    items = append_music_video_data(items, region)
+                    added = db.add_music_video_items(items, date_str, region, service_name)
+
+
+                # NOTE: no need to append genres here. They exist in RSS feed response
+                # print('Getting genre tags from Apple "Artists" API...')
+                # items = append_artist_data(items, region)
+
+                # write data to DB
+                db.set_processed(url + '_' + date_str)
+
+                # timestamp
+                endtime = datetime.now()
+                processtime = endtime - starttime
+                processtime_running_total = endtime - starttime_total
+                print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%y'))
+                print('Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
+                print('Running processing time: %i minutes, %i seconds' % divmod(processtime_running_total.days *86400 + processtime_running_total.seconds, 60))
+                print('Finished Apple API for {}'.format(region))
                 print('-' * 40)
-                continue
 
-            # check if region has been processed, if so, move to the next region in the loop
-            if db.is_processed(url + '_' + date_str):
-                print('Already processed, skipping...')
-                print('-' * 40)
-                continue
+        # timestamp
+        endtime_total = datetime.now()
+        processtime_total = endtime_total - starttime_total
+        print('Finished processing all regions at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
+        print('Total processing time: %i minutes, %i seconds' % divmod(processtime_total.days *86400 + processtime_total.seconds, 60))
+        print('-' * 40)
 
-            # setup the data structure
-            items = {}
+        # no data
+        print('Rerun these regions for these charts:')
+        print('-' * 40)
 
-            # the kind of resource from Apple RSS feed
-            # kind is 'song', 'album', 'musicVideo' - labels from Apple's feed
-            kind = results[0]['kind']
-            db_table_name = map_kind_to_db_table_name(kind)
-            items['kind'] = kind
-            items['db_table_name'] = db_table_name
-            items['media'] = chart[0]
-            items['chart'] = chart[1]
-
-            # append position based on list index
-            # convert list to dictionary for easier lookup, key is apple id
-            for i, result in enumerate(results):
-                result['position'] = i + 1
-                apple_id = result['id']
-                items[apple_id] = result
-
-                # add album_id key for consistency with appending it in the track items dict
-                if kind == 'album':
-                    items[apple_id]['album_id'] = result['id']
-
-            print('Found {} results for {}, {}.'.format(len(results), chart[0], chart[1]))
-
-            # append data to Apple data
-            print('Looking up existing ids in db')
-            items = append_apple_id_from_db(items, db_table_name)
-
-            if kind == 'song':
-                print('Getting track data from Apple "Tracks" API...')
-                items = append_track_data(items, region)
-                print('Getting label and release date from Apple "Albums" API...')
-                items = append_album_data(items, region)
-                added = db.add_track_items(items, date_str, region, service_name)
-            elif kind == 'album':
-                print('Getting label and release date from Apple "Albums" API...')
-                items = append_album_data(items, region)
-                added = db.add_album_items(items, date_str, region, service_name)
-            elif kind == 'musicVideo':
-                items = append_music_video_data(items, region)
-                added = db.add_music_video_items(items, date_str, region, service_name)
-
-
-            # NOTE: no need to append genres here. They exist in RSS feed response
-            # print('Getting genre tags from Apple "Artists" API...')
-            # items = append_artist_data(items, region)
-
-            # write data to DB
-            db.set_processed(url + '_' + date_str)
-
-            # timestamp
-            endtime = datetime.now()
-            processtime = endtime - starttime
-            processtime_running_total = endtime - starttime_total
-            print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%y'))
-            print('Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
-            print('Running processing time: %i minutes, %i seconds' % divmod(processtime_running_total.days *86400 + processtime_running_total.seconds, 60))
-            print('Finished Apple API for {}'.format(region))
-            print('-' * 40)
-
-    # timestamp
-    endtime_total = datetime.now()
-    processtime_total = endtime_total - starttime_total
-    print('Finished processing all regions at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
-    print('Total processing time: %i minutes, %i seconds' % divmod(processtime_total.days *86400 + processtime_total.seconds, 60))
-    print('-' * 40)
-
-    # no data
-    print('Rerun these regions for these charts:')
-    print('-' * 40)
-    db.print_region_status_stats()
+        CHARTS = db.print_and_update_region_status_stats()
+        rerun_times += 1
 
 def kickoff_process():
     print('started')
