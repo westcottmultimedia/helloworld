@@ -15,7 +15,7 @@ archiveFolderName = 'archive' # name of folder under path where files will be ar
 host = 'smtp.gmail.com' # specify port, if required, using a colon and port number following the hostname
 
 fromaddr = 'eric.chen0121@gmail.com' # must be a vaild 'from' address in your environment
-toaddr  = ['eric.chen0121@gmail.com', 'kwestcottg@gmail.com'] # list of email addresses
+toaddr  = ['kwestcottg@gmail.com'] # list of email addresses
 replyto = fromaddr # unless you want a different reply-to
 
 SERVER_DEBUG_LEVEL = False # set to True for verbose output
@@ -26,7 +26,7 @@ SERVER_DEBUG_LEVEL = False # set to True for verbose output
 gmail_user = 'eric.chen0121@gmail.com'
 gmail_password = '<<CHANGE THIS>>'
 
-# gmail_password = input('Enter password for {}: '.format(gmail_user) )
+gmail_password = input('Enter password for {}: '.format(gmail_user) )
 #
 msgsubject = 'Daily feeds for streaming and sales'
 

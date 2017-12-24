@@ -69,10 +69,10 @@ CHARTS = [
 ]
 
 #---------------------------------------------------
-REGIONS_MISSED_APPLE_MUSIC = ['jo']
+REGIONS_MISSED_APPLE_MUSIC = ['se']
 REGIONS_MISSED_ITUNES_SONGS = []
 REGIONS_MISSED_ITUNES_ALBUMS = []
-REGIONS_MISSED_MUSIC_VIDEOS = ['zw', 'sz', 'kg', 'mn', 'na', 'id', 'pg', 'mz', 'tm', 'fm', 'tj', 'il', 'ky', 'vg', 'jo', 'fj']
+REGIONS_MISSED_MUSIC_VIDEOS = ['ve', 'kg', 'dm', 'se', 'md', 'br', 'kh', 'ne', 'sz', 'cz', 'sv', 'at', 'gb', 'nz', 'bh', 'tw', 'be', 'bg', 'mz', 'fi', 'la', 'no', 'bs', 'ch', 'ag', 'tt', 'kn', 'bf', 'my', 'lu', 'gd', 'fj', 'az', 'sk', 'nl', 'si', 'lt', 'tj', 'zw', 'pt', 'pe', 'za', 'ua', 'do', 'ee', 'ru', 'bw', 'cl', 'co', 'gr', 'vn', 'tm', 'uz', 'ph', 'am', 'bb', 'gm', 'ca', 'au', 'lk', 'cv', 'mo', 'cr', 'fr', 'ai', 'ae', 'cy', 'bo', 'es', 'py', 'fm', 'ec', 'de', 'sg', 'ar', 'bn', 'bm', 'pg', 'pa', 'bz', 'ro', 'gh', 'ug', 'na', 'mu', 'lv', 'eg', 'mn', 'ng', 'pl']
 
 # (media, chart, regions)
 # CHARTS = [
@@ -381,15 +381,20 @@ class TrackDatabase(object):
         pq = self.c.execute("SELECT COUNT(*) FROM track_position")
         print("# Position Stats: %r\n" % pq.fetchone()[0])
 
+    # Takes today's date and finds regions that haven't yet been processed.
+    # NOTE: could look at one RSS feed's last updated, and use that date as the "date_stats" - this would be representative of the
+    # current process where a manual check is done to see if the rss feeds have been updated that day. Then it would use that day as
+    # the point with which to search the db for any processed urls, and then set the charts to scrape based on
+    #
     def print_and_update_region_status_stats(self, date_stats = date.today().strftime('%Y-%m-%d')):
-        global CHARTS
+        global CHARTS # use the global variable
+
         query_str = '''
             SELECT *
             FROM processed
             WHERE url
             LIKE '%{}'
         '''
-
 
         start = 'https://rss.itunes.apple.com/api/v1/'
         rerun_charts = []

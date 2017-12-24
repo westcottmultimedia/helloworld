@@ -53,6 +53,7 @@ ALL_USERS = SPOTIFY_USERS + UNIVERSAL_USERS
 # list to use
 USERS = ALL_USERS
 
+# outcast lists
 TEST_USERS = ['radioactivehits']
 MESSEDUP_UNIVERSAL_USERS = ['el_listÃ³n', 'digstertÃ¼rkiye']
 CLASSICAL_PLAYLIST_USERS = ['sinfinimusic.nl', 'sinfinimusic', 'peacefulclassics', 'dgdeccaclassics']
@@ -390,7 +391,7 @@ def append_album_data(tracks, batch_size=20):
             if not track['db_album_id']:
                 tracks[track_id]['album_release_date'] = album_data_dict[track['album_id']]['release_date']
                 tracks[track_id]['album_label'] = album_data_dict[track['album_id']]['label']
-        print('All tracks have album data')
+
     else:
         album_id = albums[0]
         album = spotify.request(endpoint_album.format(album_id))
@@ -398,7 +399,8 @@ def append_album_data(tracks, batch_size=20):
             if not track['db_album_id']:
                 tracks[track_id]['release_date'] = album['release_date']
                 tracks[track_id]['label'] = album['label']
-        print('All tracks have album data')
+
+    print('{} All tracks have album data'.format(PRINT_PREFIX))
     return tracks
 
 def append_artist_data(tracks, batch_size=50):
@@ -1273,6 +1275,7 @@ def append_db_playlist_info(playlists):
             playlists[playlist_id]['playlist_version_same'] = playlist_version_same
 
             if not playlist_version_same:
+
                 db.update_playlist(playlist)
 
         except Exception:
@@ -1402,6 +1405,7 @@ def process():
     playlists_list = list(unique_everseen(playlists_list, key=lambda e: '{uri}'.format(**e)))
     print('TOTAL UNIQUE PLAYLISTS {}'.format(len(playlists_list)))
 
+    # 2.a OR -- INSTEAD OF 1 and 2. --- GET PLAYLISTS FROM DB
     # 3. CONVERT TO USABLE DICTIONARY
     # ---------
     playlists = convert_list_to_dict_by_attribute(playlists_list, 'playlist_id')
@@ -1432,7 +1436,7 @@ def process():
 
     # 7. GET FOLLOWERS FOR ALL PLAYLISTS
     # 8. ADD FOLLOWERS TO DB
-    playlists = append_playlist_followers(playlists)
+    # playlists = append_playlist_followers(playlists)
 
     # 9. APPEND TRACKS TO PLAYLIST OBJECT FROM API OR DB
     playlists = append_playlist_tracks(playlists)
