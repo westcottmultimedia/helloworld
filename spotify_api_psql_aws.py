@@ -2,6 +2,7 @@ import csv, codecs, re, json, os, base64, time, hashlib, ssl, datetime, psycopg2
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
+import urllib
 from socket import error as SocketError
 import errno
 # import lxml
@@ -42,8 +43,8 @@ REGIONS_TOTAL = [
 # NOTE: add to this list as more regions are discovered without daily downloads
 REGIONS_WITHOUT_DAILY = ['bg', 'cy', 'ni']
 
-# REGIONS = list(set(REGIONS_TOTAL).difference(REGIONS_WITHOUT_DAILY))
-REGIONS = ['th', 'ar', 'mt', 'fi', 'lv', 'be', 'hn', 'co', 'lu', 'ee', 'ni', 'dk', 'mc', 'ca', 'ad']
+REGIONS = list(set(REGIONS_TOTAL).difference(REGIONS_WITHOUT_DAILY))
+# REGIONS = ['th', 'ar', 'mt', 'fi', 'lv', 'be', 'hn', 'co', 'lu', 'ee', 'ni', 'dk', 'mc', 'ca', 'ad']
 
 # max number of times to retry http requests
 MAX_url_RETRIES = 10
@@ -486,6 +487,7 @@ class TrackDatabase(object):
             region = region = url.split(start_url)[1].split(end_boundary_url)[0]
             regions_processed.append(region)
 
+        # return all regions that haven't yet been processed for the given date
         return list(set(REGIONS).difference(regions_processed))
 
     def is_processed(self, url):
@@ -765,7 +767,7 @@ class TrackDatabase(object):
         row = self.c.fetchone()
         return row[0] if row else False
 
-def process(mode):
+def process(date_to_process):
     """
     Process each region for "date" mode
     Can be YYYY-MM-DD, "watch", "all", or "latest"
@@ -775,86 +777,59 @@ def process(mode):
 
     global REGIONS
 
-    starttime_total = datetime.datetime.now() # timestamping
+    starttime_total = datetime.now() # timestamping
 
     service_name = 'Spotify'
 
     rerun_times = 0
-    while len(REGIONS) > 0 and rerun_times <= 3
+    while len(REGIONS) > 0 and rerun_times <= 3:
         for region in REGIONS:
-            if mode == 'all':
-                # gets all historical data for each region
-                print('Getting all dates available for region "%s"...' % region)
-                region_dates = get_dates_for_region(region)
-                if region_dates:
-                    print('Found %i dates.\n' % len(region_dates))
-                    available_dates = region_dates
-                else:
-                    print('No dates found for region "%s", skipping...' % region)
-                    print('-' * 40)
-                    continue
-            elif mode == 'watch' or mode == 'latest':
-                # iterate through regions, get most recent date only
-                print('Getting most recent date available for region "%s"...' % region)
-                region_dates = get_dates_for_region(region)
-                if region_dates:
-                    print('Most recent date is "%s".\n' % region_dates[0])
-                    available_dates = [region_dates[0]]
-
-                else:
-                    print('No date found for region "%s", skipping...' % region)
-                    print('-' * 40)
-                    continue
-            else:
-                # get data for each region on literal user-supplied date string
-                available_dates = [mode]
-
-            for date_str in available_dates:
-                starttime = datetime.datetime.now()
-                print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y'))
-                print('Loading tracks for region "%s" on "%s"...' % (region, date_str))
-                url = get_spotify_csv_url(region, date_str)
-                if db.is_processed(url):
-                    print('Already processed, skipping...')
-                    print('-' * 40)
-                    continue
-                region_data = load_spotify_csv_data(region, date_str)
-
-                if not region_data:
-                    print('No download available, skipping...')
-                    print('-' * 40)
-                    continue
-                print('Found %i tracks in the list.' % len(region_data))
-                print('Looking up tracks in database...')
-
-                # append data to Spotify API response
-                tracks = append_track_id_from_db(region_data)
-                print('Getting track data from Spotify "Tracks" API...')
-                tracks = append_track_data(region_data)
-                print('Getting label and release date from Spotify "Albums" API...')
-                tracks = append_track_album_data(tracks)
-                print('Getting genre tags from Spotify "Artists" API...')
-                tracks = append_artist_data(tracks)
-                print('Processed {} tracks, adding to database'.format(len(tracks)))
-                added = db.add_tracks(tracks, date_str, service_name)
-
-                # write data to DB
-                db.set_processed(url)
-
-                # timestamp
-                endtime = datetime.datetime.now()
-                processtime = endtime - starttime
-                processtime_running_total = endtime - starttime_total
-                print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%Y'))
-                print('Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
-                print('Running processing time: %i minutes, %i seconds' % divmod(processtime_running_total.days *86400 + processtime_running_total.seconds, 60))
+            starttime = datetime.now()
+            print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y'))
+            print('Loading tracks for region "%s" on "%s"...' % (region, date_to_process))
+            url = get_spotify_csv_url(region, date_to_process)
+            if db.is_processed(url):
+                print('Already processed, skipping...')
                 print('-' * 40)
+                continue
+            region_data = load_spotify_csv_data(region, date_to_process)
 
-            REGIONS = db.update_regions([available_dates])
+            if not region_data:
+                print('No download available, skipping...')
+                print('-' * 40)
+                continue
+            print('Found %i tracks in the list.' % len(region_data))
+            print('Looking up tracks in database...')
+
+            # append data to Spotify API response
+            tracks = append_track_id_from_db(region_data)
+            print('Getting track data from Spotify "Tracks" API...')
+            tracks = append_track_data(region_data)
+            print('Getting label and release date from Spotify "Albums" API...')
+            tracks = append_track_album_data(tracks)
+            print('Getting genre tags from Spotify "Artists" API...')
+            tracks = append_artist_data(tracks)
+            print('Processed {} tracks, adding to database'.format(len(tracks)))
+            added = db.add_tracks(tracks, date_to_process, service_name)
+
+            # write processed url to DB, so it doesn't get run multiple times
+            db.set_processed(url)
+
+            # timestamp
+            endtime = datetime.now()
+            processtime = endtime - starttime
+            processtime_running_total = endtime - starttime_total
+            print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%Y'))
+            print('Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
+            print('Running processing time: %i minutes, %i seconds' % divmod(processtime_running_total.days *86400 + processtime_running_total.seconds, 60))
+            print('-' * 40)
+
+            # update regions to process
+            REGIONS = db.update_regions(date_to_process)
             rerun_times += 1
 
         # timestamping
-        endtime_total = datetime.datetime.now()
+        endtime_total = datetime.now()
         processtime_total = endtime_total - starttime_total
         print('Finished processing all applicable dates at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
         print('Total processing time: %i minutes, %i seconds' % divmod(processtime_total.days *86400 + processtime_total.seconds, 60))
@@ -866,5 +841,11 @@ def process(mode):
 db = TrackDatabase()
 
 def handler(event, context):
-    process('latest')
+    # print('um lets go test this')
+    # lambda_event = json.loads(event) #defined in Test events in the AWS lambda console
+    date_to_process = event['previous']
+    process(date_to_process)
+    # print('the date to process is ', mode)
+    # process(mode) # should process 2018-01-01
     print('Finished')
+    return 'finished'
