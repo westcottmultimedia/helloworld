@@ -100,15 +100,13 @@ def get_dates_for_region(region):
         r = get_page(url)
         soup = bs(r, 'html.parser')
         rows = [item['data-value'] for item in soup.find_all(attrs={"data-type": 'date'})[0].find_all('li', attrs={'data-value' : True})]
-
     except IndexError as e:
         return False
-
     else:
         # check that rows is valid
         if not isinstance(rows, list) and not len(rows):
             return False
-
+    finally:
         return rows
 
 
@@ -139,9 +137,7 @@ def load_spotify_csv_data(region, date='latest'):
         return False
     else:
         spotify_csv = codecs.iterdecode(r, 'utf-8')
-    # NOTE: concatenate r to master csv file.
-        # Add in csv field for territory 2-letter code, OR territory_id, or a dictionary lookup
-    # NOTE: Refactor:
+
     rows = csv.reader(codecs.iterdecode(r, 'utf-8'))
     fields = None
     data = {}
@@ -438,7 +434,7 @@ class TrackDatabase(object):
     def init_database(self):
         conn = None
 
-        rds_host  = "beats.cu8wph61yh7y.us-west-1.rds.amazonaws.com"
+        rds_host  = "beats.cekfuk4kqawy.us-west-2.rds.amazonaws.com"
         name = "beatsdj"
         password = "beatsdj123"
         db_name = "beats"
@@ -459,6 +455,14 @@ class TrackDatabase(object):
                 conn.close()
                 print('Database connection closed.')
 
+    def close_database(self):
+        try:
+            if self.db:
+                self.db.close()
+        except:
+            print('cannot close db')
+        return True
+
     def show_db_size(self):
         self.c.execute('SELECT pg_size_pretty(pg_database_size(current_database()))')
         size = self.c.fetchone()[0]
@@ -467,7 +471,6 @@ class TrackDatabase(object):
 
     # default date to update is the previous day
     def update_regions(self, update_date = date.today() - timedelta(days = 1)):
-        global Regions
 
         regions_processed = []
         start_url = 'https://spotifycharts.com/regional/'
@@ -482,19 +485,24 @@ class TrackDatabase(object):
         """.format(update_date))
         rows = self.c.fetchall()
 
-        for row in rows:
-            url = str(row[0])
-            region = region = url.split(start_url)[1].split(end_boundary_url)[0]
-            regions_processed.append(region)
+        if rows:
+            for row in rows:
+                try:
+                    url = str(row[0])
+                    region = url.split(start_url)[1].split(end_boundary_url)[0]
+                    regions_processed.append(region)
+                except IndexError as e:
+                    pass
 
+        regions = list(set(REGIONS).difference(regions_processed))
         # return all regions that haven't yet been processed for the given date
-        return list(set(REGIONS).difference(regions_processed))
+        return regions
 
     def is_processed(self, url):
         """
         Has CSV url already been processed?
         """
-        query ="SELECT * FROM processed WHERE url = %s"
+        query = "SELECT * FROM processed WHERE url = %s"
         self.c.execute(query, [url])
 
         if self.c.fetchone():
@@ -513,8 +521,10 @@ class TrackDatabase(object):
                 (%s)
             """, [url])
 
-        except Exception as e:
-            raise e
+            self.db.commit()
+
+        except psycopg2.IntegrityError as e:
+            print('Integrity error: {}'.format(e))
         return True
 
     def get_track_stats(self, service_id, territory_id, track_id):
@@ -684,20 +694,24 @@ class TrackDatabase(object):
                     print(e)
                     raise
 
-            # update track_position_peak table
-            self.update_track_stats(service_id, territory_id, track_id_db, isrc, position, date_str)
+            try:
+                # update track_position_peak table
+                self.update_track_stats(service_id, territory_id, track_id_db, isrc, position, date_str)
 
-            # update track_position table
-            self.c.execute("""
-                INSERT INTO track_position
-                (service_id, territory_id, track_id, isrc, position, stream_count, date_str)
-                VALUES
-                (%s, %s, %s, %s, %s, %s, %s)
-                """,
-                (service_id, territory_id, track_id_db, isrc, position, track['Streams'], date_str)
-            )
+                # update track_position table
+                self.c.execute("""
+                    INSERT INTO track_position
+                    (service_id, territory_id, track_id, isrc, position, stream_count, date_str)
+                    VALUES
+                    (%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (service_id, territory_id, track_id_db, isrc, position, track['Streams'], date_str)
+                )
+            except Exception as e:
+                print(e)
+                pass
 
-            self.db.commit()
+        self.db.commit()
 
 
         return True
@@ -775,65 +789,77 @@ def process(date_to_process):
     # TODO: could extract the rerun_times, and while loop to
     # wrap the entire process(mode) function call in the AWS handler
 
-    global REGIONS
+    global db # for the try/except block to reset db if it for some reason doesn't exist
 
     starttime_total = datetime.now() # timestamping
 
     service_name = 'Spotify'
 
     rerun_times = 0
-    while len(REGIONS) > 0 and rerun_times <= 3:
-        for region in REGIONS:
-            starttime = datetime.now()
-            print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y'))
-            print('Loading tracks for region "%s" on "%s"...' % (region, date_to_process))
-            url = get_spotify_csv_url(region, date_to_process)
-            if db.is_processed(url):
-                print('Already processed, skipping...')
+
+    # set the initial set of regions to process
+    regions = db.update_regions(date_to_process)
+
+    while len(regions) > 0 and rerun_times <= 3:
+        try:
+            for region in regions:
+                starttime = datetime.now()
+                print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y'))
+                print('Loading tracks for region "%s" on "%s"...' % (region, date_to_process))
+                url = get_spotify_csv_url(region, date_to_process)
+                if db.is_processed(url):
+                    print('Already processed, skipping...')
+                    print('-' * 40)
+                    continue
+                region_data = load_spotify_csv_data(region, date_to_process)
+
+                if not region_data:
+                    print('No download available, skipping...')
+                    print('-' * 40)
+                    continue
+                print('Found %i tracks in the list.' % len(region_data))
+                print('Looking up tracks in database...')
+
+                # append data to Spotify API response
+                tracks = append_track_id_from_db(region_data)
+                print('Getting track data from Spotify "Tracks" API...')
+                tracks = append_track_data(region_data)
+                print('Getting label and release date from Spotify "Albums" API...')
+                tracks = append_track_album_data(tracks)
+                print('Getting genre tags from Spotify "Artists" API...')
+                tracks = append_artist_data(tracks)
+                print('Processed {} tracks, adding to database'.format(len(tracks)))
+                added = db.add_tracks(tracks, date_to_process, service_name)
+
+                # write processed url to DB, so it doesn't get run multiple times
+                db.set_processed(url)
+
+                # timestamp
+                endtime = datetime.now()
+                processtime = endtime - starttime
+                processtime_running_total = endtime - starttime_total
+                print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%Y'))
+                print('Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
+                print('Running processing time: %i minutes, %i seconds' % divmod(processtime_running_total.days *86400 + processtime_running_total.seconds, 60))
                 print('-' * 40)
-                continue
-            region_data = load_spotify_csv_data(region, date_to_process)
-
-            if not region_data:
-                print('No download available, skipping...')
-                print('-' * 40)
-                continue
-            print('Found %i tracks in the list.' % len(region_data))
-            print('Looking up tracks in database...')
-
-            # append data to Spotify API response
-            tracks = append_track_id_from_db(region_data)
-            print('Getting track data from Spotify "Tracks" API...')
-            tracks = append_track_data(region_data)
-            print('Getting label and release date from Spotify "Albums" API...')
-            tracks = append_track_album_data(tracks)
-            print('Getting genre tags from Spotify "Artists" API...')
-            tracks = append_artist_data(tracks)
-            print('Processed {} tracks, adding to database'.format(len(tracks)))
-            added = db.add_tracks(tracks, date_to_process, service_name)
-
-            # write processed url to DB, so it doesn't get run multiple times
-            db.set_processed(url)
-
-            # timestamp
-            endtime = datetime.now()
-            processtime = endtime - starttime
-            processtime_running_total = endtime - starttime_total
-            print('Finished processing at', endtime.strftime('%H:%M:%S %m-%d-%Y'))
-            print('Processing time: %i minutes, %i seconds' % divmod(processtime.days *86400 + processtime.seconds, 60))
-            print('Running processing time: %i minutes, %i seconds' % divmod(processtime_running_total.days *86400 + processtime_running_total.seconds, 60))
-            print('-' * 40)
 
             # update regions to process
-            REGIONS = db.update_regions(date_to_process)
+            print('updating regions')
+            regions = db.update_regions(date_to_process)
+            print('rerunning loop')
             rerun_times += 1
 
-        # timestamping
-        endtime_total = datetime.now()
-        processtime_total = endtime_total - starttime_total
-        print('Finished processing all applicable dates at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
-        print('Total processing time: %i minutes, %i seconds' % divmod(processtime_total.days *86400 + processtime_total.seconds, 60))
-        print('-' * 40)
+            # timestamping
+            endtime_total = datetime.now()
+            processtime_total = endtime_total - starttime_total
+            print('Finished processing all applicable dates at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
+            print('Total processing time: %i minutes, %i seconds' % divmod(processtime_total.days *86400 + processtime_total.seconds, 60))
+            print('-' * 40)
+        except psycopg2.InterfaceError as e:
+            db = TrackDatabase()
+            print('InterfaceError: ', e)
+            print('rerunning loop')
+            rerun_times += 1
 
 # AWS LAMBDA HANDLER---
 
@@ -841,11 +867,13 @@ def process(date_to_process):
 db = TrackDatabase()
 
 def handler(event, context):
-    # print('um lets go test this')
-    # lambda_event = json.loads(event) #defined in Test events in the AWS lambda console
+    print(REGIONS)
+    # event is defined in the lambda, the input value, which is a json object
     date_to_process = event['previous']
     process(date_to_process)
-    # print('the date to process is ', mode)
-    # process(mode) # should process 2018-01-01
-    print('Finished')
+
+    # close db connection
+    # db.close_database()
+    # print('closed database connection')
+
     return 'finished'
