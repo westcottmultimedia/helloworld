@@ -1,0 +1,311 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: beats
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# lock us to a pre-2.0 (not yet released) version of the serverless framework to protect us from breaking changes
+frameworkVersion: ">=1.16.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: us-west-2
+  profile: serverless-admin
+  memorySize: 128
+# you can overwrite defaults here
+# stage: dev
+
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+#
+# Guide: https://forum.serverless.com/t/how-to-ignore-directories-and-files-for-a-deployment/2624/3
+#
+package:
+  exclude:
+    - ".*/**"
+  include:
+    - aws/spotify_streaming/spotify_api_psql_aws.py
+    - aws/common/**
+
+functions:
+  spotify_streaming:
+    handler: spotify_api_psql_aws:handler
+
+plugins:
+  - serverless-pseudo-parameters
+  - serverless-step-functions
+
+stepFunctions:
+  stateMachines:
+    apple_streaming_songs:
+      events:
+        - schedule: cron(10 8 * * ? *)
+      name: AppleStreamingSongs
+      definition:
+        Comment: "Apple - Streaming - Apple Music Top Songs."
+        StartAt: ChartType A
+        States:
+          ChartType A:
+            Type: Pass
+            Result:
+              chartIndex: 0
+              all_regions: ["tw", "be", "br", "ch", "pl", "bm", "jo", "ag", "dk", "nz", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "kz", "cn", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "kr", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple ABC
+          Apple ABC:
+            Type: Parallel
+            Next: ChartType B
+            Branches:
+              - StartAt: Regions A
+                States:
+                  Regions A:
+                    Type: Pass
+                    InputPath: "$.all_regions[0:10]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple A
+                  Apple A:
+                      Type: Task
+                      Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                      End: true
+              - StartAt: Regions B
+                States:
+                  Regions B:
+                    Type: Pass
+                    InputPath: "$.all_regions[10:20]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple B
+                  Apple B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions C
+                States:
+                  Regions C:
+                    Type: Pass
+                    InputPath: "$.all_regions[20:30]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple C
+                  Apple C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType B:
+            Type: Pass
+            Result:
+              chartIndex: 0
+              all_regions: ["tw", "be", "br", "ch", "pl", "bm", "jo", "ag", "dk", "nz", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "kz", "cn", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "kr", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple DEF
+          Apple DEF:
+            Type: Parallel
+            Next: ChartType C
+            Branches:
+              - StartAt: Regions D
+                States:
+                  Regions D:
+                    Type: Pass
+                    InputPath: "$.all_regions[30:40]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple D
+                  Apple D:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions E
+                States:
+                  Regions E:
+                    Type: Pass
+                    InputPath: "$.all_regions[40:50]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple E
+                  Apple E:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions F
+                States:
+                  Regions F:
+                    Type: Pass
+                    InputPath: "$.all_regions[50:60]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple F
+                  Apple F:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType C:
+            Type: Pass
+            Result:
+              chartIndex: 0
+              all_regions: ["tw", "be", "br", "ch", "pl", "bm", "jo", "ag", "dk", "nz", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "kz", "cn", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "kr", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple GHI
+          Apple GHI:
+            Type: Parallel
+            Next: ChartType D
+            Branches:
+              - StartAt: Regions G
+                States:
+                  Regions G:
+                    Type: Pass
+                    InputPath: "$.all_regions[60:70]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple G
+                  Apple G:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions H
+                States:
+                  Regions H:
+                    Type: Pass
+                    InputPath: "$.all_regions[70:80]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple H
+                  Apple H:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions I
+                States:
+                  Regions I:
+                    Type: Pass
+                    InputPath: "$.all_regions[80:90]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple I
+
+                  Apple I:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType D:
+            Type: Pass
+            Result:
+              chartIndex: 0
+              all_regions: ["tw", "be", "br", "ch", "pl", "bm", "jo", "ag", "dk", "nz", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "kz", "cn", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "kr", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple JKL
+          Apple JKL:
+            Type: Parallel
+            End: true
+            Branches:
+              - StartAt: Regions J
+                States:
+                  Regions J:
+                    Type: Pass
+                    InputPath: "$.all_regions[90:100]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple J
+                  Apple J:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions K
+                States:
+                  Regions K:
+                    Type: Pass
+                    InputPath: "$.all_regions[100:110]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple K
+
+                  Apple K:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions L
+                States:
+                  Regions L:
+                    Type: Pass
+                    InputPath: "$.all_regions[110:]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple L
+                  Apple L:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+
+
+#    The following are a few example events you can configure
+#    NOTE: Please make sure to change your handler code to work with those events
+#    Check the event documentation for details
+#    events:
+#      - http:
+#          path: users/create
+#          method: get
+#      - s3: ${env:BUCKET}
+#      - schedule: rate(10 minutes)
+#      - sns: greeter-topic
+#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
+#      - alexaSkill
+#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
+#      - iot:
+#          sql: "SELECT * FROM 'some_topic'"
+#      - cloudwatchEvent:
+#          event:
+#            source:
+#              - "aws.ec2"
+#            detail-type:
+#              - "EC2 Instance State-change Notification"
+#            detail:
+#              state:
+#                - pending
+#      - cloudwatchLog: '/aws/lambda/hello'
+#      - cognitoUserPool:
+#          pool: MyUserPool
+#          trigger: PreSignUp
+
+#    Define function environment variables here
+#    environment:
+#      variable2: value2
+
+# you can add CloudFormation resource templates here
+#resources:
+#  Resources:
+#    NewResource:
+#      Type: AWS::S3::Bucket
+#      Properties:
+#        BucketName: my-new-bucket
+#  Outputs:
+#     NewOutput:
+#       Description: "Description for the output"
+#       Value: "Some output value"
