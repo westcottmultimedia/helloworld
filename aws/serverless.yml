@@ -1,0 +1,1117 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: beats
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# lock us to a pre-2.0 (not yet released) version of the serverless framework to protect us from breaking changes
+frameworkVersion: ">=1.16.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: us-west-2
+  profile: serverless-admin
+  memorySize: 128
+# you can overwrite defaults here
+# stage: dev
+
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+#
+# Guide: https://forum.serverless.com/t/how-to-ignore-directories-and-files-for-a-deployment/2624/3
+#
+package:
+  exclude:
+    - ".*/**"
+  include:
+    - spotify_streaming_lambda.py
+    - apple_api_ec.config
+    - apple_streaming_sales_lambda.py
+    - playlist_lambda.py
+    - test_lambda.py
+    - common_copy/**
+    # - aws/common/** # this works, but common_copy see
+
+functions:
+  spotify_streaming:
+    handler: spotify_streaming_lambda.handler
+    timeout: 300
+  apple_streaming_sales:
+    handler: apple_streaming_sales_lambda.handler
+    timeout: 300
+  playlist:
+    handler: playlist_lambda.handler
+    timeout: 300
+
+plugins:
+  - serverless-pseudo-parameters
+  - serverless-step-functions
+
+
+# https://github.com/horike37/serverless-step-functions
+stepFunctions:
+  stateMachines:
+    # start the RDS instance
+    beats_rds_start:
+      events:
+        - schedule: cron(0 4 * * ? *)
+      name: BeatsRDSStart
+      definition:
+        Comment: "Beats RDS Start"
+        StartAt: action
+        States:
+          action:
+            Type: Pass
+            Result:
+              instances:
+                - "beats"
+              action: "start"
+            Next: execute
+          execute:
+            Type: Task
+            Resource: "arn:aws:lambda:us-west-2:903653902323:function:RDS-Start-Stop"
+            End: true
+
+    # stop the RDS instance
+    beats_rds_stop:
+      events:
+        - schedule: cron(30 6 * * ? *)
+      name: BeatsRDSStop
+      definition:
+        Comment: "Beats RDS Stop"
+        StartAt: action
+        States:
+          action:
+            Type: Pass
+            Result:
+              instances:
+                - "beats"
+              action: "stop"
+            Next: execute
+          execute:
+            Type: Task
+            Resource: "arn:aws:lambda:us-west-2:903653902323:function:RDS-Start-Stop"
+            End: true
+
+    spotify_streaming_songs:
+      events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        - schedule: cron(15 4 * * ? *)
+      name: SpotifyStreamingSongs
+      definition:
+        Comment: "Spotify - Streaming - Spotify Top Songs."
+        StartAt: ChartType A
+        States:
+          ChartType A:
+            Type: Pass
+            Result:
+              previous: "latest"
+            Next: Spotify Streaming ABC
+          Spotify Streaming ABC:
+            Type: Parallel
+            End: true
+            Branches:
+              - StartAt: Spotify Streaming A
+                States:
+                  Spotify Streaming A:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:spotify_streaming"
+                    End: true
+              - StartAt: Spotify Streaming B
+                States:
+                  Spotify Streaming B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:spotify_streaming"
+                    End: true
+              - StartAt: Spotify Streaming C
+                States:
+                  Spotify Streaming C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:spotify_streaming"
+                    End: true
+    apple_streaming_songs:
+      events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        - schedule: cron(30 4 * * ? *)
+      name: AppleStreamingSongs
+      definition:
+        Comment: "Apple - Streaming - Apple Music Top Songs."
+        StartAt: ChartType A
+        States:
+          ChartType A:
+            Type: Pass
+            Result:
+              chartIndex: 0
+              all_regions: ["tw", "be", "br", "ch", "pl", "bm", "jo", "ag", "dk", "nz", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "kz", "cn", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "kr", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple ABC
+          Apple ABC:
+            Type: Parallel
+            Next: ChartType B
+            Branches:
+              - StartAt: Regions A
+                States:
+                  Regions A:
+                    Type: Pass
+                    InputPath: "$.all_regions[0:10]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple A
+                  Apple A:
+                      Type: Task
+                      Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                      End: true
+              - StartAt: Regions B
+                States:
+                  Regions B:
+                    Type: Pass
+                    InputPath: "$.all_regions[10:20]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple B
+                  Apple B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions C
+                States:
+                  Regions C:
+                    Type: Pass
+                    InputPath: "$.all_regions[20:30]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple C
+                  Apple C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType B:
+            Type: Pass
+            Result:
+              chartIndex: 0
+              all_regions: ["tw", "be", "br", "ch", "pl", "bm", "jo", "ag", "dk", "nz", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "kz", "cn", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "kr", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple DEF
+          Apple DEF:
+            Type: Parallel
+            Next: ChartType C
+            Branches:
+              - StartAt: Regions D
+                States:
+                  Regions D:
+                    Type: Pass
+                    InputPath: "$.all_regions[30:40]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple D
+                  Apple D:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions E
+                States:
+                  Regions E:
+                    Type: Pass
+                    InputPath: "$.all_regions[40:50]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple E
+                  Apple E:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions F
+                States:
+                  Regions F:
+                    Type: Pass
+                    InputPath: "$.all_regions[50:60]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple F
+                  Apple F:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType C:
+            Type: Pass
+            Result:
+              chartIndex: 0
+              all_regions: ["tw", "be", "br", "ch", "pl", "bm", "jo", "ag", "dk", "nz", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "kz", "cn", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "kr", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple GHI
+          Apple GHI:
+            Type: Parallel
+            Next: ChartType D
+            Branches:
+              - StartAt: Regions G
+                States:
+                  Regions G:
+                    Type: Pass
+                    InputPath: "$.all_regions[60:70]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple G
+                  Apple G:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions H
+                States:
+                  Regions H:
+                    Type: Pass
+                    InputPath: "$.all_regions[70:80]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple H
+                  Apple H:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions I
+                States:
+                  Regions I:
+                    Type: Pass
+                    InputPath: "$.all_regions[80:90]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple I
+
+                  Apple I:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType D:
+            Type: Pass
+            Result:
+              chartIndex: 0
+              all_regions: ["tw", "be", "br", "ch", "pl", "bm", "jo", "ag", "dk", "nz", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "kz", "cn", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "kr", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple JKL
+          Apple JKL:
+            Type: Parallel
+            End: true
+            Branches:
+              - StartAt: Regions J
+                States:
+                  Regions J:
+                    Type: Pass
+                    InputPath: "$.all_regions[90:100]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple J
+                  Apple J:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions K
+                States:
+                  Regions K:
+                    Type: Pass
+                    InputPath: "$.all_regions[100:110]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple K
+
+                  Apple K:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions L
+                States:
+                  Regions L:
+                    Type: Pass
+                    InputPath: "$.all_regions[110:]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple L
+                  Apple L:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+    apple_sales_songs:
+      events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        - schedule: cron(50 4 * * ? *)
+      name: AppleSalesSongs
+      definition:
+        Comment: "Apple - Sales - iTunes Top Songs."
+        StartAt: ChartType A
+        States:
+          ChartType A:
+            Type: Pass
+            Result:
+              chartIndex: 1
+              all_regions: ["tw", "be", "br", "ch", "na", "pl", "bm", "bs", "jo", "ag", "dk", "nz", "bn", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "bf", "kz", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "mz", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "qa", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple ABC
+          Apple ABC:
+            Type: Parallel
+            Next: ChartType B
+            Branches:
+              - StartAt: Regions A
+                States:
+                  Regions A:
+                    Type: Pass
+                    InputPath: "$.all_regions[0:10]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple A
+                  Apple A:
+                      Type: Task
+                      Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                      End: true
+              - StartAt: Regions B
+                States:
+                  Regions B:
+                    Type: Pass
+                    InputPath: "$.all_regions[10:20]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple B
+                  Apple B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions C
+                States:
+                  Regions C:
+                    Type: Pass
+                    InputPath: "$.all_regions[20:30]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple C
+                  Apple C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType B:
+            Type: Pass
+            Result:
+              chartIndex: 1
+              all_regions: ["tw", "be", "br", "ch", "na", "pl", "bm", "bs", "jo", "ag", "dk", "nz", "bn", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "bf", "kz", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "mz", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "qa", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple DEF
+          Apple DEF:
+            Type: Parallel
+            Next: ChartType C
+            Branches:
+              - StartAt: Regions D
+                States:
+                  Regions D:
+                    Type: Pass
+                    InputPath: "$.all_regions[30:40]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple D
+                  Apple D:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions E
+                States:
+                  Regions E:
+                    Type: Pass
+                    InputPath: "$.all_regions[40:50]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple E
+                  Apple E:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions F
+                States:
+                  Regions F:
+                    Type: Pass
+                    InputPath: "$.all_regions[50:60]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple F
+                  Apple F:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType C:
+            Type: Pass
+            Result:
+              chartIndex: 1
+              all_regions: ["tw", "be", "br", "ch", "na", "pl", "bm", "bs", "jo", "ag", "dk", "nz", "bn", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "bf", "kz", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "mz", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "qa", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple GHI
+          Apple GHI:
+            Type: Parallel
+            Next: ChartType D
+            Branches:
+              - StartAt: Regions G
+                States:
+                  Regions G:
+                    Type: Pass
+                    InputPath: "$.all_regions[60:70]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple G
+                  Apple G:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions H
+                States:
+                  Regions H:
+                    Type: Pass
+                    InputPath: "$.all_regions[70:80]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple H
+                  Apple H:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions I
+                States:
+                  Regions I:
+                    Type: Pass
+                    InputPath: "$.all_regions[80:90]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple I
+
+                  Apple I:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType D:
+            Type: Pass
+            Result:
+              chartIndex: 1
+              all_regions: ["tw", "be", "br", "ch", "na", "pl", "bm", "bs", "jo", "ag", "dk", "nz", "bn", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "bf", "kz", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "mz", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "qa", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple JKL
+          Apple JKL:
+            Type: Parallel
+            End: true
+            Branches:
+              - StartAt: Regions J
+                States:
+                  Regions J:
+                    Type: Pass
+                    InputPath: "$.all_regions[90:100]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple J
+                  Apple J:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions K
+                States:
+                  Regions K:
+                    Type: Pass
+                    InputPath: "$.all_regions[100:110]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple K
+
+                  Apple K:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions L
+                States:
+                  Regions L:
+                    Type: Pass
+                    InputPath: "$.all_regions[110:]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple L
+                  Apple L:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+    apple_sales_albums:
+      events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        - schedule: cron(15 5 * * ? *)
+      name: AppleSalesAlbums
+      definition:
+        Comment: "Apple - Sales - iTunes Top Songs."
+        StartAt: ChartType A
+        States:
+          ChartType A:
+            Type: Pass
+            Result:
+              chartIndex: 2
+              all_regions: ["tw", "be", "br", "ch", "na", "pl", "bm", "bs", "jo", "ag", "dk", "nz", "bn", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "bf", "kz", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "mz", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "qa", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple ABC
+          Apple ABC:
+            Type: Parallel
+            Next: ChartType B
+            Branches:
+              - StartAt: Regions A
+                States:
+                  Regions A:
+                    Type: Pass
+                    InputPath: "$.all_regions[0:10]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple A
+                  Apple A:
+                      Type: Task
+                      Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                      End: true
+              - StartAt: Regions B
+                States:
+                  Regions B:
+                    Type: Pass
+                    InputPath: "$.all_regions[10:20]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple B
+                  Apple B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions C
+                States:
+                  Regions C:
+                    Type: Pass
+                    InputPath: "$.all_regions[20:30]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple C
+                  Apple C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType B:
+            Type: Pass
+            Result:
+              chartIndex: 2
+              all_regions: ["tw", "be", "br", "ch", "na", "pl", "bm", "bs", "jo", "ag", "dk", "nz", "bn", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "bf", "kz", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "mz", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "qa", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple DEF
+          Apple DEF:
+            Type: Parallel
+            Next: ChartType C
+            Branches:
+              - StartAt: Regions D
+                States:
+                  Regions D:
+                    Type: Pass
+                    InputPath: "$.all_regions[30:40]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple D
+                  Apple D:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions E
+                States:
+                  Regions E:
+                    Type: Pass
+                    InputPath: "$.all_regions[40:50]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple E
+                  Apple E:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions F
+                States:
+                  Regions F:
+                    Type: Pass
+                    InputPath: "$.all_regions[50:60]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple F
+                  Apple F:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType C:
+            Type: Pass
+            Result:
+              chartIndex: 2
+              all_regions: ["tw", "be", "br", "ch", "na", "pl", "bm", "bs", "jo", "ag", "dk", "nz", "bn", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "bf", "kz", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "mz", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "qa", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple GHI
+          Apple GHI:
+            Type: Parallel
+            Next: ChartType D
+            Branches:
+              - StartAt: Regions G
+                States:
+                  Regions G:
+                    Type: Pass
+                    InputPath: "$.all_regions[60:70]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple G
+                  Apple G:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions H
+                States:
+                  Regions H:
+                    Type: Pass
+                    InputPath: "$.all_regions[70:80]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple H
+                  Apple H:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions I
+                States:
+                  Regions I:
+                    Type: Pass
+                    InputPath: "$.all_regions[80:90]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple I
+
+                  Apple I:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType D:
+            Type: Pass
+            Result:
+              chartIndex: 2
+              all_regions: ["tw", "be", "br", "ch", "na", "pl", "bm", "bs", "jo", "ag", "dk", "nz", "bn", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "bf", "kz", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "gw", "si", "bz", "it", "np", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "mz", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "qa", "ua", "cz", "tm", "md", "mx", "ro", "om", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "lb", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple JKL
+          Apple JKL:
+            Type: Parallel
+            End: true
+            Branches:
+              - StartAt: Regions J
+                States:
+                  Regions J:
+                    Type: Pass
+                    InputPath: "$.all_regions[90:100]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple J
+                  Apple J:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions K
+                States:
+                  Regions K:
+                    Type: Pass
+                    InputPath: "$.all_regions[100:110]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple K
+
+                  Apple K:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions L
+                States:
+                  Regions L:
+                    Type: Pass
+                    InputPath: "$.all_regions[110:]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple L
+                  Apple L:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+    apple_sales_music_videos:
+      events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        - schedule: cron(35 5 * * ? *)
+      name: AppleSalesMusicVideos
+      definition:
+        Comment: "Apple - Sales - iTunes Music Videos."
+        StartAt: ChartType A
+        States:
+          ChartType A:
+            Type: Pass
+            Result:
+              chartIndex: 3
+              all_regions: ["tw", "be", "br", "ch", "na", "pl", "bm", "bs", "jo", "ag", "dk", "nz", "bn", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "bf", "kz", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "si", "bz", "it", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "mz", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "ua", "cz", "tm", "md", "mx", "ro", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple ABC
+          Apple ABC:
+            Type: Parallel
+            Next: ChartType B
+            Branches:
+              - StartAt: Regions A
+                States:
+                  Regions A:
+                    Type: Pass
+                    InputPath: "$.all_regions[0:10]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple A
+                  Apple A:
+                      Type: Task
+                      Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                      End: true
+              - StartAt: Regions B
+                States:
+                  Regions B:
+                    Type: Pass
+                    InputPath: "$.all_regions[10:20]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple B
+                  Apple B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions C
+                States:
+                  Regions C:
+                    Type: Pass
+                    InputPath: "$.all_regions[20:30]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple C
+                  Apple C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType B:
+            Type: Pass
+            Result:
+              chartIndex: 3
+              all_regions: ["tw", "be", "br", "ch", "na", "pl", "bm", "bs", "jo", "ag", "dk", "nz", "bn", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "bf", "kz", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "si", "bz", "it", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "mz", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "ua", "cz", "tm", "md", "mx", "ro", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple DEF
+          Apple DEF:
+            Type: Parallel
+            Next: ChartType C
+            Branches:
+              - StartAt: Regions D
+                States:
+                  Regions D:
+                    Type: Pass
+                    InputPath: "$.all_regions[30:40]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple D
+                  Apple D:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions E
+                States:
+                  Regions E:
+                    Type: Pass
+                    InputPath: "$.all_regions[40:50]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple E
+                  Apple E:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions F
+                States:
+                  Regions F:
+                    Type: Pass
+                    InputPath: "$.all_regions[50:60]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple F
+                  Apple F:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType C:
+            Type: Pass
+            Result:
+              chartIndex: 3
+              all_regions: ["tw", "be", "br", "ch", "na", "pl", "bm", "bs", "jo", "ag", "dk", "nz", "bn", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "bf", "kz", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "si", "bz", "it", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "mz", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "ua", "cz", "tm", "md", "mx", "ro", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple GHI
+          Apple GHI:
+            Type: Parallel
+            Next: ChartType D
+            Branches:
+              - StartAt: Regions G
+                States:
+                  Regions G:
+                    Type: Pass
+                    InputPath: "$.all_regions[60:70]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple G
+                  Apple G:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions H
+                States:
+                  Regions H:
+                    Type: Pass
+                    InputPath: "$.all_regions[70:80]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple H
+                  Apple H:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions I
+                States:
+                  Regions I:
+                    Type: Pass
+                    InputPath: "$.all_regions[80:90]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple I
+
+                  Apple I:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+          ChartType D:
+            Type: Pass
+            Result:
+              chartIndex: 3
+              all_regions: ["tw", "be", "br", "ch", "na", "pl", "bm", "bs", "jo", "ag", "dk", "nz", "bn", "az", "eg", "sg", "tt", "kg", "bo", "zw", "bb", "jp", "se", "gm", "by", "ve", "bh", "ae", "lt", "ug", "pe", "nl", "mo", "in", "mt", "hk", "hu", "do", "id", "ni", "bf", "kz", "gb", "pg", "ar", "fj", "no", "la", "lv", "sz", "sv", "mu", "ee", "il", "us", "si", "bz", "it", "my", "pa", "gr", "kh", "ng", "uz", "cr", "tr", "kn", "ie", "py", "mz", "ru", "ke", "mn", "ai", "cv", "hn", "pt", "gh", "bw", "lk", "es", "cl", "sk", "ky", "bg", "at", "ua", "cz", "tm", "md", "mx", "ro", "ec", "fi", "gt", "gd", "fr", "lu", "dm", "au", "vn", "ph", "ne", "za", "sa", "am", "de", "fm", "cy", "vg", "ca", "th", "co", "tj"]
+            Next: Apple JKL
+          Apple JKL:
+            Type: Parallel
+            End: true
+            Branches:
+              - StartAt: Regions J
+                States:
+                  Regions J:
+                    Type: Pass
+                    InputPath: "$.all_regions[90:100]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple J
+                  Apple J:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions K
+                States:
+                  Regions K:
+                    Type: Pass
+                    InputPath: "$.all_regions[100:110]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple K
+
+                  Apple K:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+              - StartAt: Regions L
+                States:
+                  Regions L:
+                    Type: Pass
+                    InputPath: "$.all_regions[110:]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple L
+                  Apple L:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
+                    End: true
+    playlist_daily_followers:
+      events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        - schedule: cron(45 3 * * ? *)
+      name: PlaylistDailyFollowers
+      definition:
+        Comment: "Playlist - Daily Follower data for all playlists."
+        StartAt: "Playlist Followers ABC"
+        States:
+          Playlist Followers ABC:
+            Type: Parallel
+            Branches:
+              - StartAt: Playlist Followers A
+                States:
+                  Playlist Followers A:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
+                    End: true
+              - StartAt: Playlist Followers B
+                States:
+                  Playlist Followers B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
+                    End: true
+              - StartAt: Playlist Followers C
+                States:
+                  Playlist Followers C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
+                    End: true
+            Retry:
+              - ErrorEquals:
+                - "States.Timeout"
+                IntervalSeconds: 3
+                MaxAttempts: 10
+                BackoffRate: 1.5
+
+            End: true
+    playlist_update_all_user_playlists:
+      events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        # - schedule: cron(45 3 * * ? *)
+      name: PlaylistUpdateAllUserPlaylists
+      definition:
+        Comment: "Playlist - Update all playlists by users. Once a week or month update. Input can be a 'user' key with an array of spotify users, or defaults to all users in the db"
+        StartAt: "Playlist Update All ABCD"
+        States:
+          Playlist Update All ABCD:
+            Type: Parallel
+            Branches:
+              - StartAt: Playlist Users A
+                States:
+                  Playlist Users A:
+                    Type: Pass
+                    Result:
+                      users: ['spotify']
+                    Next: Playlist Update All A
+                  Playlist Update All A:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_update_all_playlists"
+                    End: true
+              - StartAt: Playlist Users B
+                States:
+                  Playlist Users B:
+                    Type: Pass
+                    Result:
+                      users: ["digster.fr", "universalmusicse", "udiscovermusic", "digster.fm", "thecompletecollection", 'topsify', 'filtr', 'radioactivehits', 'digster.ee']
+                    Next: Playlist Update All B
+                  Playlist Update All B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_update_all_playlists"
+                    End: true
+              - StartAt: Playlist Users C
+                States:
+                  Playlist Users C:
+                    Type: Pass
+                    Result:
+                      users: [ 'digster.dk',  'digster.co.uk', 'hhheroes',
+                      'digster.lt', 'capitolchristianmusicgroup', 'capitolrecords', 'digsterca', '11145233736', '12150271040',
+                      'digsterdeutschland', 'digstercz', 'digster.lv', 'hollywdrecrds', 'record_club_umc',
+                      'sozoofficial', '116734391', 'digsterhu', 'getmusicasia', 'disney_pixar_', 'digstersk', 'deutschegrammophon', '11152361853',
+                      '100keepit', 'universal.fm', 'digsternl', '12150809594', 'thisisofficial', 'universalmusicargentina',
+                      'udiscover', 'umusicnz', 'universalmusicitalia', 'progrocksmusic']
+                    Next: Playlist Update All C
+                  Playlist Update All C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_update_all_playlists"
+                    End: true
+              - StartAt: Playlist Users D
+                States:
+                  Playlist Users D:
+                    Type: Pass
+                    Result:
+                      users: ['digsterargentina', 'abbaspotify',
+                      'defjamrecordings', 'digsterno', 'digster.au', '100yearsoftheblues', 'universal.pictures.de', 'o.owner_id', '128899670',
+                      'digstergreece', 'universalmusica', 'digster.fi', 'digster.se', 'universalmusictaiwan', 'classicmotownrecords',
+                      'digster_italy', 'digster_brasil', 'thejazzlabels', 'universalmusicireland', 'wowilovechristianmusic',
+                      'digsterchile', 'disney_music_uk', 'universal_music_rock_legends', 'digster.pt']
+                    Next: Playlist Update All D
+                  Playlist Update All D:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_update_all_playlists"
+                    End: true
+            Retry:
+              - ErrorEquals:
+                - "States.Timeout"
+                IntervalSeconds: 3
+                MaxAttempts: 10
+                BackoffRate: 1.5
+            End: true
+
+    # TODO: reroute all above step functions to reference functions created above in the functions section. This will allow a serverless configuration without having to touch the AWS config in the UI
+    # this spotify_streaming_dev_test works beautifully!
+    spotify_streaming_dev_test:
+      name: SpotifyStreamingDevTest
+      definition:
+        Comment: "Playlist - Update all playlists by users. Once a week or month update. Input can be a 'user' key with an array of spotify users, or defaults to all users in the db"
+        StartAt: input data
+        States:
+          input data:
+            Type: Pass
+            Result:
+              previous: 'latest'
+            Next: spotify_streaming
+          spotify_streaming:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-spotify_streaming"
+            End: true
+
+
+#    The following are a few example events you can configure
+#    NOTE: Please make sure to change your handler code to work with those events
+#    Check the event documentation for details
+#    events:
+#      - http:
+#          path: users/create
+#          method: get
+#      - s3: ${env:BUCKET}
+#      - schedule: rate(10 minutes)
+#      - sns: greeter-topic
+#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
+#      - alexaSkill
+#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
+#      - iot:
+#          sql: "SELECT * FROM 'some_topic'"
+#      - cloudwatchEvent:
+#          event:
+#            source:
+#              - "aws.ec2"
+#            detail-type:
+#              - "EC2 Instance State-change Notification"
+#            detail:
+#              state:
+#                - pending
+#      - cloudwatchLog: '/aws/lambda/hello'
+#      - cognitoUserPool:
+#          pool: MyUserPool
+#          trigger: PreSignUp
+
+#    Define function environment variables here
+#    environment:
+#      variable2: value2
+
+# you can add CloudFormation resource templates here
+#resources:
+#  Resources:
+#    NewResource:
+#      Type: AWS::S3::Bucket
+#      Properties:
+#        BucketName: my-new-bucket
+#  Outputs:
+#     NewOutput:
+#       Description: "Description for the output"
+#       Value: "Some output value"
