@@ -60,10 +60,11 @@ package:
     - apple_api_ec.config
     - apple_streaming_sales_lambda.py
     - playlist_lambda.py
-    - test_lambda.py
-    - common_copy/**
+    - helpers.py
+    - aws_packages/**
     # - aws/common/** # this works, but common_copy see
 
+# define your functions and handlers here
 functions:
   spotify_streaming:
     handler: spotify_streaming_lambda.handler
@@ -71,15 +72,34 @@ functions:
   apple_streaming_sales:
     handler: apple_streaming_sales_lambda.handler
     timeout: 300
-  playlist:
-    handler: playlist_lambda.handler
+  playlist_daily_followers:
+    handler: playlist_lambda.daily_followers_handler
     timeout: 300
+  playlist_daily_track_position:
+    handler: playlist_lambda.daily_track_position_handler
+    timeout: 300
+  playlist_periodic_all_playlist_track_position:
+    handler: playlist_lambda.periodic_process_daily_track_position_handler
+    timeout: 300
+  playlist_periodic_update_all_playlists_by_users:
+    handler: playlist_lambda.periodic_update_all_playlists_by_users_handler
+    timeout: 300
+  get_playlists_with_followers_from_db:
+    handler: playlist_lambda.get_playlists_with_minimum_follower_count_from_db_handler
+    timeout: 10
+  get_daily_unprocessed_playlists:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_handler
+    timeout: 30
+  get_array_length:
+    handler: helpers.get_array_length
+    timeout: 5
 
+# plugins for serverless
 plugins:
   - serverless-pseudo-parameters
   - serverless-step-functions
 
-
+# step functions definitions
 # https://github.com/horike37/serverless-step-functions
 stepFunctions:
   stateMachines:
@@ -107,7 +127,7 @@ stepFunctions:
     # stop the RDS instance
     beats_rds_stop:
       events:
-        - schedule: cron(30 6 * * ? *)
+        - schedule: cron(30 8 * * ? *)
       name: BeatsRDSStop
       definition:
         Comment: "Beats RDS Stop"
@@ -979,6 +999,7 @@ stepFunctions:
                 BackoffRate: 1.5
 
             End: true
+
     playlist_update_all_user_playlists:
       events:
         # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
@@ -1052,6 +1073,7 @@ stepFunctions:
                 BackoffRate: 1.5
             End: true
 
+
     # TODO: reroute all above step functions to reference functions created above in the functions section. This will allow a serverless configuration without having to touch the AWS config in the UI
     # this spotify_streaming_dev_test works beautifully!
     spotify_streaming_dev_test:
@@ -1069,7 +1091,198 @@ stepFunctions:
             Type: Task
             Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-spotify_streaming"
             End: true
+    playlist_periodic_update_all_playlists_by_users:
+      name: PlaylistPeriodicUpdateAllPlaylistsByUsers
+      definition:
+        Comment: "Playlist - Update all playlists by users. Once a week or month update. Input can be a 'user' key with an array of spotify users, or defaults to all users in the db"
+        StartAt: input data
+        States:
+          input data:
+            Type: Pass
+            Result:
+              previous: 'latest'
+            Next: spotify_streaming
+          spotify_streaming:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_periodic_update_all_playlists_by_users"
+            End: true
 
+
+    playlist_daily_track_position:
+      name: PlaylistTracks
+      definition:
+        Comment: "Get playlists from the db to process the followers and track positions, with 15 playlists at a time"
+        StartAt: GetUnprocessedPlaylists
+        States:
+          CleanInput:
+            Type: Pass
+            Result: {}
+            Next: GetUnprocessedPlaylists
+          GetUnprocessedPlaylists:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_daily_unprocessed_playlists"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetArrayLength
+          GetArrayLength:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.playlists"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.length"
+                NumericGreaterThan: 0
+                Next: Process Playlists ABC
+          Process Playlists ABC:
+            Type: Parallel
+            Branches:
+              - StartAt: Process Playlists A
+                States:
+                  Process Playlists A:
+                    InputPath: "$.playlists[0:5]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_daily_track_position"
+                    End: true
+                    Retry:
+                      - ErrorEquals: ["States.Timeout"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+                      - ErrorEquals: ["States.TaskFailed"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+              - StartAt: Process Playlists B
+                States:
+                  Process Playlists B:
+                    InputPath: "$.playlists[5:10]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_daily_track_position"
+                    End: true
+                    Retry:
+                      - ErrorEquals: ["States.Timeout"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+                      - ErrorEquals: ["States.TaskFailed"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+              - StartAt: Process Playlists C
+                States:
+                  Process Playlists C:
+                    InputPath: "$.playlists[10:15]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_daily_track_position"
+                    End: true
+                    Retry:
+                      - ErrorEquals: ["States.Timeout"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+                      - ErrorEquals: ["States.TaskFailed"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+            Next: CleanInput
+          Done:
+            Type: Pass
+            End: true
+
+    periodic_all_track_position:
+      name: PeriodicAllPlaylistTracks
+      definition:
+        Comment: "Get all playlists from the db to process the followers and track positions, with 60 playlists at a time"
+        StartAt: GetUnprocessedPlaylists
+        States:
+          CleanInput:
+            Type: Pass
+            Result: {}
+            Next: GetUnprocessedPlaylists
+          GetUnprocessedPlaylists:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_daily_unprocessed_playlists"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetArrayLength
+          GetArrayLength:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.playlists"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.length"
+                NumericGreaterThan: 0
+                Next: Process Playlists ABC
+          Process Playlists ABC:
+            Type: Parallel
+            Branches:
+              - StartAt: Process Playlists A
+                States:
+                  Process Playlists A:
+                    InputPath: "$.playlists[0:5]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_periodic_all_playlist_track_position"
+                    End: true
+                    Retry:
+                      - ErrorEquals: ["States.Timeout"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+                      - ErrorEquals: ["States.TaskFailed"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+              - StartAt: Process Playlists B
+                States:
+                  Process Playlists B:
+                    InputPath: "$.playlists[5:10]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_periodic_all_playlist_track_position"
+                    End: true
+                    Retry:
+                      - ErrorEquals: ["States.Timeout"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+                      - ErrorEquals: ["States.TaskFailed"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+              - StartAt: Process Playlists C
+                States:
+                  Process Playlists C:
+                    InputPath: "$.playlists[10:15]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_periodic_all_playlist_track_position"
+                    End: true
+                    Retry:
+                      - ErrorEquals: ["States.Timeout"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+                      - ErrorEquals: ["States.TaskFailed"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+            Next: CleanInput
+          Done:
+            Type: Pass
+            End: true
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
