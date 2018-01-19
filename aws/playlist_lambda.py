@@ -549,7 +549,7 @@ class TrackDatabase(object):
             raise e
         return True
 
-    def is_playlist_followers_processed(self, playlist_id, date_str):
+    def is_playlist_followers_processed(self, playlist_id, playlist_version):
         """
         Has playlist followers already been processed?
         """
@@ -560,18 +560,18 @@ class TrackDatabase(object):
             WHERE
                 playlist_id = %s
                 AND
-                date_str = %s
+                playlist_version = %
                 AND
                 is_followers_processed = True
         """
 
-        self.c.execute(query, (playlist_id, date_str))
+        self.c.execute(query, (playlist_id, playlist_version))
 
         if self.c.fetchone():
             return True
         return False
 
-    def is_playlist_track_position_processed(self, playlist_id, date_str):
+    def is_playlist_track_position_processed(self, playlist_id, playlist_version):
         """
         Has playlist track position already been processed?
         """
@@ -582,11 +582,28 @@ class TrackDatabase(object):
             WHERE
                 playlist_id = %s
                 AND
-                date_str = %s
+                playlist_version = %s
                 AND
                 is_track_position_processed = True
         """
-        self.c.execute(query, (playlist_id, date_str))
+        self.c.execute(query, (playlist_id, playlist_version))
+
+        if self.c.fetchone():
+            return True
+        return False
+
+    def is_playlist_track_position_attempted(self, playlist_id, playlist_version):
+        attempted_query = """
+            SELECT *
+            FROM playlist_processed
+            WHERE
+                playlist_id = %s
+                AND
+                playlist_version = %s
+                AND
+                is_track_position_processed in (True, False)
+        """
+        self.c.execute(attempted_query, (playlist_id, playlist_version))
 
         if self.c.fetchone():
             return True
@@ -594,43 +611,47 @@ class TrackDatabase(object):
 
     # * in argument list delineates positional arguments from enforced keyword arguments.
     # http://www.informit.com/articles/article.aspx?p=2314818
-    def set_playlist_processed(self, playlist_id, date_str, *, is_followers_processed = None, is_track_position_processed = None):
+    def set_playlist_processed(self, playlist_id, playlist_version, date_str, *, is_followers_processed = None, is_track_position_processed = None):
         """
         Mark playlist as having followers or all track positions as processed
         """
 
         query_insert = """
             INSERT INTO playlist_processed
-            (playlist_id, date_str)
+            (playlist_id, playlist_version, date_str)
             VALUES
-            (%s, %s)
+            (%s, %s, %s)
             ON CONFLICT DO NOTHING
         """
 
         query_upsert_followers = """
             INSERT INTO playlist_processed
-                (playlist_id, date_str, is_followers_processed)
+                (playlist_id, playlist_version, date_str, is_followers_processed)
             VALUES
-                (%s, %s, %s)
-            ON CONFLICT (playlist_id, date_str)
+                (%s, %s, %s, %s)
+            ON CONFLICT (playlist_id, playlist_version, date_str)
             DO UPDATE SET
                 (is_followers_processed) = (%s)
             WHERE
                 playlist_processed.playlist_id = %s
+                AND
+                playlist_processed.playlist_version = %s
                 AND
                 playlist_processed.date_str = %s
         """
 
         query_upsert_track_position = """
             INSERT INTO playlist_processed
-                (playlist_id, date_str, is_track_position_processed)
+                (playlist_id, playlist_version, date_str, is_track_position_processed)
             VALUES
-                (%s, %s, %s)
-            ON CONFLICT (playlist_id, date_str)
+                (%s, %s, %s, %s)
+            ON CONFLICT (playlist_id, playlist_version, date_str)
             DO UPDATE SET
                 (is_track_position_processed) = (%s)
             WHERE
                 playlist_processed.playlist_id = %s
+                AND
+                playlist_processed.playlist_version = %s
                 AND
                 playlist_processed.date_str = %s
         """
@@ -678,17 +699,21 @@ class TrackDatabase(object):
             if is_followers_processed is None and is_track_position_processed is None:
                 self.c.execute(
                     query_insert,
-                    (playlist_id, date_str)
+                    (playlist_id, playlist_version, date_str)
                 )
             elif is_followers_processed and is_track_position_processed is None:
                 self.c.execute(
                     query_upsert_followers,
-                    (playlist_id, date_str, is_followers_processed, is_followers_processed, playlist_id, date_str)
+                    (playlist_id, playlist_version, date_str, is_followers_processed,
+                    is_followers_processed,
+                    playlist_id, playlist_version, date_str)
                 )
             elif is_track_position_processed and is_followers_processed is None:
                 self.c.execute(
                     query_upsert_track_position,
-                    (playlist_id, date_str, is_track_position_processed, is_track_position_processed, playlist_id, date_str)
+                    (playlist_id, playlist_version, date_str, is_track_position_processed,
+                    is_track_position_processed,
+                    playlist_id, playlist_version, date_str)
                 )
             else:
                 # NOTE: if this is a true condition, then do both.
@@ -1332,7 +1357,7 @@ def append_playlist_followers_and_update_version(playlists):
         # NOTE: can change to check
         # if not db.get_followers_for_playlist_from_db(playlist, TODAY):
         try:
-            if not db.is_playlist_followers_processed(playlist['db_playlist_id'], TODAY):
+            if not db.is_playlist_followers_processed(playlist['db_playlist_id'], playlist['snapshot_id']):
                 owner_id = playlist.get('owner_id')
                 followers, snapshot_id = get_followers_for_playlist(owner_id, playlist_id)
                 playlists[playlist_id]['followers'] = followers # NOTE: until you change track id to be spotify track id, there will be problems finding the followers
@@ -1346,7 +1371,7 @@ def append_playlist_followers_and_update_version(playlists):
                 db.update_playlist_version(playlist)
 
                 # mark playlist as followers having been processed
-                db.set_playlist_processed(playlist['db_playlist_id'], TODAY, is_followers_processed = True)
+                db.set_playlist_processed(playlist['db_playlist_id'], snapshot_id, TODAY, is_followers_processed = True)
 
             else:
                 print('{} db followers already in db for {}'.format(playlist_id, TODAY))
@@ -1562,7 +1587,7 @@ def append_playlist_tracks(playlists):
     for playlist_id, playlist in playlists.items():
         try:
             # if daily track position is not processed
-            if not db.is_playlist_track_position_processed(playlist['db_playlist_id'], TODAY):
+            if not db.is_playlist_track_position_processed(playlist['db_playlist_id'], playlist['snapshot_id']):
                 playlists[playlist_id].setdefault('tracks', {})
                 playlists[playlist_id].setdefault('is_track_list_from_db', False) # flag for how to insert tracks into db
 
@@ -1604,7 +1629,7 @@ def append_playlist_tracks(playlists):
                 db.add_playlist_tracks(TODAY, playlist['db_playlist_id'], playlist['snapshot_id'], tracks_dict)
 
                 # mark it as Processed, hulkster
-                db.set_playlist_processed(playlist['db_playlist_id'], TODAY, is_track_position_processed = True)
+                db.set_playlist_processed(playlist['db_playlist_id'], playlist['snapshot_id'], TODAY, is_track_position_processed = True)
 
             print('{} All tracks added for playlist id {}'.format(PRINT_PREFIX, playlist['db_playlist_id']))
             print('*' * 40)
@@ -1717,9 +1742,9 @@ def process_daily_track_position(playlists_list):
             db.update_playlist_latest_version(playlist)
             try:
                 append_single_playlist_tracks(playlist)
-                db.set_playlist_processed(playlist['db_playlist_id'], TODAY, is_track_position_processed = True)
+                db.set_playlist_processed(playlist['db_playlist_id'], playlist['snapshot_id'], TODAY, is_track_position_processed = True)
             except TypeError:
-                db.set_playlist_processed(playlist['db_playlist_id'], TODAY, is_track_position_processed = False)
+                db.set_playlist_processed(playlist['db_playlist_id'], playlist['snapshot_id'], TODAY, is_track_position_processed = False)
                 # if URLerror returns false, and NoneType is not iterable
                 continue
 
@@ -1737,11 +1762,11 @@ def periodic_process_daily_track_position(playlists_list):
         try:
             did_succeed = append_single_playlist_tracks(playlist)
             if did_succeed:
-                db.set_playlist_processed(playlist['db_playlist_id'], TODAY, is_track_position_processed = True)
+                db.set_playlist_processed(playlist['db_playlist_id'], playlist['snapshot_id'], TODAY, is_track_position_processed = True)
             else:
-                db.set_playlist_processed(playlist['db_playlist_id'], TODAY, is_track_position_processed = False)
+                db.set_playlist_processed(playlist['db_playlist_id'], playlist['snapshot_id'], TODAY, is_track_position_processed = False)
         except TypeError:
-            db.set_playlist_processed(playlist['db_playlist_id'], TODAY, is_track_position_processed = False)
+            db.set_playlist_processed(playlist['db_playlist_id'], playlist['snapshot_id'], TODAY, is_track_position_processed = False)
             # if URLerror returns false, and NoneType is not iterable
             continue
 
@@ -1972,6 +1997,25 @@ def get_daily_unprocessed_playlists_tracks_handler(event, context):
 
     db.close_database()
     return batch_playlists
+
+# NOTE: NOT WORKING!!!!!
+def unprocessed_track_playlists(event, context):
+    global db
+    db = TrackDatabase()
+    min_follower_pl = db.get_playlists_with_minimum_follower_count_from_db()
+
+    print('min followers', len(min_follower_pl))
+    # filter out playlists... if it's been attempted (true or false, false if it failed for some reason like URLError)
+    # can also try using is_playlist_track_position_processed()
+    #
+    unprocessed = [pl for pl in min_follower_pl if not db.is_playlist_track_position_attempted(pl['db_playlist_id'], pl['snapshot_id'])]
+    print(len(unprocessed), unprocessed)
+
+    batch = temporary_remove_unwanted_playlists(unprocessed)[0:15]
+
+    db.close_database()
+
+    return batch
 
 def get_daily_unprocessed_playlists_followers_handler(event, context):
     global db

@@ -106,6 +106,10 @@ functions:
     handler: playlist_lambda.get_daily_unprocessed_playlists_tracks_handler
     timeout: 30
 
+  unprocessed_track_playlists:
+    handler: playlist_lambda.unprocessed_track_playlists
+    timeout: 30
+
   playlist_daily_track_position:
     handler: playlist_lambda.daily_track_position_handler
     timeout: 300
@@ -1171,7 +1175,7 @@ stepFunctions:
             Next: GetUnprocessedPlaylists
           GetUnprocessedPlaylists:
             Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_daily_unprocessed_playlists_tracks"
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-unprocessed_track_playlists"
             ResultPath: "$.playlists"
             OutputPath: "$"
             Next: GetArrayLength
@@ -1255,14 +1259,12 @@ stepFunctions:
         States:
           CleanInput:
             Type: Pass
-            Result:
-              date_str: '2018-01-18'
-              should_process_date: true
+            Result: {}
             ResultPath: "$"
             Next: GetUnprocessedPlaylists
           GetUnprocessedPlaylists:
             Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_daily_unprocessed_playlists_tracks"
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-unprocessed_track_playlists"
             InputPath: "$"
             ResultPath: "$.playlists"
             OutputPath: "$"
@@ -1296,11 +1298,11 @@ stepFunctions:
                     Retry:
                       - ErrorEquals: ["States.Timeout"]
                         IntervalSeconds: 3
-                        MaxAttempts: 10
+                        MaxAttempts: 2
                         BackoffRate: 1.5
                       - ErrorEquals: ["States.TaskFailed"]
                         IntervalSeconds: 3
-                        MaxAttempts: 10
+                        MaxAttempts: 2
                         BackoffRate: 1.5
               - StartAt: Process Playlists B
                 States:
@@ -1312,11 +1314,11 @@ stepFunctions:
                     Retry:
                       - ErrorEquals: ["States.Timeout"]
                         IntervalSeconds: 3
-                        MaxAttempts: 10
+                        MaxAttempts: 2
                         BackoffRate: 1.5
                       - ErrorEquals: ["States.TaskFailed"]
                         IntervalSeconds: 3
-                        MaxAttempts: 10
+                        MaxAttempts: 2
                         BackoffRate: 1.5
               - StartAt: Process Playlists C
                 States:
@@ -1328,11 +1330,11 @@ stepFunctions:
                     Retry:
                       - ErrorEquals: ["States.Timeout"]
                         IntervalSeconds: 3
-                        MaxAttempts: 10
+                        MaxAttempts: 2
                         BackoffRate: 1.5
                       - ErrorEquals: ["States.TaskFailed"]
                         IntervalSeconds: 3
-                        MaxAttempts: 10
+                        MaxAttempts: 2
                         BackoffRate: 1.5
             Next: CleanInput
           Done:
