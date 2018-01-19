@@ -66,33 +66,58 @@ package:
 
 # define your functions and handlers here
 functions:
+  # ---- STREAMING AND ITUNES SALES ----
+  # ---- SPOTIFY
   spotify_streaming:
     handler: spotify_streaming_lambda.handler
     timeout: 300
+
+  #  ---- APPLE &
+  #  ---- ITUNES (songs, albums and music videos)
   apple_streaming_sales:
     handler: apple_streaming_sales_lambda.handler
     timeout: 300
+
+  # ---- PLAYLISTS ----
+  # ---- FOLLOWERS
+  get_daily_unprocessed_playlists_followers:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_followers_handler
+    timeout: 30
+
   playlist_daily_followers:
     handler: playlist_lambda.daily_followers_handler
     timeout: 300
-  playlist_daily_track_position:
-    handler: playlist_lambda.daily_track_position_handler
-    timeout: 300
+
+  # ---- PLAYLIST ADMIN / SEEDING DATA
+  # Recommended to update followers for ALL playlists, once a week or once a month
+  # This will catch and release playlists that hit or fall below the 1000 (?) follower count threshold
+  # !!! IMPORTANT: to update the DATE_STR of getting the minimum follower count from the db function once this function is re-run.
   playlist_periodic_all_playlist_track_position:
     handler: playlist_lambda.periodic_process_daily_track_position_handler
     timeout: 300
+
+  # One-time processing of all playlists into the database
   playlist_periodic_update_all_playlists_by_users:
     handler: playlist_lambda.periodic_update_all_playlists_by_users_handler
     timeout: 300
-  get_playlists_with_followers_from_db:
-    handler: playlist_lambda.get_playlists_with_minimum_follower_count_from_db_handler
-    timeout: 10
-  get_daily_unprocessed_playlists:
-    handler: playlist_lambda.get_daily_unprocessed_playlists_handler
+
+  # ---- TRACK POSITION
+  get_daily_unprocessed_playlists_tracks:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_tracks_handler
     timeout: 30
+
+  playlist_daily_track_position:
+    handler: playlist_lambda.daily_track_position_handler
+    timeout: 300
+
+  # pre-processing helpers
   get_array_length:
     handler: helpers.get_array_length
     timeout: 5
+
+  get_playlists_with_followers_from_db:
+    handler: playlist_lambda.get_playlists_with_minimum_follower_count_from_db_handler
+    timeout: 10
 
 # plugins for serverless
 plugins:
@@ -961,6 +986,7 @@ stepFunctions:
                     Type: Task
                     Resource: "arn:aws:lambda:us-west-2:903653902323:function:apple_streaming_and_sales"
                     End: true
+
     playlist_daily_followers:
       events:
         # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
@@ -968,36 +994,61 @@ stepFunctions:
       name: PlaylistDailyFollowers
       definition:
         Comment: "Playlist - Daily Follower data for all playlists."
-        StartAt: "Playlist Followers ABC"
+        StartAt: GetUnprocessedPlaylists
         States:
+          CleanInput:
+            Type: Pass
+            Result: {}
+            Next: GetUnprocessedPlaylists
+          GetUnprocessedPlaylists:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_daily_unprocessed_playlists_followers"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetArrayLength
+          GetArrayLength:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.playlists"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.length"
+                NumericGreaterThan: 0
+                Next: Playlist Followers ABC
           Playlist Followers ABC:
             Type: Parallel
             Branches:
               - StartAt: Playlist Followers A
                 States:
                   Playlist Followers A:
+                    InputPath: "$.playlists[0:100]"
                     Type: Task
                     Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
                     End: true
               - StartAt: Playlist Followers B
                 States:
                   Playlist Followers B:
+                    InputPath: "$.playlists[100:200]"
                     Type: Task
                     Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
                     End: true
               - StartAt: Playlist Followers C
                 States:
                   Playlist Followers C:
+                    InputPath: "$.playlists[200:300]"
                     Type: Task
                     Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
                     End: true
-            Retry:
-              - ErrorEquals:
-                - "States.Timeout"
-                IntervalSeconds: 3
-                MaxAttempts: 10
-                BackoffRate: 1.5
-
+            Next: CleanInput
+          Done:
+            Type: Pass
             End: true
 
     playlist_update_all_user_playlists:
@@ -1120,7 +1171,7 @@ stepFunctions:
             Next: GetUnprocessedPlaylists
           GetUnprocessedPlaylists:
             Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_daily_unprocessed_playlists"
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_daily_unprocessed_playlists_tracks"
             ResultPath: "$.playlists"
             OutputPath: "$"
             Next: GetArrayLength
@@ -1199,16 +1250,20 @@ stepFunctions:
     periodic_all_track_position:
       name: PeriodicAllPlaylistTracks
       definition:
-        Comment: "Get all playlists from the db to process the followers and track positions, with 60 playlists at a time"
-        StartAt: GetUnprocessedPlaylists
+        Comment: "Get all playlists from the db to process track positions"
+        StartAt: CleanInput
         States:
           CleanInput:
             Type: Pass
-            Result: {}
+            Result:
+              date_str: '2018-01-18'
+              should_process_date: true
+            ResultPath: "$"
             Next: GetUnprocessedPlaylists
           GetUnprocessedPlaylists:
             Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_daily_unprocessed_playlists"
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_daily_unprocessed_playlists_tracks"
+            InputPath: "$"
             ResultPath: "$.playlists"
             OutputPath: "$"
             Next: GetArrayLength
