@@ -70,7 +70,7 @@ class TrackDatabase(object):
 
     # TRACKS ADDED FROM YESTERDAY
     #
-    def tp_add(self, date_to_process, refresh = false):
+    def tp_add(self, date_to_process, refresh = False):
 
         if refresh:
             self.c.execute("""
@@ -78,8 +78,9 @@ class TrackDatabase(object):
             """
             )
         else:
+            # takes 6.5s on localhost
             self.c.execute("""
-                CREATE materialized VIEW tp_add as (
+                CREATE materialized VIEW IF NOT EXISTS tp_add as (
                     WITH add_view AS (
                         SELECT
                             T1.date_str AS date_str,
@@ -108,15 +109,16 @@ class TrackDatabase(object):
                 )
             """.format(date_to_process))
 
-    def tp_drop(self, date_to_process, refresh = false):
+    def tp_drop(self, date_to_process, refresh = False):
         if refresh:
             self.c.execute("""
-                REFRESH materialized VIEW tp_add
+                REFRESH materialized VIEW tp_drop
             """
             )
         else:
+            # takes 46s on localhost
             self.c.execute("""
-                CREATE materialized VIEW tp_add as (
+                CREATE materialized VIEW IF NOT EXISTS tp_drop as (
                     WITH drop_view AS (
                         SELECT
                             T1.date_str as previous_date,
@@ -146,6 +148,66 @@ class TrackDatabase(object):
             """.format(date_to_process))
 
 
+    def tp_movement(self, date_to_process):
+        self.c.execute("""
+            CREATE materialized VIEW IF NOT EXISTS tp_movement as (
+                SELECT
+                    T1.*,
+                    T2.date_str as previous_date,
+                    T2.position as previous_track_position,
+                    T2.position - T1.position as movement,
+                    CASE
+                        WHEN T2.position is NULL THEN 'add'
+                        ELSE NULL
+                    END add_drop
+                FROM track_position T1
+                INNER JOIN track_position T2
+                    ON T1.isrc = T2.isrc
+                    AND T1.territory_id = T2.territory_id
+                    AND T1.service_id = T2.service_id
+                    AND DATE(T1.date_str) - DATE(T2.date_str) = 1
+                WHERE T1.date_str IN (SELECT '{}' from track_position)
+
+                UNION
+
+                -- Select and add the same columns from the add table
+                SELECT
+                    *,
+                    (SELECT to_char(DATE('{}') - 1, 'yyyy-mm-dd')) as previous_date,
+                    -1 as previous_track_position,
+                    200 - T1.position as movement,
+                    'add' as add_drop
+                FROM track_position T1
+                WHERE
+                    id in (SELECT track_position_id FROM tp_add)
+
+                UNION
+
+                -- Select and add the same columns from the drop table
+                SELECT
+                    T1.id,
+                    T1.service_id,
+                    T1.territory_id,
+                    T1.track_id,
+                    T1.isrc,
+                    -1 as position,
+                    -1 as stream_count,
+                    (SELECT '{}') as date_str,
+                    (SELECT to_char(DATE('{}') - 1, 'yyyy-mm-dd')) as previous_date,
+                    T1.position as previous_track_position, T1.position - 201 as movement,
+                    'drop' as add_drop
+                FROM track_position T1
+                WHERE id in (SELECT track_position_id from tp_drop)
+
+                -- Order them by territory
+                ORDER BY
+                    date_str DESC,
+                    territory_id ASC,
+                    position ASC
+            )
+        """.format(date_to_process, date_to_process, date_to_process, date_to_process))
+
+
 if __name__ == '__main__':
     db = TrackDatabase()
 
@@ -166,8 +228,9 @@ if __name__ == '__main__':
 
     # refresh_all = True
 
-    db.tp_add(date_to_process, refresh = false)
-    db.tp_drop(date_to_process, refresh = false)
+    db.tp_add(date_to_process, refresh = False)
+    db.tp_drop(date_to_process, refresh = False)
+    db.tp_movement(date_to_process)
 
     # service_id, service_chart_id, table, query, columns = getStreamingTrackSpotifyQuery()
     # exportReport(service_id, service_chart_id, table, query, columns)
