@@ -38,13 +38,15 @@ class TrackDatabase(object):
         # password = '123'
 
         try:
-            print('Connecting to the RDS PostgreSQL database {}...'.format(rds_host))
-            # AWS
-            self.db = psycopg2.connect(host=rds_host, user=name, password=password, dbname=db_name)
 
-            # LOCAL BELOW Only
-            # self.db = psycopg2.connect(user=name, password=password, dbname=db_name)
+            # AWS BELOW
+            print('Connecting to the RDS PostgreSQL database {}...'.format(rds_host))
+            self.db = psycopg2.connect(host=rds_host, user=name, password=password, dbname=db_name)
             print('Successfully connected to AWS RDS PostgreSQL instance.', rds_host)
+
+            # LOCALHOST BELOW Only
+            # self.db = psycopg2.connect(user=name, password=password, dbname=db_name)
+
             self.db.autocommit = True
             self.c = self.db.cursor()
             self.show_db_size()
@@ -68,161 +70,174 @@ class TrackDatabase(object):
     # MATERIALIZED VIEWS
     # http://www.postgresqltutorial.com/postgresql-materialized-views/
 
+    def drop_materialized_views(self):
+        # dropping views in order matters, so you don't hit a "objects rely on" error
+        self.c.execute("""
+            DROP materialized VIEW IF EXISTS client_border_city_daily
+        """)
+
+        self.c.execute("""
+            DROP materialized VIEW IF EXISTS tp_movement
+        """)
+
+        self.c.execute("""
+            DROP materialized VIEW IF EXISTS tp_add
+        """)
+
+        self.c.execute("""
+            DROP materialized VIEW IF EXISTS tp_drop
+        """)
+
     # TRACKS ADDED FROM YESTERDAY
     #
-    def tp_add(self, date_to_process, refresh = False):
+    def tp_add(self, date_to_process):
+        print('starting tp add view')
+        # NOTE: opted to delete and recreate materialized views each time rather than a choice based on refresh or not
+        # This decision comes down to a) cannot change the definition of a custom date to a max(date_str) dynamically,
+        # you'd have to delete and create the materialized view anyways. b) you don't know whether the definition has max(date_str)
+        # in it, so you have to complex queries to figure it out ("SELECT definition FROM pg_matviews"), which makes this function relatively unreadable
+        self.c.execute("""
+            CREATE materialized VIEW IF NOT EXISTS tp_add as (
+                WITH add_view AS (
+                    SELECT
+                        T1.date_str AS date_str,
+                        T1.id AS track_position_id,
+                        T1.service_id AS service_id,
+                        T1.territory_id AS territory_id,
+                        T1.track_id AS track_id,
+                        T1.isrc,
+                        T1.position AS today_position,
+                        CASE
+                            WHEN T2.position IS NULL THEN 'add'
+                            ELSE NULL
+                        END AS add_drop
+                    FROM track_position T1
+                    LEFT JOIN track_position T2
+                        ON T1.isrc = T2.isrc
+                        AND T1.territory_id = T2.territory_id
+                        AND T1.service_id = T2.service_id
+                        AND DATE(T1.date_str) - DATE(T2.date_str) = 1
+                    WHERE
+                        T1.date_str = '{}'
+                )
 
-        if refresh:
-            self.c.execute("""
-                REFRESH materialized VIEW tp_add
-            """
+                SELECT * FROM add_view
+                WHERE add_drop = 'add'
             )
-        else:
-            # takes 6.5s on localhost
-            self.c.execute("""
-                CREATE materialized VIEW IF NOT EXISTS tp_add as (
-                    WITH add_view AS (
-                        SELECT
-                            T1.date_str AS date_str,
-                            T1.id AS track_position_id,
-                            T1.service_id AS service_id,
-                            T1.territory_id AS territory_id,
-                            T1.track_id AS track_id,
-                            T1.isrc,
-                            T1.position AS today_position,
-                            CASE
-                                WHEN T2.position IS NULL THEN 'add'
-                                ELSE NULL
-                            END AS add_drop
+        """.format(date_to_process))
+        print('finished tp add view')
+
+    def latest_date(self):
+        self.c.execute('SELECT max(date_str) FROM track_position')
+        return self.c.fetchone()[0]
+
+    def tp_drop(self, date_to_process):
+        print('starting tp drop view')
+        self.c.execute("""
+            CREATE materialized VIEW IF NOT EXISTS tp_drop as (
+                WITH drop_view AS (
+                    SELECT
+                        T1.date_str as previous_date,
+                        T1.id as track_position_id,
+                        T1.service_id as service_id,
+                        T1.territory_id as territory_id,
+                        T1.track_id as track_id,
+                        T1.isrc,
+                        T1.position as previous_position,
+                        CASE
+                            WHEN T2.position is NULL then 'drop'
+                            ELSE NULL
+                        END AS add_drop
                         FROM track_position T1
                         LEFT JOIN track_position T2
                             ON T1.isrc = T2.isrc
                             AND T1.territory_id = T2.territory_id
                             AND T1.service_id = T2.service_id
-                            AND DATE(T1.date_str) - DATE(T2.date_str) = 1
+                            AND DATE(T1.date_str) - DATE(T2.date_str) = -1
                         WHERE
-                            T1.date_str = '{}'
-                    )
-
-                    SELECT * FROM add_view
-                    WHERE add_drop = 'add'
+                            DATE(T1.date_str) = date('{}') - 1
                 )
-            """.format(date_to_process))
 
-    def tp_drop(self, date_to_process, refresh = False):
-        if refresh:
-            self.c.execute("""
-                REFRESH materialized VIEW tp_drop
-            """
+                SELECT * FROM drop_view
+                WHERE add_drop = 'drop'
             )
-        else:
-            # takes 46s on localhost
-            self.c.execute("""
-                CREATE materialized VIEW IF NOT EXISTS tp_drop as (
-                    WITH drop_view AS (
-                        SELECT
-                            T1.date_str as previous_date,
-                            T1.id as track_position_id,
-                            T1.service_id as service_id,
-                            T1.territory_id as territory_id,
-                            T1.track_id as track_id,
-                            T1.isrc,
-                            T1.position as previous_position,
-                            CASE
-                                WHEN T2.position is NULL then 'drop'
-                                ELSE NULL
-                            END AS add_drop
-                            FROM track_position T1
-                            LEFT JOIN track_position T2
-                                ON T1.isrc = T2.isrc
-                                AND T1.territory_id = T2.territory_id
-                                AND T1.service_id = T2.service_id
-                                AND DATE(T1.date_str) - DATE(T2.date_str) = -1
-                            WHERE
-                                DATE(T1.date_str) = date('{}') - 1
-                    )
+        """.format(date_to_process))
+        print('finished tp drop view')
 
-                    SELECT * FROM drop_view
-                    WHERE add_drop = 'drop'
-                )
-            """.format(date_to_process))
+    def tp_movement(self, date_to_process):
+        print('starting tp movement view')
+        self.c.execute("""
+            CREATE materialized VIEW IF NOT EXISTS tp_movement as (
+                SELECT
+                    T1.*,
+                    T2.date_str as previous_date,
+                    T2.position as previous_track_position,
+                    T2.position - T1.position as movement,
+                    CASE
+                        WHEN T2.position is NULL THEN 'add'
+                        ELSE NULL
+                    END add_drop
+                FROM track_position T1
+                INNER JOIN track_position T2
+                    ON T1.isrc = T2.isrc
+                    AND T1.territory_id = T2.territory_id
+                    AND T1.service_id = T2.service_id
+                    AND DATE(T1.date_str) - DATE(T2.date_str) = 1
+                WHERE T1.date_str IN (SELECT '{}'::text from track_position)
 
+                UNION
 
-    def tp_movement(self, date_to_process, refresh = False):
-        if refresh:
-            self.c.execute("""
-                REFRESH materialized VIEW tp_movement
-            """
+                -- Select and add the same columns from the add table
+                SELECT
+                    *,
+                    (SELECT to_char(DATE('{}'::text) - 1, 'yyyy-mm-dd')) as previous_date,
+                    -1 as previous_track_position,
+                    200 - T1.position as movement,
+                    'add' as add_drop
+                FROM track_position T1
+                WHERE
+                    id in (SELECT track_position_id FROM tp_add)
+
+                UNION
+
+                -- Select and add the same columns from the drop table
+                SELECT
+                    T1.id,
+                    T1.service_id,
+                    T1.territory_id,
+                    T1.track_id,
+                    T1.isrc,
+                    -1 as position,
+                    -1 as stream_count,
+                    (SELECT '{}'::text) as date_str,
+                    (SELECT to_char(DATE('{}'::text) - 1, 'yyyy-mm-dd')) as previous_date,
+                    T1.position as previous_track_position, T1.position - 201 as movement,
+                    'drop' as add_drop
+                FROM track_position T1
+                WHERE id in (SELECT track_position_id from tp_drop)
+
+                -- Order them by territory
+                ORDER BY
+                    date_str DESC,
+                    territory_id ASC,
+                    position ASC
             )
-        else:
-            self.c.execute("""
-                CREATE materialized VIEW IF NOT EXISTS tp_movement as (
-                    SELECT
-                        T1.*,
-                        T2.date_str as previous_date,
-                        T2.position as previous_track_position,
-                        T2.position - T1.position as movement,
-                        CASE
-                            WHEN T2.position is NULL THEN 'add'
-                            ELSE NULL
-                        END add_drop
-                    FROM track_position T1
-                    INNER JOIN track_position T2
-                        ON T1.isrc = T2.isrc
-                        AND T1.territory_id = T2.territory_id
-                        AND T1.service_id = T2.service_id
-                        AND DATE(T1.date_str) - DATE(T2.date_str) = 1
-                    WHERE T1.date_str IN (SELECT '{}'::text from track_position)
-
-                    UNION
-
-                    -- Select and add the same columns from the add table
-                    SELECT
-                        *,
-                        (SELECT to_char(DATE('{}'::text) - 1, 'yyyy-mm-dd')) as previous_date,
-                        -1 as previous_track_position,
-                        200 - T1.position as movement,
-                        'add' as add_drop
-                    FROM track_position T1
-                    WHERE
-                        id in (SELECT track_position_id FROM tp_add)
-
-                    UNION
-
-                    -- Select and add the same columns from the drop table
-                    SELECT
-                        T1.id,
-                        T1.service_id,
-                        T1.territory_id,
-                        T1.track_id,
-                        T1.isrc,
-                        -1 as position,
-                        -1 as stream_count,
-                        (SELECT '{}'::text) as date_str,
-                        (SELECT to_char(DATE('{}'::text) - 1, 'yyyy-mm-dd')) as previous_date,
-                        T1.position as previous_track_position, T1.position - 201 as movement,
-                        'drop' as add_drop
-                    FROM track_position T1
-                    WHERE id in (SELECT track_position_id from tp_drop)
-
-                    -- Order them by territory
-                    ORDER BY
-                        date_str DESC,
-                        territory_id ASC,
-                        position ASC
-                )
-            """.format(date_to_process, date_to_process, date_to_process, date_to_process))
-
+        """.format(date_to_process, date_to_process, date_to_process, date_to_process))
+        print('finished tp movement view')
+        
+    # NOTE: This is a long running query. Need not refresh this very often.
+    #
     def tp_labels(self):
         self.c.execute('''
             CREATE materialized VIEW IF NOT EXISTS tracks_with_multiple_labels AS (
-                select
-                album.service_id as service_id,
-                track.isrc, track.track,
-                count(*) from track
-                inner join album ON album.id = track.album_id
-                group by track.isrc, album.service_id, track.track
-                having count(*) > 1
+                SELECT
+                    album.service_id AS service_id,
+                    track.isrc,
+                    track.track,
+                    count(*) FROM track
+                INNER JOIN album ON album.id = track.album_id
+                GROUP BY track.isrc, album.service_id, track.track
+                HAVING count(*) > 1
             )
         ''')
 
@@ -247,6 +262,7 @@ class TrackDatabase(object):
         ''')
 
     def track_album(self):
+        print('starting track_album view')
         self.c.execute('''
             CREATE materialized VIEW IF NOT EXISTS track_album AS (
                 SELECT
@@ -260,10 +276,13 @@ class TrackDatabase(object):
                     ON album.id = track.album_id
             )
         ''')
+        print('finished track_album view')
 
     def report(self):
-        self.c.execute('''
-            CREATE VIEW client_border_city_daily as
+        print('starting report view')
+        # took 46s to execute
+        self.c.execute("""
+            CREATE materialized VIEW IF NOT EXISTS client_border_city_daily as
             SELECT
             tp.date_str as date_str,
             service.id as service_id,
@@ -289,7 +308,7 @@ class TrackDatabase(object):
             end AS label
             FROM tp_movement tp
             INNER JOIN track_position_peak tpp
-                ON tpp.isrc = tp.isrc -- NOTE: WORK FROM HERE: DO I NEED TO RECREATE THIS TABLE NOW?
+                ON tpp.isrc = tp.isrc
                 AND tpp.territory_id = tp.territory_id
                 AND tpp.service_id = tp.service_id
             INNER JOIN service on service.id = tp.service_id
@@ -298,38 +317,29 @@ class TrackDatabase(object):
             INNER JOIN artist on track.artist_id = artist.id
             INNER JOIN album on track.album_id = album.id
             ORDER BY service_id ASC, territory_id ASC, chart_position ASC
-        ''')
+        """)
+        print('finished track_album view')
 
 if __name__ == '__main__':
     db = TrackDatabase()
-
-    # previous
-    # conn = connect()
-    # NOW: db.db
-
-    # c = conn.cursor()
-    # NOW: db.c
-    #
 
     # # spotify streaming
     print('Generating Spotify stream reports')
     service_id = 1
     # print(latest_streamingDates)
     # generateStreamingReporting(service_id, latest_streamingDates[service_id])
+    # date_to_process = db.latest_date()
     date_to_process = '2017-11-04'
 
-    # refresh_all = True
-    print('track albums started')
     db.track_album()
-    print('... finished')
+    db.tp_labels()
 
-    db.tp_add(date_to_process, refresh = False)
-    db.tp_drop(date_to_process, refresh = False)
+    db.drop_materialized_views()
+    db.tp_add(date_to_process)
+    db.tp_drop(date_to_process)
     db.tp_movement(date_to_process)
 
-    print('labels started')
-    db.tp_labels()
-    print('... finished')
+    db.report()
 
 
     # service_id, service_chart_id, table, query, columns = getStreamingTrackSpotifyQuery()
