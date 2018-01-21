@@ -224,7 +224,7 @@ class TrackDatabase(object):
             )
         """.format(date_to_process, date_to_process, date_to_process, date_to_process))
         print('finished tp movement view')
-        
+
     # NOTE: This is a long running query. Need not refresh this very often.
     #
     def tp_labels(self):
@@ -278,8 +278,8 @@ class TrackDatabase(object):
         ''')
         print('finished track_album view')
 
-    def report(self):
-        print('starting report view')
+    def report_streaming(self):
+        print('starting streaming report view')
         # took 46s to execute
         self.c.execute("""
             CREATE materialized VIEW IF NOT EXISTS client_border_city_daily as
@@ -318,7 +318,80 @@ class TrackDatabase(object):
             INNER JOIN album on track.album_id = album.id
             ORDER BY service_id ASC, territory_id ASC, chart_position ASC
         """)
-        print('finished track_album view')
+        print('finished streaming report view')
+
+    def report_spotify_streaming(self, refresh = True):
+        input_table = 'client_border_city_daily'
+        output_table = 'report_spotify_streaming'
+        service_id = 1
+        create_query = """
+            CREATE materialized VIEW IF NOT EXISTS {} AS
+            SELECT
+                date_str,
+                CASE
+                    WHEN territory_id = 'global' THEN 'zz'
+                    ELSE territory_id
+                END AS territory_id,
+                add_drop,
+                previous_track_position,
+                chart_position,
+                track_isrc,
+                track_name,
+                artist_name,
+                stream_count,
+                peak_ranking,
+                peak_ranking_date,
+                url,
+                label
+            FROM {}
+            WHERE service_id = {}
+        """
+
+        refresh_query = """
+            REFRESH materialized VIEW {};
+        """
+
+        if refresh:
+            self.c.execute(refresh_query.format(output_table))
+        else:
+            self.c.execute(create_query.format(output_table, input_table, service_id))
+
+    def report_apple_streaming(self, refresh = True):
+        input_table = 'client_border_city_daily'
+        output_table = 'report_apple_streaming'
+        service_id = 2
+        create_query = """
+            CREATE materialized VIEW IF NOT EXISTS {} AS
+            SELECT
+                date_str,
+                CASE
+                    WHEN territory_id = 'global' THEN 'zz'
+                    ELSE territory_id
+                END AS territory_id,
+                add_drop,
+                previous_track_position,
+                chart_position,
+                track_isrc,
+                track_name,
+                artist_name,
+                NULL AS stream_count,
+                peak_ranking,
+                peak_ranking_date,
+                url,
+                label
+            FROM {}
+            WHERE service_id = {}
+        """
+
+        refresh_query = """
+            REFRESH materialized VIEW {};
+        """
+
+        if refresh:
+            self.c.execute(refresh_query.format(output_table))
+        else:
+            self.c.execute(create_query.format(output_table, input_table, service_id))
+
 
 if __name__ == '__main__':
     db = TrackDatabase()
@@ -329,17 +402,20 @@ if __name__ == '__main__':
     # print(latest_streamingDates)
     # generateStreamingReporting(service_id, latest_streamingDates[service_id])
     # date_to_process = db.latest_date()
-    date_to_process = '2017-11-04'
+    # date_to_process = '2017-11-04'
+    #
+    # db.track_album()
+    # db.tp_labels()
+    #
+    # db.drop_materialized_views()
+    # db.tp_add(date_to_process)
+    # db.tp_drop(date_to_process)
+    # db.tp_movement(date_to_process)
+    #
+    # db.streaming_report()
 
-    db.track_album()
-    db.tp_labels()
-
-    db.drop_materialized_views()
-    db.tp_add(date_to_process)
-    db.tp_drop(date_to_process)
-    db.tp_movement(date_to_process)
-
-    db.report()
+    db.report_spotify_streaming(refresh = True)
+    db.report_apple_streaming(refresh = True)
 
 
     # service_id, service_chart_id, table, query, columns = getStreamingTrackSpotifyQuery()
