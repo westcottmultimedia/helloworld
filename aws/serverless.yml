@@ -88,6 +88,7 @@ functions:
     handler: playlist_lambda.daily_followers_handler
     timeout: 300
 
+
   # ---- PLAYLIST ADMIN / SEEDING DATA
   # Recommended to update followers for ALL playlists, once a week or once a month
   # This will catch and release playlists that hit or fall below the 1000 (?) follower count threshold
@@ -181,34 +182,80 @@ stepFunctions:
       name: SpotifyStreamingSongs
       definition:
         Comment: "Spotify - Streaming - Spotify Top Songs."
-        StartAt: ChartType A
+        StartAt: JobDistributor
         States:
-          ChartType A:
+          JobDistributor:
             Type: Pass
             Result:
-              previous: "latest"
+              date_str: "latest" # values can be "latest" or a date, ie '2018-01-01'
+              all_regions: ['global', 'us', 'gb','ad','ar','at','au','be','bo','br','ca','ch','cl','co','cr','cz','de','dk','do','ec','ee','es','fi','fr','gr','gt','hk','hn','hu','id','ie', 'is','it','jp','lt','lu','lv','mc','mt','mx','my','ni','nl','no','nz','pa','pe','ph','pl','pt','py','se','sg','sk','sv','th','tr','tw','uy', 'bg', 'cy', 'ni']
             Next: Spotify Streaming ABC
           Spotify Streaming ABC:
             Type: Parallel
             End: true
             Branches:
-              - StartAt: Spotify Streaming A
+              - StartAt: Regions A
                 States:
+                  Regions A:
+                    Type: Pass
+                    InputPath: "$.all_regions[0:20]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Spotify Streaming A
                   Spotify Streaming A:
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:spotify_streaming"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-spotify_streaming"
+                    Retry:
+                      - ErrorEquals: ["States.Timeout"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+                      - ErrorEquals: ["States.TaskFailed"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
                     End: true
-              - StartAt: Spotify Streaming B
+              - StartAt: Regions B
                 States:
+                  Regions B:
+                    Type: Pass
+                    InputPath: "$.all_regions[20:40]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Spotify Streaming B
                   Spotify Streaming B:
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:spotify_streaming"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-spotify_streaming"
+                    Retry:
+                      - ErrorEquals: ["States.Timeout"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+                      - ErrorEquals: ["States.TaskFailed"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
                     End: true
-              - StartAt: Spotify Streaming C
+              - StartAt: Regions C
                 States:
+                  Regions C:
+                    Type: Pass
+                    InputPath: "$.all_regions[40:]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Spotify Streaming C
                   Spotify Streaming C:
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:spotify_streaming"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-spotify_streaming"
+                    Retry:
+                      - ErrorEquals: ["States.Timeout"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+                      - ErrorEquals: ["States.TaskFailed"]
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
                     End: true
     apple_streaming_songs:
       events:
@@ -1032,28 +1079,110 @@ stepFunctions:
               - StartAt: Playlist Followers A
                 States:
                   Playlist Followers A:
-                    InputPath: "$.playlists[0:100]"
+                    InputPath: "$.playlists[0:50]"
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-playlist_daily_followers"
+                    Retry:
+                      - ErrorEquals:
+                        - "States.Timeout"
+                        IntervalSeconds: 3
+                        MaxAttempts: 4
+                        BackoffRate: 1.5
                     End: true
               - StartAt: Playlist Followers B
                 States:
                   Playlist Followers B:
-                    InputPath: "$.playlists[100:200]"
+                    InputPath: "$.playlists[50:100]"
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-playlist_daily_followers"
+                    Retry:
+                      - ErrorEquals:
+                        - "States.Timeout"
+                        IntervalSeconds: 3
+                        MaxAttempts: 4
+                        BackoffRate: 1.5
                     End: true
               - StartAt: Playlist Followers C
                 States:
                   Playlist Followers C:
-                    InputPath: "$.playlists[200:300]"
+                    InputPath: "$.playlists[100:150]"
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-playlist_daily_followers"
+                    Retry:
+                      - ErrorEquals:
+                        - "States.Timeout"
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
                     End: true
             Next: CleanInput
           Done:
             Type: Pass
             End: true
+
+    # PlaylistFollowers:
+    #   events:
+    #     # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+    #     - schedule: cron(45 3 * * ? *)
+    #   name: PlaylistFollowers
+    #   definition:
+    #     Comment: "Playlist - Daily Follower data for all playlists."
+    #     StartAt: GetUnprocessedPlaylists
+    #     States:
+    #       CleanInput:
+    #         Type: Pass
+    #         Result: {}
+    #         Next: GetUnprocessedPlaylists
+    #       GetUnprocessedPlaylists:
+    #         Type: Task
+    #         Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_daily_unprocessed_playlists_followers"
+    #         ResultPath: "$.playlists"
+    #         OutputPath: "$"
+    #         Next: GetArrayLength
+    #       GetArrayLength:
+    #         Type: Task
+    #         Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+    #         InputPath: "$.playlists"
+    #         ResultPath: "$.length"
+    #         OutputPath: "$"
+    #         Next: ProcessingChoice
+    #       ProcessingChoice:
+    #         Type: Choice
+    #         Choices:
+    #           - Variable: "$.length"
+    #             NumericEquals: 0
+    #             Next: Done
+    #           - Variable: "$.length"
+    #             NumericGreaterThan: 0
+    #             Next: Playlist Followers ABC
+    #       Playlist Followers ABC:
+    #         Type: Parallel
+    #         Branches:
+    #           - StartAt: Playlist Followers A
+    #             States:
+    #               Playlist Followers A:
+    #                 InputPath: "$.playlists[0:50]"
+    #                 Type: Task
+    #                 Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
+    #                 End: true
+    #           - StartAt: Playlist Followers B
+    #             States:
+    #               Playlist Followers B:
+    #                 InputPath: "$.playlists[50:100]"
+    #                 Type: Task
+    #                 Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
+    #                 End: true
+    #           - StartAt: Playlist Followers C
+    #             States:
+    #               Playlist Followers C:
+    #                 InputPath: "$.playlists[100:150]"
+    #                 Type: Task
+    #                 Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
+    #                 End: true
+    #         Next: CleanInput
+    #       Done:
+    #         Type: Pass
+    #         End: true
 
     playlist_update_all_user_playlists:
       events:
