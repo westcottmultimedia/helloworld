@@ -16,8 +16,10 @@ logger.setLevel(logging.DEBUG)
 PRINT_PREFIX = '++'
 
 SERVICE_ID = 1
-TODAY = date.today().strftime('%Y-%m-%d')
 
+# TODAY is day in UTC - 8hrs, or PST
+# https://julien.danjou.info/blog/2015/python-and-timezones
+TODAY = (datetime.utcnow() - timedelta(hours=8)).strftime('%Y-%m-%d')
 
 # cache http requests?
 CACHE_ENABLED = False
@@ -558,14 +560,14 @@ class TrackDatabase(object):
             SELECT *
             FROM playlist_processed
             WHERE
-                playlist_id = %s
+                playlist_id = {}
                 AND
-                playlist_version = %
+                playlist_version = '{}'
                 AND
                 is_followers_processed = True
         """
-
-        self.c.execute(query, (playlist_id, playlist_version))
+        print('is_playlist_followers_processed:', playlist_id, playlist_version)
+        self.c.execute(query.format(playlist_id, playlist_version))
 
         if self.c.fetchone():
             return True
@@ -582,7 +584,7 @@ class TrackDatabase(object):
             WHERE
                 playlist_id = %s
                 AND
-                playlist_version = %s
+                playlist_version = '%s'
                 AND
                 is_track_position_processed = True
         """
@@ -599,7 +601,7 @@ class TrackDatabase(object):
             WHERE
                 playlist_id = %s
                 AND
-                playlist_version = %s
+                playlist_version = '%s'
                 AND
                 is_track_position_processed in (True, False)
         """
@@ -635,7 +637,7 @@ class TrackDatabase(object):
             WHERE
                 playlist_processed.playlist_id = %s
                 AND
-                playlist_processed.playlist_version = %s
+                playlist_processed.playlist_version = '{}'
                 AND
                 playlist_processed.date_str = %s
         """
@@ -645,15 +647,17 @@ class TrackDatabase(object):
                 (playlist_id, playlist_version, date_str, is_track_position_processed)
             VALUES
                 (%s, %s, %s, %s)
+            --ON CONFLICT (playlist_id, playlist_version, date_str)
             ON CONFLICT (playlist_id, playlist_version, date_str)
             DO UPDATE SET
                 (is_track_position_processed) = (%s)
             WHERE
                 playlist_processed.playlist_id = %s
                 AND
-                playlist_processed.playlist_version = %s
+                playlist_processed.playlist_version = '{}'
                 AND
                 playlist_processed.date_str = %s
+            ;
         """
 
         # query_update_followers = """
@@ -702,18 +706,20 @@ class TrackDatabase(object):
                     (playlist_id, playlist_version, date_str)
                 )
             elif is_followers_processed and is_track_position_processed is None:
+                print('FOLLOWERS PROCESSING')
                 self.c.execute(
-                    query_upsert_followers,
+                    query_upsert_followers.format(playlist_version),
                     (playlist_id, playlist_version, date_str, is_followers_processed,
                     is_followers_processed,
-                    playlist_id, playlist_version, date_str)
+                    playlist_id, date_str)
                 )
+                print('FOLLOWERS PROCESSED')
             elif is_track_position_processed and is_followers_processed is None:
                 self.c.execute(
-                    query_upsert_track_position,
+                    query_upsert_track_position.format(playlist_version),
                     (playlist_id, playlist_version, date_str, is_track_position_processed,
                     is_track_position_processed,
-                    playlist_id, playlist_version, date_str)
+                    playlist_id, date_str)
                 )
             else:
                 # NOTE: if this is a true condition, then do both.
@@ -721,13 +727,21 @@ class TrackDatabase(object):
                 # You could create a query that updates both in one UPSERT.
                 self.c.execute(
                     query_upsert_followers,
-                    (playlist_id, date_str, is_followers_processed, is_followers_processed, playlist_id, date_str)
+                    (playlist_id, playlist_version, date_str, is_followers_processed,
+                    is_followers_processed,
+                    playlist_id, playlist_version, date_str)
                 )
 
                 self.c.execute(
                     query_upsert_track_position,
-                    (playlist_id, date_str, is_track_position_processed, is_track_position_processed, playlist_id, date_str)
+                    (playlist_id, playlist_version, date_str, is_track_position_processed,
+                    is_track_position_processed,
+                    playlist_id, playlist_version, date_str)
                 )
+        # except IndexError:
+        #     print('')
+        #     continue
+
         except Exception as e:
             print(e)
             raise
@@ -1205,14 +1219,15 @@ class TrackDatabase(object):
                 (service_id, playlist_id, playlist_version, followers, date_str)
                 VALUES
                 (%s, %s, %s, %s, %s)
+                ON CONFLICT DO NOTHING
             """, (service_id, db_playlist_id, playlist['snapshot_id'], playlist['followers'], date_str))
 
             print("{} playlist id's followers added to db".format(db_playlist_id))
 
         except psycopg2.IntegrityError as e:
             if e.pgcode != '23502': # Not Null constraint: https://www.postgresql.org/docs/8.1/static/errcodes-appendix.html
-                print(e)
-            print('Adding playlist insertion to db failed...')
+                print('Postgresql Integrity Error: ', e)
+            print('Adding playlist followers to db failed...')
 
     def get_db_tracks_by_playlist(self, service_playlist_id, playlist_version):
     # get all info from db from most recent date of latest playlist version
@@ -1333,8 +1348,9 @@ def get_daily_unprocessed_playlists_tracks(date_str = TODAY):
     unprocessed_playlists = [pl for pl in playlists if pl['db_playlist_id'] in db_ids_unprocessed]
     return unprocessed_playlists
 
+# Strategy of daily unprocessed lists
 #
-def get_daily_unprocessed_playlists_followers(limit = 100):
+def get_daily_unprocessed_playlists_followers(limit = 150):
     playlists = db.get_playlists_with_minimum_follower_count_from_db()
     db_ids_processed = db.get_playlists_followers_processed_by_date()
     unprocessed_playlists = [pl for pl in playlists if pl['db_playlist_id'] not in db_ids_processed]
@@ -1368,7 +1384,7 @@ def append_playlist_followers_and_update_version(playlists):
 
                 # write to db
                 db.add_playlist_followers(SERVICE_ID, TODAY, playlist)
-                db.update_playlist_version(playlist)
+                db.update_playlist_latest_version(playlist)
 
                 # mark playlist as followers having been processed
                 db.set_playlist_processed(playlist['db_playlist_id'], snapshot_id, TODAY, is_followers_processed = True)
@@ -1711,7 +1727,7 @@ def process_update_all_playlists_by_users(users):
     print('writing to db')
     append_playlist_followers_and_update_version(playlists)
 
-def process_daily_followers(playlists):
+def process_daily_followers(playlists_list):
     starttime_total = datetime.now() # timestamping
 
     # INITIALIZE VARIABLES - DO I NEED THIS?
@@ -1982,6 +1998,10 @@ def get_playlists_with_minimum_follower_count_from_db_handler(event, context):
     return playlists
 
 
+# Lambda input should have { "should_process_date": true, "date_str": "2018-01-18"}
+# The issue with this strategy is that with the same list of failing (either from timeouts or otherwise) playlists
+# come up time and again.
+#
 def get_daily_unprocessed_playlists_tracks_handler(event, context):
     global db
     db = TrackDatabase()
@@ -1998,7 +2018,7 @@ def get_daily_unprocessed_playlists_tracks_handler(event, context):
     db.close_database()
     return batch_playlists
 
-# NOTE: NOT WORKING!!!!!
+
 def unprocessed_track_playlists(event, context):
     global db
     db = TrackDatabase()

@@ -1,7 +1,7 @@
 import sys
-sys.path.insert(0, './common_copy')
+sys.path.insert(0, './aws_packages')
 
-import csv, codecs, re, json, os, base64, time, hashlib, ssl, jwt, configparser, logging, psycopg2
+import csv, codecs, re, json, os, base64, time, hashlib, ssl, jwt, configparser, logging, psycopg2, pytz
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
@@ -23,6 +23,10 @@ logger.setLevel(logging.INFO)
 
 # cache http requests?
 CACHE_ENABLED = False
+
+# TODAY is day in UTC - 8hrs, or PST
+# https://julien.danjou.info/blog/2015/python-and-timezones
+TODAY = (datetime.utcnow() - timedelta(hours=8)).strftime('%Y-%m-%d')
 
 # the Apple API url
 # ie. https://api.music.apple.com/v1/catalog/{storefront}/genres/{id}
@@ -371,6 +375,51 @@ def append_artist_data(tracks, region):
                     tracks[apple_id]['genres'] = r_dict[apple_id]['attributes']['genreNames']
     return tracks
 
+# Process helpers----------
+#
+
+# Returns a list of regions
+# PARAMS:
+#   chart_service is chart[0] in an item of CHARTS
+#   kind is chart[1] in an item of  CHARTs
+#   url is a processed url from the db
+#
+
+def unprocessed_regions(chart_service, kind, date_str = (date.today() - timedelta(hours=8)).strftime('%Y-%m-%d')):
+    processed_urls = db.get_processed_by_kind(chart_service, kind, date_str)
+
+    print('params', chart_service, kind, date_str)
+    print('processed urls are:', processed_urls)
+
+    processed_regions = []
+    for url in processed_urls:
+        processed_regions.append(strip_region_from_url(chart_service, kind, url))
+
+        print('processed region...', processed_regions)
+
+    print('processed regions', processed_regions)
+    if chart_service == 'apple-music' and kind == 'top-songs':
+        regions = list(set(REGIONS_WITH_APPLE_MUSIC).difference(processed_regions))
+    elif chart_service == 'itunes-music'and kind == 'top-albums':
+        regions = list(set(REGIONS_WITH_ITUNES_MUSIC_ALBUMS).difference(processed_regions))
+    elif chart_service == 'music-videos':
+        regions = list(set(REGIONS_WITH_MUSIC_VIDEOS).difference(processed_regions))
+    else:
+        regions = []
+        print('Error in type')
+
+    return regions
+
+# PARAMS:
+#   chart_service is chart[0] in an item of CHARTS
+#   kind is chart[1] in an item of  CHARTs
+#   url is a processed url from the db
+#
+def strip_region_from_url(chart_service, kind, url):
+    start = 'https://rss.itunes.apple.com/api/v1'
+    m = re.search('{}/(.*)/{}/{}'.format(start, chart_service, kind), url)
+    return m.group(1)
+
 # TrackDatabase class start
 #
 #
@@ -447,7 +496,7 @@ class TrackDatabase(object):
             SELECT *
             FROM processed
             WHERE url
-            LIKE '%{}'
+            LIKE '%{}%'
         '''
 
         start = 'https://rss.itunes.apple.com/api/v1/'
@@ -642,6 +691,27 @@ class TrackDatabase(object):
         )
         row = self.c.fetchone()
         return row[0] if row else False
+
+
+    def get_processed_by_kind(self, chart_service, kind, date_str):
+        """
+        Retrieve the list of processed urls for a type (album, song, music-video) and date
+        """
+        query = "SELECT url from processed WHERE url like '%{}/{}/all/200/explicit.json_{}%'".format(chart_service, kind, date_str)
+
+        print('QUERY IS:', query)
+
+        self.c.execute(query)
+
+        rows = self.c.fetchall()
+
+        print('get processed by kind rows', rows)
+
+        urls = []
+        for row in rows:
+            urls.append(row[0])
+        print('urls', urls)
+        return urls
 
     # update stats functions
     # TODO: test to see if they work ;)
@@ -1219,6 +1289,22 @@ def process(charts, regions):
 # AWS Lambda Handler
 #
 
+def get_unprocessed_apple_regions(event, context):
+    global db
+    db = TrackDatabase()
+
+    print('TODAY is', TODAY)
+    print('NOW is', datetime.now())
+    print('TIMEZONE TIME', datetime.now(tz=pytz.utc))
+    print(event)
+    # NOTE: could use the chartIndex like in the handler()... pros and cons
+    if event['date_str']:
+        regions = unprocessed_regions(event['chart_service'], event['kind'], event['date_str'])
+
+    db.close_database()
+    print('closed database connection')
+    return regions
+
 def handler(event, context):
     # for container reuse
     # https://stackoverflow.com/questions/43355278/aws-lambda-rds-mysql-db-connection-interfaceerror
@@ -1231,9 +1317,10 @@ def handler(event, context):
 
     # event = { chartIndex: 0 }
     chartIndex = event['chartIndex'] # pass in index for chunking the processing
-    if chartIndex >= 0 and chartIndex <= 3:
+    if chartIndex >= 0 and chartIndex <= 3: # ensure santizied input
         charts = [CHARTS[chartIndex]] # recreate array structure of CHARTS
 
+    # Lambda function input
     # {'regions': ['us', 'ab', '<ETC>']}
     regions = event['regions']
 
