@@ -1,11 +1,10 @@
 import sys
-sys.path.insert(0, './aws_packages')
+sys.path.insert(0, './aws_packages') # local relative path of aws lambda packages
 
 import csv, codecs, re, json, os, base64, time, hashlib, ssl, jwt, configparser, logging, psycopg2, pytz
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
-# from lxml import html
 from pprint import pprint
 from datetime import datetime, date, timedelta
 from dateutil import parser
@@ -71,11 +70,12 @@ CHARTS = [
 ]
 
 
-REGIONS_MISSED_APPLE_MUSIC = ['jo', 'kz', 'gd']
-REGIONS_MISSED_ITUNES_SONGS = []
-REGIONS_MISSED_ITUNES_ALBUMS = []
-REGIONS_MISSED_MUSIC_VIDEOS = []
-
+# # LEGACY use of Missed Regions to manually run local custom CHARTS
+#
+# REGIONS_MISSED_APPLE_MUSIC = ['jo', 'kz', 'gd']
+# REGIONS_MISSED_ITUNES_SONGS = []
+# REGIONS_MISSED_ITUNES_ALBUMS = []
+# REGIONS_MISSED_MUSIC_VIDEOS = []
 
 # (media, chart, regions)
 # CHARTS = [
@@ -154,13 +154,11 @@ class Apple(object):
         # NOTE: make this file directory smarter. just testing for now.
         cache_file = "./apple/all-%s.json" % date.today().strftime('%m-%d-%Y')
 
-        if count > 3:
-            # retried 3 times, giving up
+        if count > 3: # retried 3 times, giving up
             print('Failed getting page "%s", retried %i times' % (url, count))
             return False
         if last_request > time.time()-1:
-            # wait 3 seconds between retries
-            time.sleep(3)
+            time.sleep(3) # wait 3 seconds between retries
         try:
             q = Request(url)
             q.add_header('Authorization', 'Bearer {}'.format(self.token))
@@ -171,8 +169,7 @@ class Apple(object):
         except HTTPError as err:
             if err.code == 400:
                 print('HTTP 400, said:')
-
-            # raise
+            return False
         except Exception as e:
             count += 1
             print('Exception in API request, retrying...')
@@ -291,7 +288,7 @@ def append_track_data(items, region):
             print('{} new tracks with ISRC and album_id'.format(count_new_items))
         else:
             logger.warn("Region {} songs haven't been looked up by the API. Check for empty isrc, album_id and track_genres for these track ids: {}".format(region, tracks_to_lookup))
-
+            return False # NOTE: new... could cause errors! Make sure to monitor for Boolean
     return items
 
 def append_music_video_data(items, region):
@@ -385,22 +382,18 @@ def append_artist_data(tracks, region):
 #   url is a processed url from the db
 #
 
-def unprocessed_regions(chart_service, kind, date_str = (date.today() - timedelta(hours=8)).strftime('%Y-%m-%d')):
+def unprocessed_regions(chart_service, kind, date_str = TODAY):
     processed_urls = db.get_processed_by_kind(chart_service, kind, date_str)
-
-    print('params', chart_service, kind, date_str)
-    print('processed urls are:', processed_urls)
 
     processed_regions = []
     for url in processed_urls:
         processed_regions.append(strip_region_from_url(chart_service, kind, url))
 
-        print('processed region...', processed_regions)
-
-    print('processed regions', processed_regions)
     if chart_service == 'apple-music' and kind == 'top-songs':
         regions = list(set(REGIONS_WITH_APPLE_MUSIC).difference(processed_regions))
     elif chart_service == 'itunes-music'and kind == 'top-albums':
+        regions = list(set(REGIONS_WITH_ITUNES_MUSIC_ALBUMS).difference(processed_regions))
+    elif chart_service == 'itunes-music'and kind == 'top-songs':
         regions = list(set(REGIONS_WITH_ITUNES_MUSIC_ALBUMS).difference(processed_regions))
     elif chart_service == 'music-videos':
         regions = list(set(REGIONS_WITH_MUSIC_VIDEOS).difference(processed_regions))
@@ -968,7 +961,8 @@ class TrackDatabase(object):
                         track_id = self.add_track(service_id, track_id, artist_id, album_id, track_name, isrc)
 
                     except Exception as e:
-                        print(e)
+                        print(media, db_table, e)
+                        return False
                         raise
 
                 if media == 'apple-music':
@@ -1159,9 +1153,7 @@ def process(charts, regions):
                 'limit': 200,
             }
 
-            # for region in chart[2]:
             for region in regions:
-            # for region in REGIONS_ONE_OFF: # use when need be to check only a few regions
                 starttime = datetime.now() # timestamp
                 print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y')) # timestamp
 
@@ -1172,22 +1164,20 @@ def process(charts, regions):
                 try:
                     req = Request(url)
                     r = urlopen(req).read().decode('UTF-8')
-
                 except HTTPError as err:
                     if err.code == 400:
-                        print('HTTP 400')
+                        print('HTTP 400 with:', url)
+                        continue
                     if err.code == 404:
                         print('No RSS feed data found for {} for {} in {}'.format(region, rss_params['media'], rss_params['chart']))
                         logger.warn('No RSS feed data found for {} for {} in {}'.format(region, rss_params['media'], rss_params['chart']))
                         print('-' * 40)
                         continue
                 except URLError as e:
-                    print('We failed to reach a server.')
-                    print('Reason: ', e.reason)
+                    print('We failed to reach a server. URLError with:', url, e.reason)
 
                 # Process the data
-
-                print('Loading charts for region {}...'.format(region))
+                print('Loading {} {} charts for region {}...'.format(rss_params['media'], rss_params['chart'], region))
 
                 try:
                     raw_data = json.loads(r)
@@ -1236,19 +1226,26 @@ def process(charts, regions):
                 print('Looking up existing ids in db')
                 items = append_apple_id_from_db(items, db_table_name)
 
+                complete = False
                 if kind == 'song':
                     print('Getting track data from Apple "Tracks" API...')
                     items = append_track_data(items, region)
-                    print('Getting label and release date from Apple "Albums" API...')
-                    items = append_album_data(items, region)
-                    added = db.add_track_items(items, date_str, region, service_name)
+
+                    if items:
+                        print('Getting label and release date from Apple "Albums" API...')
+                        items = append_album_data(items, region)
+                    if items:
+                        complete = db.add_track_items(items, date_str, region, service_name)
                 elif kind == 'album':
                     print('Getting label and release date from Apple "Albums" API...')
                     items = append_album_data(items, region)
-                    added = db.add_album_items(items, date_str, region, service_name)
+                    if items:
+                        complete = db.add_album_items(items, date_str, region, service_name)
                 elif kind == 'musicVideo':
                     items = append_music_video_data(items, region)
-                    added = db.add_music_video_items(items, date_str, region, service_name)
+                    if items:
+                        complete = db.add_music_video_items(items, date_str, region, service_name)
+
 
 
                 # NOTE: no need to append genres here. They exist in RSS feed response
@@ -1256,7 +1253,8 @@ def process(charts, regions):
                 # items = append_artist_data(items, region)
 
                 # write data to DB
-                db.set_processed(url + '_' + date_str)
+                if complete:
+                    db.set_processed(url + '_' + date_str)
 
                 # timestamp
                 endtime = datetime.now()
@@ -1277,7 +1275,7 @@ def process(charts, regions):
 
         # no data
         print('Rerun these regions for these charts:')
-        print('-' * 40)
+        print('+' * 40)
         db.print_region_status_stats()
 
     except psycopg2.InterfaceError as e:
@@ -1293,20 +1291,20 @@ def get_unprocessed_apple_regions(event, context):
     global db
     db = TrackDatabase()
 
-    print('TODAY is', TODAY)
-    print('NOW is', datetime.now())
-    print('TIMEZONE TIME', datetime.now(tz=pytz.utc))
-    print(event)
-    # NOTE: could use the chartIndex like in the handler()... pros and cons
-    if event['date_str']:
+    # NOTE: Possible refactor: could use the chartIndex like in the handler()... pros and cons
+
+     # in serverless.yml, user can input date_str
+    if event.setdefault('date_str', None):
         regions = unprocessed_regions(event['chart_service'], event['kind'], event['date_str'])
+    else:
+        regions = unprocessed_regions(event['chart_service'], event['kind'])
 
     db.close_database()
     print('closed database connection')
     return regions
 
 def handler(event, context):
-    # for container reuse
+    # Primer on AWS Lambda container reuse
     # https://stackoverflow.com/questions/43355278/aws-lambda-rds-mysql-db-connection-interfaceerror
     # https://aws.amazon.com/blogs/compute/container-reuse-in-lambda/
     global db
@@ -1315,13 +1313,13 @@ def handler(event, context):
     db = TrackDatabase()
     apple = Apple()
 
-    # event = { chartIndex: 0 }
+    # Initialize input variables
+    # event = { chartIndex: 0 ...}
     chartIndex = event['chartIndex'] # pass in index for chunking the processing
     if chartIndex >= 0 and chartIndex <= 3: # ensure santizied input
         charts = [CHARTS[chartIndex]] # recreate array structure of CHARTS
 
-    # Lambda function input
-    # {'regions': ['us', 'ab', '<ETC>']}
+    # event = {'regions': ['us', 'ab', '<ETC>'] ...}
     regions = event['regions']
 
     print('processing : ', charts[0][0], charts[0][1], regions)

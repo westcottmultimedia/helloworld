@@ -1,13 +1,14 @@
 import sys
-sys.path.insert(0, './aws_packages')
+sys.path.insert(0, './aws_packages') # local relative path of aws lambda packages for zipping
 
-import csv, codecs, re, json, os, base64, time, hashlib, ssl, datetime, logging, errno, psycopg2
+import csv, codecs, re, json, os, base64, time, hashlib, ssl, datetime, logging, errno
+from pprint import pprint as pprint
+from datetime import datetime, date, timedelta
+from socket import error as SocketError
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
-from socket import error as SocketError
-from pprint import pprint as pprint
-from datetime import datetime, date, timedelta
+import psycopg2
 
 logger = logging.getLogger()
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')

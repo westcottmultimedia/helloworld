@@ -1057,7 +1057,6 @@ stepFunctions:
               chartIndex: 0
               chart_service: 'apple-music'
               kind: 'top-songs'
-              date_str: '2018-01-25'
               length_post: 0
               done: False
             Next: GetUnprocessedRegionsPre
@@ -1166,10 +1165,10 @@ stepFunctions:
           CleanInput:
             Type: Pass
             Result:
+              # date_str: '2018-01-25' for user-defined processing of a specific date... shouldn't have to be used, however.
               chartIndex: 1
               chart_service: 'itunes-music'
               kind: 'top-songs'
-              date_str: '2018-01-25'
               length_post: 0
               done: False
             Next: GetUnprocessedRegionsPre
@@ -1282,7 +1281,6 @@ stepFunctions:
               chartIndex: 2
               chart_service: 'itunes-music'
               kind: 'top-albums'
-              date_str: '2018-01-25'
               length_post: 0
               done: False
             Next: GetUnprocessedRegionsPre
@@ -1394,7 +1392,6 @@ stepFunctions:
               chartIndex: 3
               chart_service: 'music-videos'
               kind: 'top-music-videos'
-              date_str: '2018-01-25'
               length_post: 0
               done: False
             Next: GetUnprocessedRegionsPre
