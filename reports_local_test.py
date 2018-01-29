@@ -70,10 +70,10 @@ class TrackDatabase(object):
     # MATERIALIZED VIEWS
     # http://www.postgresqltutorial.com/postgresql-materialized-views/
 
-    def drop_materialized_views(self):
+    def tp_drop_materialized_views(self):
         # dropping views in order matters, so you don't hit a "objects rely on" error
         self.c.execute("""
-            DROP materialized VIEW IF EXISTS client_border_city_daily
+            DROP materialized VIEW IF EXISTS streaming CASCADE
         """)
 
         self.c.execute("""
@@ -88,7 +88,36 @@ class TrackDatabase(object):
             DROP materialized VIEW IF EXISTS tp_drop
         """)
 
-    # TRACKS ADDED FROM YESTERDAY
+    def sp_drop_materialized_views(self):
+        # dropping views in order matters, so you don't hit a "objects rely on" error
+
+        # SALES REPORTS FIRST
+        self.c.execute("""
+            DROP materialized VIEW IF EXISTS sales_songs CASCADE
+        """)
+
+        self.c.execute("""
+            DROP materialized VIEW IF EXISTS sales_albums CASCADE
+        """)
+
+        self.c.execute("""
+            DROP materialized VIEW IF EXISTS sales_music_videos CASCADE
+        """)
+
+        # SALES ADD/DROP/MOVEMENT TABLES NEXT
+        self.c.execute("""
+            DROP materialized VIEW IF EXISTS sp_movement
+        """)
+
+        self.c.execute("""
+            DROP materialized VIEW IF EXISTS sp_add
+        """)
+
+        self.c.execute("""
+            DROP materialized VIEW IF EXISTS sp_drop
+        """)
+
+    # ADDED, DROPPED and MOVED Position Functions
     #
     def tp_add(self, date_to_process):
         print('starting tp add view')
@@ -98,7 +127,7 @@ class TrackDatabase(object):
         # in it, so you have to complex queries to figure it out ("SELECT definition FROM pg_matviews"), which makes this function relatively unreadable
         self.c.execute("""
             CREATE materialized VIEW IF NOT EXISTS tp_add as (
-                WITH add_view AS (
+                WITH tp_add_view AS (
                     SELECT
                         T1.date_str AS date_str,
                         T1.id AS track_position_id,
@@ -121,11 +150,43 @@ class TrackDatabase(object):
                         T1.date_str = '{}'
                 )
 
-                SELECT * FROM add_view
+                SELECT * FROM tp_add_view
                 WHERE add_drop = 'add'
             )
         """.format(date_to_process))
         print('finished tp add view')
+
+    def sp_add(self, date_to_process):
+        self.c.execute("""
+            CREATE materialized VIEW IF NOT EXISTS sp_add as (
+                WITH sp_add_view AS (
+                    select
+                        T1.date_str as date_str,
+                        T1.id as sales_position_id,
+                        T1.service_id as service_id,
+                        T1.territory_id as territory_id,
+                        T1.media_id as media_id,
+                        T1.media_type as media_type,
+                        T1.position as today_position,
+                        CASE
+                            WHEN T2.position is NULL THEN "add"
+                            ELSE NULL
+                        END AS add_drop
+                    FROM sales_position T1
+                    LEFT JOIN sales_position T2
+                        ON T1.media_id = T2.media_id
+                        AND T1.media_type = T2.media_type
+                        AND T1.territory_id = T2.territory_id
+                        AND T1.service_id = T2.service_id
+                        AND DATE(T1.date_str) - DATE(T2.date_str) = 1
+                    WHERE
+                        T1.date_str = '{}'
+                )
+                    SELECT * FROM tp_add_view
+                    WHERE add_drop = 'add'
+            )
+        """.format(date_to_process))
+        print('finished SP add view')
 
     def latest_date(self):
         self.c.execute('SELECT max(date_str) FROM track_position')
@@ -135,7 +196,7 @@ class TrackDatabase(object):
         print('starting tp drop view')
         self.c.execute("""
             CREATE materialized VIEW IF NOT EXISTS tp_drop as (
-                WITH drop_view AS (
+                WITH tp_drop_view AS (
                     SELECT
                         T1.date_str as previous_date,
                         T1.id as track_position_id,
@@ -158,11 +219,44 @@ class TrackDatabase(object):
                             DATE(T1.date_str) = date('{}') - 1
                 )
 
-                SELECT * FROM drop_view
+                SELECT * FROM tp_drop_view
                 WHERE add_drop = 'drop'
             )
         """.format(date_to_process))
-        print('finished tp drop view')
+        print('finished TP drop view')
+
+    def sp_drop(self, date_to_process):
+        print('starting SP drop view')
+        self.c.execute("""
+            CREATE materialized VIEW IF NOT EXISTS sp_drop as (
+                WITH sp_drop_view AS (
+                    SELECT T1.date_str AS previous_date,
+                    T1.id AS sales_position_id,
+                    T1.service_id AS service_id,
+                    T1.territory_id AS territory_id,
+                    T1.media_id AS media_id,
+                    T1.media_type AS media_type,
+                    T1.position AS previous_position,
+                    CASE
+                        WHEN T2.position IS NULL THEN 'drop'
+                        ELSE NULL
+                    END AS add_drop
+                    FROM sales_position T1
+                    LEFT JOIN sales_position T2
+                        ON T1.media_id = T2.media_id
+                        AND T1.media_type = T2.media_type
+                        AND T1.territory_id = T2.territory_id
+                        AND T1.service_id = T2.service_id
+                        AND DATE(T1.date_str) - DATE(T2.date_str) = -1
+                    WHERE
+                        DATE(T1.date_str) = date('{}') - 1
+
+                )
+                SELECT * FROM sp_drop_view
+                WHERE add_drop = 'drop'
+            )
+        """).format(date_to_process))
+        print('finished SP drop view')
 
     def tp_movement(self, date_to_process):
         print('starting tp movement view')
@@ -176,7 +270,7 @@ class TrackDatabase(object):
                     CASE
                         WHEN T2.position is NULL THEN 'add'
                         ELSE NULL
-                    END add_drop
+                    END AS add_drop
                 FROM track_position T1
                 INNER JOIN track_position T2
                     ON T1.isrc = T2.isrc
@@ -215,6 +309,68 @@ class TrackDatabase(object):
                     'drop' as add_drop
                 FROM track_position T1
                 WHERE id in (SELECT track_position_id from tp_drop)
+
+                -- Order them by territory
+                ORDER BY
+                    date_str DESC,
+                    territory_id ASC,
+                    position ASC
+            )
+        """.format(date_to_process, date_to_process, date_to_process, date_to_process))
+        print('finished tp movement view')
+
+    def sp_movement(self, date_to_process):
+        print('starting sp movement view')
+        self.c.execute("""
+            CREATE materialized VIEW IF NOT EXISTS sp_movement as (
+                SELECT
+                    T1.*,
+                    T2.date_str as previous_date,
+                    T2.position as previous_track_position,
+                    T2.position - T1.position as movement,
+                    CASE
+                        WHEN T2.position is NULL THEN 'add'
+                        ELSE NULL
+                    END AS add_drop
+                from sales_position T1
+                INNER JOIN sales_position T2
+                    ON T1.media_id = T2.media_id
+                    AND T1.media_type = T2.media_type
+                    AND T1.territory_id = T2.territory_id
+                    AND T1.service_id = T2.service_id
+                    AND DATE(T1.date_str) - DATE(T2.date_str) = 1
+                WHERE T1.date_str IN (SELECT '{}'::text from sales_position)
+
+                UNION
+
+                -- Select and add the same columns from the add table
+                SELECT
+                    *,
+                    (SELECT to_char(DATE('{}'::text) - 1, 'yyyy-mm-dd')) as previous_date,
+                    -1 as previous_sales_position,
+                    200 - T1.position as movement,
+                    'add' as add_drop
+                FROM sales_position T1
+                WHERE
+                    id in (SELECT sales_position_id FROM sp_add)
+
+                UNION
+
+                -- Select and add the same columns from the drop table
+                SELECT
+                    T1.id,
+                    T1.service_id,
+                    T1.territory_id,
+                    T1.media_id,
+                    T1.media_type,
+                    -1 as position,
+                    -1 as stream_count,
+                    (SELECT '{}'::text) as date_str,
+                    (SELECT to_char(DATE('{}'::text) - 1, 'yyyy-mm-dd')) as previous_date,
+                    T1.position as previous_sales_position, T1.position - 201 as movement,
+                    'drop' as add_drop
+                FROM sales_position T1
+                WHERE id in (SELECT sales_position_id from sp_drop)
 
                 -- Order them by territory
                 ORDER BY
@@ -278,11 +434,12 @@ class TrackDatabase(object):
         ''')
         print('finished track_album view')
 
-    def report_streaming(self):
-        print('starting streaming report view')
+    def tp_report_streaming(self, refresh = True):
+        print('starting Apple Music and Spotify STREAMING')
         # took 46s to execute
-        self.c.execute("""
-            CREATE materialized VIEW IF NOT EXISTS client_border_city_daily as
+        output_table = 'streaming'
+        create_query = """
+            CREATE materialized VIEW IF NOT EXISTS {} as
             SELECT
             tp.date_str as date_str,
             service.id as service_id,
@@ -317,11 +474,171 @@ class TrackDatabase(object):
             INNER JOIN artist on track.artist_id = artist.id
             INNER JOIN album on track.album_id = album.id
             ORDER BY service_id ASC, territory_id ASC, chart_position ASC
-        """)
+        """
+
+        refresh_query = """
+            REFRESH materialized VIEW {};
+        """
+
+        if refresh:
+            self.c.execute(refresh_query.format(output_table))
+        else:
+            self.c.execute(create_query.format(output_table))
+
         print('finished streaming report view')
 
+    def sp_report_songs(self, refresh = True):
+        print('starting iTunes SALES for SONGS/TRACKS')
+        # took 46s to execute
+        output_table = 'sales_songs'
+        create_query = """
+            CREATE materialized VIEW IF NOT EXISTS {} as
+                SELECT
+                    sp.date_str as date_str,
+                    'track' as type,
+                    service.id as service_id,
+                    territory.code as territory_id,
+                    sp.add_drop as add_drop,
+                    sp.previous_sales_position as previous_sales_position,
+                    sp.position as position,
+                    track.track as track_name,
+                    album.album as album_name,
+                    artist.artist as artist_name,
+                    track.isrc as isrc,
+                    sp.sales_count as sales_count,
+                    spp.peak_rank as peak_ranking,
+                    spp.peak_date as peak_ranking_date,
+                    ('https://itunes.apple.com/' || territory.code || '/album/' || album.service_album_id || '?=' || track.service_track_id) as url,
+                    album.label as label
+                FROM sp_movement sp
+                INNER JOIN sales_position_peak spp
+                    ON spp.media_id = sp.media_id
+                    AND spp.media_type = sp.media_type
+                    AND spp.territory_id = sp.territory_id
+                    AND spp.service_id = sp.service_id
+                INNER JOIN service on service.id = sp.service_id
+                INNER JOIN territory on territory.id = sp.territory_id
+                INNER JOIN track on track.id = sp.media_id
+                INNER JOIN artist on track.artist_id = artist.id
+                INNER JOIN album on track.album_id = album.id
+                WHERE sp.media_type = 'track'
+                ORDER BY
+                    service_id ASC,
+                    territory_id ASC,
+                    position ASC
+        """
+
+        refresh_query = """
+            REFRESH materialized VIEW {};
+        """
+
+        if refresh:
+            self.c.execute(refresh_query.format(output_table))
+        else:
+            self.c.execute(create_query.format(output_table))
+
+        print('finished song/track sales report view')
+
+    def sp_report_albums(self, refresh = True):
+        print('starting iTunes SALES for ALBUMS')
+        # took 46s to execute
+        output_table = 'sales_albums'
+        create_query = """
+            CREATE materialized VIEW IF NOT EXISTS {} as
+                SELECT
+                    sp.date_str as date_str,
+                    'album' as type,
+                    service.id as service_id,
+                    territory.code as territory_id,
+                    sp.add_drop as add_drop,
+                    sp.previous_sales_position as previous_sales_position,
+                    sp.position as position,
+                    artist.artist as artist_name,
+                    album.album as album_name,
+                    sp.sales_count as sales_count,
+                    spp.peak_rank as peak_ranking,
+                    spp.peak_date as peak_ranking_date,
+                    ('https://itunes.apple.com/' || territory.code || '/album/' || album.service_album_id) as url,
+                    album.label as label
+                FROM sp_movement sp
+                INNER JOIN sales_position_peak spp
+                    ON spp.media_id = sp.media_id
+                    AND spp.media_type = sp.media_type
+                    AND spp.territory_id = sp.territory_id
+                    AND spp.service_id = sp.service_id
+                INNER JOIN service on service.id = sp.service_id
+                INNER JOIN territory on territory.id = sp.territory_id
+                INNER JOIN artist on track.artist_id = artist.id
+                INNER JOIN album on track.album_id = album.id
+                WHERE sp.media_type = 'album'
+                ORDER BY
+                    service_id ASC,
+                    territory_id ASC,
+                    position ASC
+        """
+
+        refresh_query = """
+            REFRESH materialized VIEW {};
+        """
+
+        if refresh:
+            self.c.execute(refresh_query.format(output_table))
+        else:
+            self.c.execute(create_query.format(output_table))
+
+        print('finished album sales report view')
+
+    def sp_report_music_videos(self, refresh = True):
+        print('starting iTunes SALES for MUSIC VIDEOS)
+        # took 46s to execute
+        output_table = 'sales_music_videos'
+        create_query = """
+            CREATE materialized VIEW IF NOT EXISTS {} as
+                SELECT
+                    sp.date_str as date_str,
+                    'music_video' as type,
+                    service.id as service_id,
+                    territory.code as territory_id,
+                    sp.add_drop as add_drop,
+                    sp.previous_sales_position as previous_sales_position,
+                    sp.position as position,
+                    artist.artist as artist_name,
+                    music_video.music_video as music_video_name,
+                    music_video.isrc as isrc,
+                    sp.sales_count as sales_count,
+                    spp.peak_rank as peak_ranking,
+                    spp.peak_date as peak_ranking_date,
+                    ('https://itunes.apple.com/' || territory.code || '/music-video/' || music_video.service_music_video_id) as url
+                FROM sp_movement sp
+                INNER JOIN sales_position_peak spp
+                    ON spp.media_id = sp.media_id
+                    AND spp.media_type = sp.media_type
+                    AND spp.territory_id = sp.territory_id
+                    AND spp.service_id = sp.service_id
+                INNER JOIN service on service.id = sp.service_id
+                INNER JOIN territory on territory.id = sp.territory_id
+                INNER JOIN artist on track.artist_id = artist.id
+                INNER JOIN music_video on music_video.id = sp.media_id
+                WHERE sp.media_type = 'music_video'
+                ORDER BY
+                    service_id ASC,
+                    territory_id ASC,
+                    position ASC
+        """
+
+        refresh_query = """
+            REFRESH materialized VIEW {};
+        """
+
+        if refresh:
+            self.c.execute(refresh_query.format(output_table))
+        else:
+            self.c.execute(create_query.format(output_table))
+
+        print('finished music video sales report view')
+
     def report_spotify_streaming(self, refresh = True):
-        input_table = 'client_border_city_daily'
+        input_table = 'streaming'
         output_table = 'report_spotify_streaming'
         service_id = 1
         create_query = """
@@ -357,7 +674,7 @@ class TrackDatabase(object):
             self.c.execute(create_query.format(output_table, input_table, service_id))
 
     def report_apple_streaming(self, refresh = True):
-        input_table = 'client_border_city_daily'
+        input_table = 'streaming'
         output_table = 'report_apple_streaming'
         service_id = 2
         create_query = """
@@ -392,30 +709,212 @@ class TrackDatabase(object):
         else:
             self.c.execute(create_query.format(output_table, input_table, service_id))
 
+    def report_sales_song(self, refresh = True):
+        input_table = 'sales_songs'
+        output_table = 'report_sales_song'
+        service_id = 2
+        create_query = """
+            CREATE materialized VIEW IF NOT EXISTS {} AS
+            SELECT
+                date_str,
+                CASE
+                    WHEN territory_id = 'global' THEN 'zz'
+                    ELSE territory_id
+                END territory_id,
+                add_drop,
+                previous_sales_position,
+                position,
+                track_name,
+                album_name,
+                artist_name,
+                isrc,
+                NULL as sales_count,
+                peak_ranking,
+                peak_ranking_date,
+                url,
+                label
+            FROM {}
+        """
 
-if __name__ == '__main__':
-    db = TrackDatabase()
+        refresh_query = """
+            REFRESH materialized VIEW {};
+        """
 
-    # # spotify streaming
-    print('Generating Spotify stream reports')
-    service_id = 1
+        if refresh:
+            self.c.execute(refresh_query.format(output_table))
+        else:
+            self.c.execute(create_query.format(output_table, input_table))
+
+    def report_sales_album(self, refresh = True):
+        input_table = 'sales_album'
+        output_table = 'report_sales_album'
+        service_id = 2
+        create_query = """
+            CREATE materialized VIEW IF NOT EXISTS {} AS
+            SELECT
+                date_str,
+                CASE
+                    WHEN territory_id = 'global' THEN 'zz'
+                    ELSE territory_id
+                END territory_id,
+                add_drop,
+                previous_sales_position,
+                position,
+                artist_name,
+                album_name,
+                NULL as sales_count,
+                peak_ranking,
+                peak_ranking_date,
+                url,
+                label
+            FROM {}
+        """
+
+        refresh_query = """
+            REFRESH materialized VIEW {};
+        """
+
+        if refresh:
+            self.c.execute(refresh_query.format(output_table))
+        else:
+            self.c.execute(create_query.format(output_table, input_table))
+
+    def report_sales_music_video(self, refresh = True):
+        input_table = 'sales_music_videos'
+        output_table = 'report_sales_music_video'
+        service_id = 2
+        create_query = """
+            CREATE materialized VIEW IF NOT EXISTS {} AS
+            SELECT
+                date_str,
+                CASE
+                    WHEN territory_id = 'global' THEN 'zz'
+                    ELSE territory_id
+                END territory_id,
+                add_drop,
+                previous_sales_position,
+                position,
+                artist_name,
+                music_video_name,
+                isrc,
+                NULL as sales_count,
+                peak_ranking,
+                peak_ranking_date,
+                url
+            FROM {}
+        """
+
+        refresh_query = """
+            REFRESH materialized VIEW {};
+        """
+
+        if refresh:
+            self.c.execute(refresh_query.format(output_table))
+        else:
+            self.c.execute(create_query.format(output_table, input_table))
+
+
+# GENERATE REPORTING!!!! PROCESS IT ALL!
+def generate_all_reports(date_str):
+    generate_streaming_reports(date_str)
+    generate_sales_reports(date_str)
+
+def generate_streaming_reports(date_str):
+
     # print(latest_streamingDates)
     # generateStreamingReporting(service_id, latest_streamingDates[service_id])
     # date_to_process = db.latest_date()
-    # date_to_process = '2017-11-04'
+
     #
+    # # GENERATE ALL SETUP TABLES
+    # print(datetime.datetime.now().strftime('%-H:%M:%S'))
+    # print('Generating all setup tables')
     # db.track_album()
     # db.tp_labels()
     #
-    # db.drop_materialized_views()
-    # db.tp_add(date_to_process)
-    # db.tp_drop(date_to_process)
-    # db.tp_movement(date_to_process)
-    #
-    # db.streaming_report()
 
-    db.report_spotify_streaming(refresh = True)
-    db.report_apple_streaming(refresh = True)
+    clean_streaming_tables()
+    calculate_streaming_movement(date_str)
+    generate_streaming_tables()
+    generate_streaming_report_for_spotify()
+    generate_streaming_report_for_apple_music()
+
+    # TODO: setup Data Stream to export table to S3 bucket
+
+    print(datetime.datetime.now().strftime('%-H:%M:%S'))
+
+def clean_streaming_tables():
+    db.tp_drop_materialized_views()
+
+def calculate_streaming_movement(date_str):
+    print(datetime.datetime.now().strftime('%-H:%M:%S'))
+
+    db.tp_add(date_str)
+    db.tp_drop(date_str)
+    db.tp_movement(date_str)
+    print(datetime.datetime.now().strftime('%-H:%M:%S'))
+
+def generate_streaming_tables():
+    # GENERATE TABLE FOR BOTH STREAMING REPORTS
+    print(datetime.datetime.now().strftime('%-H:%M:%S'))
+    print('Generating streaming reporting...')
+    db.tp_report_streaming(refresh = False)
+
+def generate_streaming_report_for_spotify():
+    print(datetime.datetime.now().strftime('%-H:%M:%S'))
+    print('Writing Spotify stream report...')
+    db.report_spotify_streaming(refresh = False)
+
+def generate_streaming_report_for_apple_music():
+    print(datetime.datetime.now().strftime('%-H:%M:%S'))
+    print('Writing Apple Music stream report...')
+    db.report_apple_streaming(refresh = False)
+
+def generate_sales_reports(date_str):
+
+    # GENERATE APPLE ITUNES SALES REPORTING
+    # TODO: NOTE: 01-27-2018 Finished with reporting views.
+    # Need to get queries, test them and see that they generate the correct reports
+
+    clean_sales_tables()
+    calculate_sales_movement(date_str)
+
+    generate_sales_report_for_songs()
+    generate_sales_report_for_albums()
+    generate_sales_report_for_music_videos()
+
+def clean_sales_tables():
+    db.sp_drop_materialized_views()
+
+def calculate_sales_movement(date_str):
+    db.sp_add(date_str)
+    db.sp_drop(date_str)
+    db.sp_movement(date_str)
+
+def generate_sales_report_for_songs():
+    db.sp_report_songs()
+    db.report_sales_song(refresh = False)
+
+def generate_sales_report_for_albums():
+    db.sp_report_albums()
+    db.report_sales_album(refresh = False)
+
+def generate_sales_report_for_music_videos():
+    db.sp_report_music_videos()
+    db.report_sales_music_video(refresh = False)
+
+if __name__ == '__main__':
+    # Setup
+    global db
+    db = TrackDatabase()
+
+    # Work Werk Werk Werk Work
+    # generate_all_reports('2018-01-25')
+    # generate_streaming_reports('2018-01-25')
+    generate_sales_reports('2018-01-25')
+
+    # Teardown
+    db.close_database()
 
 
     # service_id, service_chart_id, table, query, columns = getStreamingTrackSpotifyQuery()
