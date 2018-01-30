@@ -169,7 +169,7 @@ class TrackDatabase(object):
                         T1.media_type as media_type,
                         T1.position as today_position,
                         CASE
-                            WHEN T2.position is NULL THEN "add"
+                            WHEN T2.position is NULL THEN 'add'
                             ELSE NULL
                         END AS add_drop
                     FROM sales_position T1
@@ -182,8 +182,9 @@ class TrackDatabase(object):
                     WHERE
                         T1.date_str = '{}'
                 )
-                    SELECT * FROM tp_add_view
-                    WHERE add_drop = 'add'
+
+                SELECT * FROM sp_add_view
+                WHERE add_drop = 'add'
             )
         """.format(date_to_process))
         print('finished SP add view')
@@ -255,7 +256,7 @@ class TrackDatabase(object):
                 SELECT * FROM sp_drop_view
                 WHERE add_drop = 'drop'
             )
-        """).format(date_to_process))
+        """.format(date_to_process))
         print('finished SP drop view')
 
     def tp_movement(self, date_to_process):
@@ -326,7 +327,7 @@ class TrackDatabase(object):
                 SELECT
                     T1.*,
                     T2.date_str as previous_date,
-                    T2.position as previous_track_position,
+                    T2.position as previous_sales_position,
                     T2.position - T1.position as movement,
                     CASE
                         WHEN T2.position is NULL THEN 'add'
@@ -367,7 +368,8 @@ class TrackDatabase(object):
                     -1 as stream_count,
                     (SELECT '{}'::text) as date_str,
                     (SELECT to_char(DATE('{}'::text) - 1, 'yyyy-mm-dd')) as previous_date,
-                    T1.position as previous_sales_position, T1.position - 201 as movement,
+                    T1.position as previous_sales_position,
+                    T1.position - 201 as movement,
                     'drop' as add_drop
                 FROM sales_position T1
                 WHERE id in (SELECT sales_position_id from sp_drop)
@@ -379,7 +381,7 @@ class TrackDatabase(object):
                     position ASC
             )
         """.format(date_to_process, date_to_process, date_to_process, date_to_process))
-        print('finished tp movement view')
+        print('finished sp movement view')
 
     # NOTE: This is a long running query. Need not refresh this very often.
     #
@@ -568,8 +570,8 @@ class TrackDatabase(object):
                     AND spp.service_id = sp.service_id
                 INNER JOIN service on service.id = sp.service_id
                 INNER JOIN territory on territory.id = sp.territory_id
-                INNER JOIN artist on track.artist_id = artist.id
-                INNER JOIN album on track.album_id = album.id
+                INNER JOIN album on album.id = sp.media_id
+                INNER JOIN artist on album.artist_id = artist.id
                 WHERE sp.media_type = 'album'
                 ORDER BY
                     service_id ASC,
@@ -589,7 +591,7 @@ class TrackDatabase(object):
         print('finished album sales report view')
 
     def sp_report_music_videos(self, refresh = True):
-        print('starting iTunes SALES for MUSIC VIDEOS)
+        print('starting iTunes SALES for MUSIC VIDEOS')
         # took 46s to execute
         output_table = 'sales_music_videos'
         create_query = """
@@ -617,13 +619,14 @@ class TrackDatabase(object):
                     AND spp.service_id = sp.service_id
                 INNER JOIN service on service.id = sp.service_id
                 INNER JOIN territory on territory.id = sp.territory_id
-                INNER JOIN artist on track.artist_id = artist.id
                 INNER JOIN music_video on music_video.id = sp.media_id
+                INNER JOIN artist on music_video.artist_id = artist.id
                 WHERE sp.media_type = 'music_video'
                 ORDER BY
                     service_id ASC,
                     territory_id ASC,
-                    position ASC
+                    position ASC,
+                    previous_sales_position ASC
         """
 
         refresh_query = """
@@ -709,9 +712,9 @@ class TrackDatabase(object):
         else:
             self.c.execute(create_query.format(output_table, input_table, service_id))
 
-    def report_sales_song(self, refresh = True):
+    def report_sales_songs(self, refresh = True):
         input_table = 'sales_songs'
-        output_table = 'report_sales_song'
+        output_table = 'report_sales_songs'
         service_id = 2
         create_query = """
             CREATE materialized VIEW IF NOT EXISTS {} AS
@@ -745,9 +748,9 @@ class TrackDatabase(object):
         else:
             self.c.execute(create_query.format(output_table, input_table))
 
-    def report_sales_album(self, refresh = True):
-        input_table = 'sales_album'
-        output_table = 'report_sales_album'
+    def report_sales_albums(self, refresh = True):
+        input_table = 'sales_albums'
+        output_table = 'report_sales_albums'
         service_id = 2
         create_query = """
             CREATE materialized VIEW IF NOT EXISTS {} AS
@@ -779,9 +782,9 @@ class TrackDatabase(object):
         else:
             self.c.execute(create_query.format(output_table, input_table))
 
-    def report_sales_music_video(self, refresh = True):
+    def report_sales_music_videos(self, refresh = True):
         input_table = 'sales_music_videos'
-        output_table = 'report_sales_music_video'
+        output_table = 'report_sales_music_videos'
         service_id = 2
         create_query = """
             CREATE materialized VIEW IF NOT EXISTS {} AS
@@ -892,28 +895,37 @@ def calculate_sales_movement(date_str):
     db.sp_movement(date_str)
 
 def generate_sales_report_for_songs():
-    db.sp_report_songs()
-    db.report_sales_song(refresh = False)
+    db.sp_report_songs(refresh = False)
+    db.report_sales_songs(refresh = False)
 
 def generate_sales_report_for_albums():
-    db.sp_report_albums()
-    db.report_sales_album(refresh = False)
+    db.sp_report_albums(refresh = False)
+    db.report_sales_albums(refresh = False)
 
 def generate_sales_report_for_music_videos():
-    db.sp_report_music_videos()
-    db.report_sales_music_video(refresh = False)
+    db.sp_report_music_videos(refresh = False)
+    db.report_sales_music_videos(refresh = False)
+
+# ----- TESTING FOR TIMING PURPOSES FOR AWS LAMBDA
+def test_one_sales_report(date_str):
+    clean_sales_tables()
+    calculate_sales_movement(date_str)
+    generate_sales_report_for_songs()
 
 if __name__ == '__main__':
-    # Setup
+    # #---------Setup
     global db
     db = TrackDatabase()
 
-    # Work Werk Werk Werk Work
+    # # --------Work Werk Werk Werk Work
     # generate_all_reports('2018-01-25')
     # generate_streaming_reports('2018-01-25')
-    generate_sales_reports('2018-01-25')
+    generate_sales_reports('2018-01-19')
 
-    # Teardown
+    # test_one_sales_report('2018-01-19')
+    # generate_sales_report_for_music_videos()
+
+    # #----------Teardown
     db.close_database()
 
 
