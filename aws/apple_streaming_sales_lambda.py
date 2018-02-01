@@ -241,16 +241,20 @@ def append_apple_id_from_db(items, db_table_name):
         SELECT id
         FROM {}
         WHERE service_id = 2
-        AND service_{}_id = %s
-    """.format(db_table_name, db_table_name)
+        AND service_{}_id = {}
+    """
 
-
-    for apple_id in items:
-        if type(apple_id) == int:
-            db.c.execute(query, [apple_id])
-            row = db.c.fetchone()
-            if row:
-                items[apple_id]['apple_id_db'] = row[0]
+    for apple_id, value in items.items():
+        try:
+            # exclude non-string values from items {} in process()
+            if apple_id not in ['kind', 'db_table_name', 'media', 'chart']:
+                if type(apple_id) == str:
+                    db.c.execute(query.format(db_table_name, db_table_name, apple_id))
+                    row = db.c.fetchone()
+                    if row:
+                        items[apple_id]['apple_id_db'] = row[0]
+        except psycopg2.ProgrammingError as e:
+            print('programming error', e, apple_id, value)
     return items
 
 def append_track_data(items, region):
@@ -829,12 +833,16 @@ class TrackDatabase(object):
         return db_track_id
 
     def add_artist_genre(self, service_id, artist_id, genre):
-        self.c.execute("""
-            INSERT INTO artist_genre
-            (service_id, artist_id, genre)
-            VALUES
-            (%s, %s, %s)
-        """, (service_id, artist_id, genre))
+        try:
+            self.c.execute("""
+                INSERT INTO artist_genre
+                (service_id, artist_id, genre)
+                VALUES
+                (%s, %s, %s)
+                ON CONFLICT DO NOTHING
+            """, (service_id, artist_id, genre))
+        except Exception as e:
+            print(e)
 
     def add_music_video(self, service_id, service_music_video_id, artist_id, music_video_name, release_date, isrc):
         self.c.execute("""
@@ -866,6 +874,9 @@ class TrackDatabase(object):
         for track_id, item in items.items():
             if type(item) is dict:
                 position = item['position']
+
+                print('here is each item', item)
+                print('apple id db', item.get('apple_id_db'))
 
                 if 'apple_id_db' in item:
                     track_id = item['apple_id_db']
@@ -1202,6 +1213,7 @@ def process(charts, regions):
                 kind = results[0]['kind']
                 db_table_name = map_kind_to_db_table_name(kind)
 
+                print('kind and table name', kind, db_table_name)
                 # init variables
                 items = {}
                 items['kind'] = kind
@@ -1224,6 +1236,7 @@ def process(charts, regions):
 
                 # append data to Apple data
                 print('Looking up existing ids in db')
+                print
                 items = append_apple_id_from_db(items, db_table_name)
 
                 complete = False
