@@ -158,10 +158,10 @@ stepFunctions:
   #
   stateMachines:
     # start the RDS instance
-    # start at 12:00am, UTC (4:00P PST)
+    # start at 11:00PM, UTC (3:00P PST)
     beats_rds_start:
       events:
-        - schedule: cron(0 0 * * ? *)
+        - schedule: cron(0 23 * * ? *)
       name: BeatsRDSStart
       definition:
         Comment: "Beats RDS Start"
@@ -180,11 +180,11 @@ stepFunctions:
             End: true
 
     # stop the RDS instance
-    # stop the instance at 12:00pm, UTC (4:00A PST)
+    # stop the instance at 11:00A, UTC (3:00A PST)
     #
     beats_rds_stop:
       events:
-        # - schedule: cron(0 12 * * ? *)
+        - schedule: cron(0 11 * * ? *)
       name: BeatsRDSStop
       definition:
         Comment: "Beats RDS Stop"
@@ -205,7 +205,7 @@ stepFunctions:
     spotify_streaming_songs:
       events:
         # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
-        # - schedule: cron(10 0 * * ? *)
+        - schedule: cron(10 23 * * ? *)
       name: SpotifyStreamingSongs
       definition:
         Comment: "Spotify - Streaming - Spotify Top Songs."
@@ -317,7 +317,7 @@ stepFunctions:
     apple_streaming_songs:
       name: AppleStreamingSongs
       events:
-        # - schedule: cron(30 0 * * ? *)
+        - schedule: cron(30 23 * * ? *)
       definition:
         Comment: "Apple Music for Streaming Songs"
         StartAt: CleanInput
@@ -431,7 +431,7 @@ stepFunctions:
     apple_sales_songs:
       name: AppleSalesSongs
       events:
-        # - schedule: cron(0 1 * * ? *)
+        - schedule: cron(0 0 * * ? *)
       definition:
         Comment: "Apple iTunes Sales for Songs"
         StartAt: CleanInput
@@ -546,7 +546,7 @@ stepFunctions:
     apple_sales_albums:
       name: AppleSalesAlbums
       events:
-        # - schedule: cron(30 1 * * ? *)
+        - schedule: cron(30 0 * * ? *)
       definition:
         Comment: "Apple iTunes Sales for Albums"
         StartAt: CleanInput
@@ -660,7 +660,7 @@ stepFunctions:
     apple_sales_music_videos:
       name: AppleSalesMusicVideos
       events:
-        # - schedule: cron(0 2 * * ? *)
+        - schedule: cron(0 1 * * ? *)
       definition:
         Comment: "Apple iTunes Sales for Music Videos"
         StartAt: CleanInput
@@ -850,70 +850,6 @@ stepFunctions:
             Type: Pass
             End: true
 
-    # PlaylistFollowers:
-    #   events:
-    #     # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
-        # - schedule: cron(45 3 * * ? *)
-    #   name: PlaylistFollowers
-    #   definition:
-    #     Comment: "Playlist - Daily Follower data for all playlists."
-    #     StartAt: GetUnprocessedPlaylists
-    #     States:
-    #       CleanInput:
-    #         Type: Pass
-    #         Result: {}
-    #         Next: GetUnprocessedPlaylists
-    #       GetUnprocessedPlaylists:
-    #         Type: Task
-    #         Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_daily_unprocessed_playlists_followers"
-    #         ResultPath: "$.playlists"
-    #         OutputPath: "$"
-    #         Next: GetArrayLength
-    #       GetArrayLength:
-    #         Type: Task
-    #         Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
-    #         InputPath: "$.playlists"
-    #         ResultPath: "$.length"
-    #         OutputPath: "$"
-    #         Next: ProcessingChoice
-    #       ProcessingChoice:
-    #         Type: Choice
-    #         Choices:
-    #           - Variable: "$.length"
-    #             NumericEquals: 0
-    #             Next: Done
-    #           - Variable: "$.length"
-    #             NumericGreaterThan: 0
-    #             Next: Playlist Followers ABC
-    #       Playlist Followers ABC:
-    #         Type: Parallel
-    #         Branches:
-    #           - StartAt: Playlist Followers A
-    #             States:
-    #               Playlist Followers A:
-    #                 InputPath: "$.playlists[0:50]"
-    #                 Type: Task
-    #                 Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
-    #                 End: true
-    #           - StartAt: Playlist Followers B
-    #             States:
-    #               Playlist Followers B:
-    #                 InputPath: "$.playlists[50:100]"
-    #                 Type: Task
-    #                 Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
-    #                 End: true
-    #           - StartAt: Playlist Followers C
-    #             States:
-    #               Playlist Followers C:
-    #                 InputPath: "$.playlists[100:150]"
-    #                 Type: Task
-    #                 Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_daily_followers"
-    #                 End: true
-    #         Next: CleanInput
-    #       Done:
-    #         Type: Pass
-    #         End: true
-
     playlist_update_all_user_playlists:
       events:
         # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
@@ -985,25 +921,6 @@ stepFunctions:
                 IntervalSeconds: 3
                 MaxAttempts: 10
                 BackoffRate: 1.5
-            End: true
-
-
-    # TODO: reroute all above step functions to reference functions created above in the functions section. This will allow a serverless configuration without having to touch the AWS config in the UI
-    # this spotify_streaming_dev_test works beautifully!
-    spotify_streaming_dev_test:
-      name: SpotifyStreamingDevTest
-      definition:
-        Comment: "Playlist - Update all playlists by users. Once a week or month update. Input can be a 'user' key with an array of spotify users, or defaults to all users in the db"
-        StartAt: input data
-        States:
-          input data:
-            Type: Pass
-            Result:
-              previous: 'latest'
-            Next: spotify_streaming
-          spotify_streaming:
-            Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-spotify_streaming"
             End: true
 
     playlist_daily_track_position:
