@@ -325,7 +325,7 @@ stepFunctions:
           CleanInput:
             Type: Pass
             Result:
-              date_str: '2018-02-01'
+              # date_str: '2018-02-01'
               chartIndex: 0
               chart_service: 'apple-music'
               kind: 'top-songs'
@@ -439,7 +439,7 @@ stepFunctions:
           CleanInput:
             Type: Pass
             Result:
-              date_str: '2018-02-01' #for user-defined processing of a specific date... shouldn't have to be used, however.
+              # date_str: '2018-02-01' #for user-defined processing of a specific date... shouldn't have to be used, however.
               chartIndex: 1
               chart_service: 'itunes-music'
               kind: 'top-songs'
@@ -554,7 +554,7 @@ stepFunctions:
           CleanInput:
             Type: Pass
             Result:
-              date_str: '2018-02-01'
+              # date_str: '2018-02-01'
               chartIndex: 2
               chart_service: 'itunes-music'
               kind: 'top-albums'
@@ -660,7 +660,8 @@ stepFunctions:
     apple_sales_music_videos:
       name: AppleSalesMusicVideos
       events:
-        - schedule: cron(0 1 * * ? *)
+        # music videos are updated later in the day, so we set it to run later
+        - schedule: cron(0 4 * * ? *)
       definition:
         Comment: "Apple iTunes Sales for Music Videos"
         StartAt: CleanInput
@@ -871,7 +872,7 @@ stepFunctions:
                     Next: Playlist Update All A
                   Playlist Update All A:
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_update_all_playlists"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-playlist_periodic_update_all_playlists_by_users"
                     End: true
               - StartAt: Playlist Users B
                 States:
@@ -882,7 +883,7 @@ stepFunctions:
                     Next: Playlist Update All B
                   Playlist Update All B:
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_update_all_playlists"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-playlist_periodic_update_all_playlists_by_users"
                     End: true
               - StartAt: Playlist Users C
                 States:
@@ -898,7 +899,7 @@ stepFunctions:
                     Next: Playlist Update All C
                   Playlist Update All C:
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_update_all_playlists"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-playlist_periodic_update_all_playlists_by_users"
                     End: true
               - StartAt: Playlist Users D
                 States:
@@ -913,7 +914,7 @@ stepFunctions:
                     Next: Playlist Update All D
                   Playlist Update All D:
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:playlist_update_all_playlists"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-playlist_periodic_update_all_playlists_by_users"
                     End: true
             Retry:
               - ErrorEquals:

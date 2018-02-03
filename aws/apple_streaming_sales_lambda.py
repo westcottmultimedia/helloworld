@@ -241,7 +241,7 @@ def append_apple_id_from_db(items, db_table_name):
         SELECT id
         FROM {}
         WHERE service_id = 2
-        AND service_{}_id = {}
+        AND service_{}_id = '{}'
     """
 
     for apple_id, value in items.items():
@@ -317,7 +317,7 @@ def append_music_video_data(items, region):
                     count_new_items += 1
             print('{} new music videos with ISRC'.format(count_new_items))
     else:
-        logger.warn("Region {} music videos haven't been looked up by the API. Check for empty isrc for music video ids: {}".format(region, videos_to_lookup))
+        print("There are no music videos to look up!")
 
     return items
 
@@ -415,7 +415,8 @@ def unprocessed_regions(chart_service, kind, date_str = TODAY):
 def strip_region_from_url(chart_service, kind, url):
     start = 'https://rss.itunes.apple.com/api/v1'
     m = re.search('{}/(.*)/{}/{}'.format(start, chart_service, kind), url)
-    return m.group(1)
+    country_code = m.group(1)
+    return country_code
 
 # TrackDatabase class start
 #
@@ -488,7 +489,7 @@ class TrackDatabase(object):
         self.table_stats['playlist_track_position']['start_count'] = ptps
         print("# Track Position Stats: {}".format(ptps))
 
-    def print_region_status_stats(self, date_stats = date.today().strftime('%Y-%m-%d')):
+    def print_region_status_stats(self, date_stats = TODAY):
         query_str = '''
             SELECT *
             FROM processed
@@ -695,19 +696,11 @@ class TrackDatabase(object):
         Retrieve the list of processed urls for a type (album, song, music-video) and date
         """
         query = "SELECT url from processed WHERE url like '%{}/{}/all/200/explicit.json_{}%'".format(chart_service, kind, date_str)
-
-        print('QUERY IS:', query)
-
         self.c.execute(query)
-
         rows = self.c.fetchall()
-
-        print('get processed by kind rows', rows)
-
         urls = []
         for row in rows:
             urls.append(row[0])
-        print('urls', urls)
         return urls
 
     # update stats functions
@@ -874,9 +867,6 @@ class TrackDatabase(object):
         for track_id, item in items.items():
             if type(item) is dict:
                 position = item['position']
-
-                print('here is each item', item)
-                print('apple id db', item.get('apple_id_db'))
 
                 if 'apple_id_db' in item:
                     track_id = item['apple_id_db']
