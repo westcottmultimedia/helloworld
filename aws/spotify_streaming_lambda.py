@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, './common_copy')
+sys.path.insert(0, './aws_packages')
 
 import csv, codecs, re, json, os, base64, time, hashlib, ssl, datetime, logging, psycopg2
 from urllib.request import Request, urlopen
@@ -41,6 +41,9 @@ REGIONS_TOTAL = [
     'nl','no','nz','pa','pe','ph','pl','pt','py','se','sg',
     'sk','sv','th','tr','tw','uy'
 ]
+
+YESTERDAY = (datetime.utcnow() - timedelta(days = 1, hours=8)).strftime('%Y-%m-%d')
+
 
 # NOTE: add to this list as more regions are discovered without daily downloads
 REGIONS_WITHOUT_DAILY = ['bg', 'cy', 'ni']
@@ -424,6 +427,25 @@ def get_track_id_from_url(url):
     assert matches, "No track ID found for {}".format(url)
     return matches.group(1)
 
+def get_unprocessed_regions_by_date(date_str = YESTERDAY):
+    processed_urls = db.get_processed_by_date(date_str)
+
+    processed_regions = []
+    for url in processed_urls:
+        processed_regions.append(strip_region_from_url(url))
+
+    regions = list(set(REGIONS).difference(processed_regions))
+
+    return regions
+
+# Takes a url such as 'https://spotifycharts.com/regional/ee/daily/2018-02-01/download'
+# and RETURNS the country code, ie. 'ee'
+def strip_region_from_url(url):
+    start = 'https://spotifycharts.com/regional'
+    m = re.search('{}/(.*)/daily/'.format(start), url)
+    country_code = m.group(1)
+    return country_code
+
 # TrackDatabase class start
 #
 #
@@ -464,8 +486,17 @@ class TrackDatabase(object):
         print('Size: {}'.format(size))
         return
 
+    def get_processed_by_date(self, date_str):
+        query = "SELECT url from processed WHERE url like '%{}/download%'".format(date_str)
+        self.c.execute(query)
+        rows = self.c.fetchall()
+        urls = []
+        for row in rows:
+            urls.append(row[0])
+        return urls
+
     # default date to update is the previous day
-    def update_regions(self, update_date = (date.today() - timedelta(days = 1)).strftime('%Y-%m-%d')):
+    def update_regions(self, update_date = YESTERDAY):
 
         regions_processed = []
         start_url = 'https://spotifycharts.com/regional/'
@@ -514,6 +545,7 @@ class TrackDatabase(object):
                 (url)
                 VALUES
                 (%s)
+                ON CONFLICT DO NOTHING
             """, [url])
 
             self.db.commit()
@@ -666,6 +698,7 @@ class TrackDatabase(object):
                             (service_id, artist_id, genre)
                             VALUES
                             (%s, %s, %s)
+                            ON CONFLICT DO NOTHING
                             """,
                             (service_id, artist_id, genre)
                         )
@@ -776,7 +809,7 @@ class TrackDatabase(object):
         row = self.c.fetchone()
         return row[0] if row else False
 
-def process(mode = (date.today() - timedelta(days = 0)).strftime('%Y-%m-%d')):
+def process(mode = YESTERDAY, regions = REGIONS):
     """
     Process each region for "date" mode
     Can be YYYY-MM-DD, "watch", "all", or "latest"
@@ -784,16 +817,11 @@ def process(mode = (date.today() - timedelta(days = 0)).strftime('%Y-%m-%d')):
     # TODO: could extract the loops, and while loop to
     # wrap the entire process(mode) function call in the AWS handler
 
-    global db # for the try/except block to reset db if it for some reason doesn't exist
-
     starttime_total = datetime.now() # timestamping
 
     service_name = 'Spotify'
 
     loops = 0
-
-    # set the initial set of regions to process
-    regions = REGIONS
 
     # set dates to process
     # find latest date PER REGION.
@@ -873,26 +901,42 @@ def process(mode = (date.today() - timedelta(days = 0)).strftime('%Y-%m-%d')):
             # update loop count
             print('rerunning loop')
             loops += 1
-
-        except psycopg2.InterfaceError as e:
-            db = TrackDatabase()
-            print('InterfaceError: ', e)
-            print('rerunning loop')
-
+        except Exception as e:
+            print(e)
+            continue
 
 # AWS LAMBDA HANDLER---
 def handler(event, context):
     global db
 
-    # set global db object
+    # setup
     db = TrackDatabase()
 
     # aws handler input
-    # test change here ;)
-    mode = event['previous']
-    process(mode)
+    mode = event.setdefault('date_str', YESTERDAY)
+    regions = event['regions']
+
+    # Work werk werk werk werk
+    process(mode, regions)
 
     # clean up
     db.close_database()
     print('closed database connection')
     return 'finished spotify'
+
+
+def get_unprocessed_spotify_regions_handler(event, context):
+    global db
+
+    # setup
+    db = TrackDatabase()
+
+    # AWS handler input
+    # in serverless.yml, user can input date_str
+    date_str = event.setdefault('date_str', YESTERDAY)
+    regions = get_unprocessed_regions_by_date(date_str)
+
+    # clean up
+    db.close_database()
+    print('closed database connection')
+    return regions
