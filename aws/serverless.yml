@@ -93,8 +93,8 @@ functions:
   # Recommended to update followers for ALL playlists, once a week or once a month
   # This will catch and release playlists that hit or fall below the 1000 (?) follower count threshold
   # !!! IMPORTANT: to update the DATE_STR of getting the minimum follower count from the db function once this function is re-run.
-  playlist_periodic_all_playlist_track_position:
-    handler: playlist_lambda.periodic_process_daily_track_position_handler
+  FetchAllPlaylistPositions:
+    handler: playlist_lambda.fetch_all_playlist_positions_handler
     timeout: 300
 
   # Refresh all playlists' info of selected users
@@ -161,12 +161,12 @@ stepFunctions:
   stateMachines:
     # start the RDS instance
     # for PST time, subtract 8 hours (-8) from schedule time
-    beats_rds_start:
+    StartRDSBeats:
       events:
         - schedule: cron(0 23 * * ? *)
-      name: BeatsRDSStart
+      name: StartRDSBeats
       definition:
-        Comment: "Beats RDS Start"
+        Comment: "Start the RDS instance of Beats"
         StartAt: action
         States:
           action:
@@ -184,12 +184,12 @@ stepFunctions:
     # stop the RDS instance
     # for PST time, subtract 8 hours (-8) from schedule time
     #
-    beats_rds_stop:
+    StopRDSBeats:
       events:
         - schedule: cron(0 11 * * ? *)
-      name: BeatsRDSStop
+      name: StopRDSBeats
       definition:
-        Comment: "Beats RDS Stop"
+        Comment: "Stop the RDS instance of Beats"
         StartAt: action
         States:
           action:
@@ -1022,8 +1022,8 @@ stepFunctions:
             Type: Pass
             End: true
 
-    periodic_all_track_position:
-      name: PeriodicAllPlaylistTracks
+    FetchAllPlaylistPositions:
+      name: FetchAllPlaylistPositions
       definition:
         Comment: "Get all playlists from the db to process track positions"
         StartAt: CleanInput
@@ -1064,7 +1064,7 @@ stepFunctions:
                   Process Playlists A:
                     InputPath: "$.playlists[0:5]"
                     Type: Task
-                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_periodic_all_playlist_track_position"
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchAllPlaylistPositions"
                     End: true
                     Retry:
                       - ErrorEquals: ["States.Timeout"]
@@ -1080,7 +1080,7 @@ stepFunctions:
                   Process Playlists B:
                     InputPath: "$.playlists[5:10]"
                     Type: Task
-                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_periodic_all_playlist_track_position"
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchAllPlaylistPositions"
                     End: true
                     Retry:
                       - ErrorEquals: ["States.Timeout"]
@@ -1096,7 +1096,7 @@ stepFunctions:
                   Process Playlists C:
                     InputPath: "$.playlists[10:15]"
                     Type: Task
-                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_periodic_all_playlist_track_position"
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchAllPlaylistPositions"
                     End: true
                     Retry:
                       - ErrorEquals: ["States.Timeout"]
