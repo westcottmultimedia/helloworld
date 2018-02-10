@@ -781,7 +781,7 @@ stepFunctions:
 
     # NOTE: TODO: implement similar playlist length in ResultPath, OutputPath to do a ProcessingCHoice check that's smarter than =0 and >0 (leads to endless loop)
     FetchPlaylistFollowers:
-      name: PlaylistDailyFollowers
+      name: FetchPlaylistFollowers
       definition:
         Comment: "Playlist - Daily Follower data for all playlists."
         StartAt: GetUnprocessedPlaylists
