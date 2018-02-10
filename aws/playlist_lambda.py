@@ -86,7 +86,7 @@ def get_page(url, count=0, last_request=0, return_full=False):
     if last_request > time.time()-1:
         time.sleep(SECONDS_BETWEEN_RETRIES)
     try:
-        r = urlopen(url, context=SSL_CONTEXT)
+        r = urlopen(url.encode('utf-8'), context=SSL_CONTEXT)
         return r if return_full else r.read().decode('utf-8')
     except Exception as e:
         count += 1
@@ -214,17 +214,17 @@ class Spotify(object):
             return json.loads(data)
 
         except URLError as e:
-            print('URLError... ', str(e.reason), ' for ', url)
+            print('request issue! URLError in the request... ', str(e.reason), ' for ', url)
             return False
         except ConnectionResetError as e:
-            print('Error 54: Connection reset error. ', str(e))
+            print('request issue! Error 54: Connection reset error. ', str(e))
             return get_page(url, cache, count, time.time())
         except HTTPError as err:
             if err.code == 400:
-                print('HTTP400 error... {}'.format(url))
+                print('request issue! HTTP400 error... {}'.format(url))
                 return False
             elif err.code == 401:
-                print('HTTP401 error... {}'.format(url))
+                print('request issue! HTTP401 error... {}'.format(url))
                 return False
         except SocketError as e:
             if e.errno != errno.ECONNRESET:
@@ -552,7 +552,7 @@ class TrackDatabase(object):
             raise e
         return True
 
-    def is_playlist_followers_processed(self, playlist_id, playlist_version):
+    def is_playlist_followers_processed(self, playlist_id, playlist_version, date_str = TODAY):
         """
         Has playlist followers already been processed?
         """
@@ -561,14 +561,16 @@ class TrackDatabase(object):
             SELECT *
             FROM playlist_processed
             WHERE
-                playlist_id = {}
+                playlist_id = %s
                 AND
-                playlist_version = '{}'
+                playlist_version = %s
                 AND
                 is_followers_processed = True
+                AND
+                date_str = %s
         """
-        print('is_playlist_followers_processed:', playlist_id, playlist_version)
-        self.c.execute(query.format(playlist_id, playlist_version))
+        # self.c.execute(query.format(playlist_id, playlist_version, date_str))
+        self.c.execute(query, (playlist_id, playlist_version, date_str))
 
         if self.c.fetchone():
             return True
@@ -576,7 +578,7 @@ class TrackDatabase(object):
 
     def is_playlist_track_position_processed(self, playlist_id, playlist_version):
         """
-        Has playlist track position already been processed?
+        Has playlist track position already been processed? (on ANY date)
         """
 
         query = """
@@ -585,7 +587,7 @@ class TrackDatabase(object):
             WHERE
                 playlist_id = %s
                 AND
-                playlist_version = '%s'
+                playlist_version = %s
                 AND
                 is_track_position_processed = True
         """
@@ -602,7 +604,7 @@ class TrackDatabase(object):
             WHERE
                 playlist_id = %s
                 AND
-                playlist_version = '%s'
+                playlist_version = %s
                 AND
                 is_track_position_processed in (True, False)
         """
@@ -707,14 +709,12 @@ class TrackDatabase(object):
                     (playlist_id, playlist_version, date_str)
                 )
             elif is_followers_processed and is_track_position_processed is None:
-                print('FOLLOWERS PROCESSING')
                 self.c.execute(
                     query_upsert_followers.format(playlist_version),
                     (playlist_id, playlist_version, date_str, is_followers_processed,
                     is_followers_processed,
                     playlist_id, date_str)
                 )
-                print('FOLLOWERS PROCESSED')
             elif is_track_position_processed and is_followers_processed is None:
                 self.c.execute(
                     query_upsert_track_position.format(playlist_version),
@@ -730,14 +730,14 @@ class TrackDatabase(object):
                     query_upsert_followers,
                     (playlist_id, playlist_version, date_str, is_followers_processed,
                     is_followers_processed,
-                    playlist_id, playlist_version, date_str)
+                    playlist_id, date_str)
                 )
 
                 self.c.execute(
                     query_upsert_track_position,
                     (playlist_id, playlist_version, date_str, is_track_position_processed,
                     is_track_position_processed,
-                    playlist_id, playlist_version, date_str)
+                    playlist_id, date_str)
                 )
         # except IndexError:
         #     print('')
@@ -1083,14 +1083,26 @@ class TrackDatabase(object):
 
     # updates the db to store latest version of a playlist
     def update_playlist_latest_version(self, playlist):
-        self.c.execute("""
-            UPDATE playlist
-            SET latest_version = %s
-            WHERE id = %s
-            """,
-            (playlist['snapshot_id'], playlist['db_playlist_id'])
-        )
+        if playlist.get('snapshot_id') is not None:
+            self.c.execute("""
+                UPDATE playlist
+                SET latest_version = %s
+                WHERE id = %s
+                """,
+                (playlist['snapshot_id'], playlist['db_playlist_id'])
+            )
 
+    def flag_playlist_version_change(self, playlist):
+        self.c.execute("""
+            UPDATE playlist_processed
+            SET is_version_updated = %s
+            WHERE
+                playlist_id = %s
+                and
+                date_str = %s
+        """,
+            (not playlist['playlist_version_same'], playlist['db_playlist_id'], TODAY)
+        )
 
     # NOTE: could query is_playlist_processed for followers flag to check before selecting value
     def get_followers_for_playlist_from_db(self, playlist, date_str):
@@ -1112,7 +1124,7 @@ class TrackDatabase(object):
 
         return True if row else False
 
-    def get_playlists_with_minimum_follower_count_from_db(self, followers = 1000, date_of_followers = '2018-01-12'):
+    def get_playlists_with_minimum_follower_count_from_db(self, followers = 1000, date_of_followers = '2018-02-02'):
         query = """
             SELECT
                 playlist.id,
@@ -1224,11 +1236,12 @@ class TrackDatabase(object):
             """, (service_id, db_playlist_id, playlist['snapshot_id'], playlist['followers'], date_str))
 
             print("{} playlist id's followers added to db".format(db_playlist_id))
-
+            return True
         except psycopg2.IntegrityError as e:
             if e.pgcode != '23502': # Not Null constraint: https://www.postgresql.org/docs/8.1/static/errcodes-appendix.html
                 print('Postgresql Integrity Error: ', e)
             print('Adding playlist followers to db failed...')
+            return False
 
     def get_db_tracks_by_playlist(self, service_playlist_id, playlist_version):
     # get all info from db from most recent date of latest playlist version
@@ -1374,22 +1387,28 @@ def append_playlist_followers_and_update_version(playlists):
         # NOTE: can change to check
         # if not db.get_followers_for_playlist_from_db(playlist, TODAY):
         try:
-            if not db.is_playlist_followers_processed(playlist['db_playlist_id'], playlist['snapshot_id']):
+            if not db.is_playlist_followers_processed(playlist['db_playlist_id'], playlist['snapshot_id'], TODAY):
+                # get data
                 owner_id = playlist.get('owner_id')
-                followers, snapshot_id = get_followers_for_playlist(owner_id, playlist_id)
-                playlists[playlist_id]['followers'] = followers # NOTE: until you change track id to be spotify track id, there will be problems finding the followers
+
+                # if getting followers from api fails, it returns None, NoneType
+                # which will result in Null values in the db
+                followers, snapshot_id = get_followers_for_playlist_from_api(owner_id, playlist_id)
+                playlists[playlist_id]['followers'] = followers
                 playlists[playlist_id]['snapshot_id'] = snapshot_id
 
-                if followers and owner_id and playlist_id:
-                    print('{} followers for {}:{}'.format(format(followers, ',d'), owner_id, playlist_id))
-
                 # write to db
-                db.add_playlist_followers(SERVICE_ID, TODAY, playlist)
+                is_followers_added = db.add_playlist_followers(SERVICE_ID, TODAY, playlist)
                 db.update_playlist_latest_version(playlist)
 
                 # mark playlist as followers having been processed
-                db.set_playlist_processed(playlist['db_playlist_id'], snapshot_id, TODAY, is_followers_processed = True)
+                if is_followers_added:
+                    db.set_playlist_processed(playlist['db_playlist_id'], snapshot_id, TODAY, is_followers_processed = True)
+                else:
+                    db.set_playlist_processed(playlist['db_playlist_id'], snapshot_id, TODAY, is_followers_processed = False)
 
+                #  DOES THIS HAVE PLAYLIST VERSION SAME KEY??>
+                db.flag_playlist_version_change(playlist)
             else:
                 print('{} db followers already in db for {}'.format(playlist_id, TODAY))
         except psycopg2.IntegrityError as e:
@@ -1397,16 +1416,19 @@ def append_playlist_followers_and_update_version(playlists):
             continue
     return playlists
 
-def get_followers_for_playlist(user_id, playlist_id):
+def get_followers_for_playlist_from_api(user_id, playlist_id):
     query_params = 'fields=followers.total,snapshot_id'
     endpoint = '{}/users/{}/playlists/{}?{}'.format(SPOTIFY_API, user_id, playlist_id, query_params)
 
+    # r will return the json data or False (if error in the request)
     r = spotify.request(endpoint)
 
     if r and r['followers']:
         followers = r['followers']['total']
         snapshot_id = r['snapshot_id']
         return (followers, snapshot_id)
+    else:
+        print("Couldn't get followers or snapshot id for user {} and playlist {}... request returned False".format(user_id, playlist_id))
 
     return (None, None)
 
@@ -1516,7 +1538,11 @@ def get_db_owner_id(service_id, playlist):
         raise
         return None
 
-# returns playlist id from db, else creates the playlist and returns the newly created id
+# Returns: playlist id from db (INT), as well as whether it's a new 'snapshot' or version of the playlist (BOOL)
+# Logic:
+#   -if the playlist exists, return its ID. Else, create the playlist, return it's newly created ID
+#   -check latest version from api against the latest stored in the db. Compare and return whether its the same (TRUE or FALSE)
+#
 def get_db_playlist_info(playlist):
 
     try:
@@ -1526,7 +1552,6 @@ def get_db_playlist_info(playlist):
         # compare playlist version, set flag
         if playlist['snapshot_id'] == playlist_version:
             playlist_version_same = True
-            print('{} Spotify playlist versions are the same for playlist id: {}'.format(PRINT_PREFIX, db_playlist_id))
         else:
             playlist_version_same = False
 
@@ -1552,6 +1577,8 @@ def append_db_owner_id(playlists):
             raise
     return playlists
 
+# appends the playlist id as well as whether the version number is the same
+#
 def append_db_playlist_info(playlists):
     for playlist_id, playlist in playlists.items():
         try:
@@ -1713,7 +1740,7 @@ def unique_everseen(iterable, key=None):
 """
 
 # NOTE: batch update by users once a week or something. Not Used YET!!!
-def process_update_all_playlists_by_users(users):
+def refresh_playlists_of_users(users):
     # INITIALIZE VARIABLES
     service_name = 'Spotify'
 
@@ -1736,6 +1763,7 @@ def process_daily_followers(playlists_list):
 
     # getting ready for liftoff! to the moon!
     playlists = convert_list_to_dict_by_attribute(playlists_list, 'playlist_id')
+    playlists = append_db_playlist_info(playlists)
 
     # need to update latest version and follower count.
     playlists = append_playlist_followers_and_update_version(playlists)
@@ -1921,7 +1949,7 @@ def handler(event, context):
     print('closed database connection')
     return 'finished spotify'
 
-def periodic_update_all_playlists_by_users_handler(event, context):
+def refresh_playlists_of_users_handler(event, context):
     global spotify
     global db
 
@@ -1938,14 +1966,14 @@ def periodic_update_all_playlists_by_users_handler(event, context):
     if event.get('users'):
         users = event.get('users')
 
-    process_update_all_playlists_by_users(users)
+    refresh_playlists_of_users(users)
 
     # clean up
     db.close_database()
     print('closed database connection')
     return 'finished spotify updating of all playlists'
 
-def daily_followers_handler(event, context):
+def fetch_playlist_followers_handler(event, context):
     global spotify
     global db
 
@@ -1969,7 +1997,7 @@ def daily_followers_handler(event, context):
     return 'finished playlist followers'
 
 
-def daily_track_position_handler(event, context):
+def fetch_playlist_positions_handler(event, context):
     global spotify
     global db
 
@@ -2025,13 +2053,16 @@ def unprocessed_track_playlists(event, context):
     db = TrackDatabase()
     min_follower_pl = db.get_playlists_with_minimum_follower_count_from_db()
 
-    print('min followers', len(min_follower_pl))
-    # filter out playlists... if it's been attempted (true or false, false if it failed for some reason like URLError)
-    # can also try using is_playlist_track_position_processed()
+    # filter out playlists... if it's been attempted at all (ie. is_track_position_processed true or false, false if it failed for some reason like URLError)
+    # if it's NULL in the db, then it hasn't been attempted yet
+    #
+    # NOTE: also can use is_version_updated boolean to help determine whether to process it or not.
     #
     unprocessed = [pl for pl in min_follower_pl if not db.is_playlist_track_position_attempted(pl['db_playlist_id'], pl['snapshot_id'])]
-    print(len(unprocessed), unprocessed)
 
+    # batch returns just the first 15 playlists.
+    # NOTE: Not sure this is could do a simliar thing like the apple/spotify streaming where you count
+     #
     batch = temporary_remove_unwanted_playlists(unprocessed)[0:15]
 
     db.close_database()

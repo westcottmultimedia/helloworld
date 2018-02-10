@@ -97,9 +97,11 @@ functions:
     handler: playlist_lambda.periodic_process_daily_track_position_handler
     timeout: 300
 
-  # One-time processing of all playlists into the database
-  playlist_periodic_update_all_playlists_by_users:
-    handler: playlist_lambda.periodic_update_all_playlists_by_users_handler
+  # Refresh all playlists' info of selected users
+  # This function retrieves new playlists from our user list from the Spotify API.
+  # Periodically run this to update the list of playlists
+  RefreshPlaylistsOfUsers:
+    handler: playlist_lambda.refresh_playlists_of_users_handler
     timeout: 300
 
   # ---- POSITION
@@ -111,8 +113,8 @@ functions:
     handler: playlist_lambda.unprocessed_track_playlists
     timeout: 30
 
-  playlist_daily_track_position:
-    handler: playlist_lambda.daily_track_position_handler
+  FetchPlaylistPositions:
+    handler: playlist_lambda.fetch_playlist_positions_handler
     timeout: 300
 
   # ----- GENERATE REPORTING
@@ -859,11 +861,11 @@ stepFunctions:
             Type: Pass
             End: true
 
-    playlist_update_all_user_playlists:
+    RefreshPlaylistsOfUsers:
       events:
         # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
         # - schedule: cron(45 3 * * ? *)
-      name: PlaylistUpdateAllUserPlaylists
+      name: RefreshPlaylistsOfUsers
       definition:
         Comment: "Playlist - Update all playlists by users. Once a week or month update. Input can be a 'user' key with an array of spotify users, or defaults to all users in the db"
         StartAt: "Playlist Update All ABCD"
@@ -880,7 +882,7 @@ stepFunctions:
                     Next: Playlist Update All A
                   Playlist Update All A:
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-playlist_periodic_update_all_playlists_by_users"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-RefreshPlaylistsOfUsers"
                     End: true
               - StartAt: Playlist Users B
                 States:
@@ -891,7 +893,7 @@ stepFunctions:
                     Next: Playlist Update All B
                   Playlist Update All B:
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-playlist_periodic_update_all_playlists_by_users"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-RefreshPlaylistsOfUsers"
                     End: true
               - StartAt: Playlist Users C
                 States:
@@ -907,7 +909,7 @@ stepFunctions:
                     Next: Playlist Update All C
                   Playlist Update All C:
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-playlist_periodic_update_all_playlists_by_users"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-RefreshPlaylistsOfUsers"
                     End: true
               - StartAt: Playlist Users D
                 States:
@@ -922,7 +924,7 @@ stepFunctions:
                     Next: Playlist Update All D
                   Playlist Update All D:
                     Type: Task
-                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-playlist_periodic_update_all_playlists_by_users"
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-RefreshPlaylistsOfUsers"
                     End: true
             Retry:
               - ErrorEquals:
@@ -932,8 +934,8 @@ stepFunctions:
                 BackoffRate: 1.5
             End: true
 
-    playlist_daily_track_position:
-      name: PlaylistTracks
+    FetchPlaylistPositions:
+      name: FetchPlaylistPositions
       definition:
         Comment: "Get playlists from the db to process track positions, with 15 playlists at a time"
         StartAt: GetUnprocessedPlaylists
@@ -972,7 +974,7 @@ stepFunctions:
                   Process Playlists A:
                     InputPath: "$.playlists[0:5]"
                     Type: Task
-                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_daily_track_position"
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
                     End: true
                     Retry:
                       - ErrorEquals: ["States.Timeout"]
@@ -988,7 +990,7 @@ stepFunctions:
                   Process Playlists B:
                     InputPath: "$.playlists[5:10]"
                     Type: Task
-                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_daily_track_position"
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
                     End: true
                     Retry:
                       - ErrorEquals: ["States.Timeout"]
@@ -1004,7 +1006,7 @@ stepFunctions:
                   Process Playlists C:
                     InputPath: "$.playlists[10:15]"
                     Type: Task
-                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-playlist_daily_track_position"
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
                     End: true
                     Retry:
                       - ErrorEquals: ["States.Timeout"]
