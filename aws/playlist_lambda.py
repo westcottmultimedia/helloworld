@@ -59,8 +59,12 @@ CLASSICAL_PLAYLIST_USERS = ['sinfinimusic.nl', 'sinfinimusic', 'peacefulclassics
 
 # current language playlists
 # Playlists where name like '%Learn' and owner_id = 9 (or Spotify's owner id)
-LANGUAGE_PLAYLIST_DB_IDS = [1153, 1162, 1163, 1164, 1165, 1166, 1167, 1168, 1169, 1170, 960, 1006, 978, 961, 962, 984] # NOTE: added in from 960 onwards manually, since function was getting stuck
-LANGUAGE_PLAYLIST_SPOTIFY_IDS = ['37i9dQZF1DXc6li3e9oatQ', '37i9dQZF1DX1QCg8MO15wF', '37i9dQZF1DWTJSgpZmw7H2', '37i9dQZF1DWVrSKB2Pc3PY', '37i9dQZF1DWW6K9D6JN1rY', '37i9dQZF1DX0yHwYvqyUJQ', '37i9dQZF1DX2SgxzTVd6bU', '37i9dQZF1DX60lVXkfYly8', '37i9dQZF1DWSsCx004HXRd', '37i9dQZF1DWSIZLZz4Kogf']
+# LANGUAGE_PLAYLIST_DB_IDS = [1153, 1162, 1163, 1164, 1165, 1166, 1167, 1168, 1169, 1170, 960, 1006, 978, 961, 962, 984] # NOTE: added in from 960 onwards manually, since function was getting stuck
+UNWANTED_PLAYLIST_SPOTIFY_IDS = [
+    # orchestra/classical
+    '37i9dQZF1DX4sWSpwq3LiO', '37i9dQZF1DWYi4w24l7FTx', '37i9dQZF1DXah8e1pvF5oE', '37i9dQZF1DXddGd6mP5X2a',
+    '37i9dQZF1DXameWHxm60IU',
+    '37i9dQZF1DXc6li3e9oatQ', '37i9dQZF1DX1QCg8MO15wF', '37i9dQZF1DWTJSgpZmw7H2', '37i9dQZF1DWVrSKB2Pc3PY', '37i9dQZF1DWW6K9D6JN1rY', '37i9dQZF1DX0yHwYvqyUJQ', '37i9dQZF1DX2SgxzTVd6bU', '37i9dQZF1DX60lVXkfYly8', '37i9dQZF1DWSsCx004HXRd', '37i9dQZF1DWSIZLZz4Kogf']
 
 
 # max number of times to retry http requests
@@ -236,6 +240,8 @@ class Spotify(object):
 #
 # SPOTIFY CLASS END
 
+# GET IDS AND DATA FROM API METHODS
+#
 def get_isrc_by_id(tracks, track_id):
     """
     Return the isrc data for the track matching track_id
@@ -552,7 +558,7 @@ class TrackDatabase(object):
             raise e
         return True
 
-    def is_playlist_followers_processed(self, playlist_id, playlist_version, date_str = TODAY):
+    def is_playlist_followers_processed(self, db_playlist_id, playlist_version, date_str = TODAY):
         """
         Has playlist followers already been processed?
         """
@@ -570,13 +576,13 @@ class TrackDatabase(object):
                 date_str = %s
         """
         # self.c.execute(query.format(playlist_id, playlist_version, date_str))
-        self.c.execute(query, (playlist_id, playlist_version, date_str))
+        self.c.execute(query, (db_playlist_id, playlist_version, date_str))
 
         if self.c.fetchone():
             return True
         return False
 
-    def is_playlist_track_position_processed(self, playlist_id, playlist_version):
+    def is_playlist_position_processed(self, db_playlist_id, playlist_version):
         """
         Has playlist track position already been processed? (on ANY date)
         """
@@ -591,7 +597,7 @@ class TrackDatabase(object):
                 AND
                 is_track_position_processed = True
         """
-        self.c.execute(query, (playlist_id, playlist_version))
+        self.c.execute(query, (db_playlist_id, playlist_version))
 
         if self.c.fetchone():
             return True
@@ -877,6 +883,7 @@ class TrackDatabase(object):
                         (service_id, service_artist_id, artist)
                         VALUES
                         (%s, %s, %s)
+                        ON CONFLICT DO NOTHING
                         RETURNING id
                     """, (SERVICE_ID, service_artist_id, artist_name))
 
@@ -890,6 +897,7 @@ class TrackDatabase(object):
                         (service_id, artist_id, service_album_id, album, release_date, label)
                         VALUES
                         (%s, %s, %s, %s, %s, %s)
+                        ON CONFLICT DO NOTHING
                         RETURNING id
                     """, (SERVICE_ID, artist_id, service_album_id, track['album_name'], track.setdefault('album_release_date', None), track.setdefault('album_label', None) )
                     )
@@ -903,6 +911,7 @@ class TrackDatabase(object):
                         (service_id, artist_id, genre)
                         VALUES
                         (%s, %s, %s)
+                        ON CONFLICT DO NOTHING
                     """, (SERVICE_ID, artist_id, genre))
 
                 # update track table
@@ -913,6 +922,7 @@ class TrackDatabase(object):
                         (service_id, service_track_id, artist_id, album_id, track, isrc)
                         VALUES
                         (%s, %s, %s, %s, %s, %s)
+                        ON CONFLICT DO NOTHING
                         RETURNING id
                     """,
                         (SERVICE_ID, track_id, artist_id, album_id, track['track_name'], isrc)
@@ -930,7 +940,7 @@ class TrackDatabase(object):
                 (service_id, playlist_id, playlist_version, track_id, isrc, position, date_str)
                 VALUES
                 (%s, %s, %s, %s, %s, %s, %s)
-                RETURNING id
+                ON CONFLICT DO NOTHING
             """, (SERVICE_ID, db_playlist_id, playlist_version, db_track_id, isrc, position, date_str)
             )
 
@@ -985,7 +995,7 @@ class TrackDatabase(object):
 
     def get_album_id(self, service_id, service_album_id):
         """
-        Retrive service_album_id
+        Retrive album db id based on service album id
         INPUT:
             service_id: integer
             service_album_id: text
@@ -1082,7 +1092,7 @@ class TrackDatabase(object):
             return None
 
     # updates the db to store latest version of a playlist
-    def update_playlist_latest_version(self, playlist):
+    def update_latest_version(self, playlist):
         if playlist.get('snapshot_id') is not None:
             self.c.execute("""
                 UPDATE playlist
@@ -1101,7 +1111,7 @@ class TrackDatabase(object):
                 and
                 date_str = %s
         """,
-            (not playlist['playlist_version_same'], playlist['db_playlist_id'], TODAY)
+            (not playlist['is_playlist_version_same'], playlist['db_playlist_id'], TODAY)
         )
 
     # NOTE: could query is_playlist_processed for followers flag to check before selecting value
@@ -1287,7 +1297,7 @@ class TrackDatabase(object):
 
         return track_list
 
-def get_playlists_by_user(user_id, nextUrl=None):
+def get_playlists_for_user(user_id, nextUrl=None):
 
     if not nextUrl:
         endpoint = "{}/users/{}/playlists?limit={}".format(SPOTIFY_API, user_id, MAX_LIMIT_QUERY)
@@ -1313,22 +1323,21 @@ def get_playlists_by_user(user_id, nextUrl=None):
 
         # if there are more values to return, request more and add to the list
         if not r['next']:
-            # validate_playlist_owner(playlists, user_id)
             print('-----{} playlists-----'.format(user_id))
             return playlists
         else:
             print('...getting more playlists for {}'.format(user_id))
-            return playlists + get_playlists_by_user(user_id, r['next'])
+            return playlists + get_playlists_for_user(user_id, r['next'])
 
         return playlists
 
     except Exception as e:
         logger.warn(e)
 
-def get_all_playlists(users):
+def get_all_playlists_for_users(users):
     all_playlists = []
     for user in users:
-        user_playlists = get_playlists_by_user(user)
+        user_playlists = get_playlists_for_user(user)
         all_playlists += user_playlists
         print('{} playlists:'.format(len(user_playlists)))
         print_divider(len(user_playlists), '*')
@@ -1336,18 +1345,8 @@ def get_all_playlists(users):
     print('TOTAL PLAYLISTS FOR ALL USERS {}'.format(len(all_playlists)))
     return all_playlists
 
-# Playlist Helper functions
+# Print Helper
 #
-
-def validate_playlist_owner(playlists, user_id):
-    for p in playlists:
-        if p['owner'] != user:
-            logger.warning('Spotify user {} has playlist id {} of owner {}, uri: {}'.format(user_id, p['spotify_id'], p['owner'], p['uri']))
-
-def print_playlist_names(playlists):
-    for p in playlists:
-        print(p['name'])
-
 def print_divider(number, divider='-'):
     print(divider * number)
 
@@ -1372,9 +1371,9 @@ def get_daily_unprocessed_playlists_followers(limit = 150):
     return unprocessed_playlists
 
 # takes a list of playlist objects and removes objects where the playlist db id is in the unwanted list
-def temporary_remove_unwanted_playlists(playlists):
-    unwanted = LANGUAGE_PLAYLIST_DB_IDS
-    wanted = [pl for pl in playlists if pl['db_playlist_id'] not in unwanted]
+def remove_unwanted_playlists(playlists):
+    unwanted = UNWANTED_PLAYLIST_SPOTIFY_IDS
+    wanted = [pl for pl in playlists if pl['playlist_id'] not in unwanted]
     return wanted
 
 # Add follower count for playlists
@@ -1399,7 +1398,7 @@ def append_playlist_followers_and_update_version(playlists):
 
                 # write to db
                 is_followers_added = db.add_playlist_followers(SERVICE_ID, TODAY, playlist)
-                db.update_playlist_latest_version(playlist)
+                db.update_latest_version(playlist)
 
                 # mark playlist as followers having been processed
                 if is_followers_added:
@@ -1438,7 +1437,7 @@ def get_followers_for_playlist_from_api(user_id, playlist_id):
 #     try:
 #         r = spotify.request(endpoint)
 
-def get_tracks_by_playlist(user_id, playlist_id, tracks=[], nextUrl=None):
+def fetch_playlist_tracks_from_api(user_id, playlist_id, tracks=[], nextUrl=None):
     """
     Return value example:
     [
@@ -1516,7 +1515,7 @@ def get_tracks_by_playlist(user_id, playlist_id, tracks=[], nextUrl=None):
         else:
 
             print('Retrieving more tracks for playlist {}, running total: {}'.format(playlist_id, len(tracks)))
-            return get_tracks_by_playlist(user_id, playlist_id, tracks, r.get('next'))
+            return fetch_playlist_tracks_from_api(user_id, playlist_id, tracks, r.get('next'))
 
     except TypeError as e:
         logger.warn(e)
@@ -1585,11 +1584,11 @@ def append_db_playlist_info(playlists):
             playlists[playlist_id].setdefault('db_playlist_id', None)
             db_playlist_id, playlist_version_same = get_db_playlist_info(playlist)
             playlists[playlist_id]['db_playlist_id'] = db_playlist_id
-            playlists[playlist_id]['playlist_version_same'] = playlist_version_same
+            playlists[playlist_id]['is_playlist_version_same'] = playlist_version_same
 
             # if there's a newer version
             if not playlist_version_same:
-                db.update_playlist_latest_version(playlist)
+                db.update_latest_version(playlist)
 
         except Exception:
             raise
@@ -1598,12 +1597,13 @@ def append_db_playlist_info(playlists):
 
 # if playlist tracks for the playlist version are not in the db, add them
 
-def append_single_playlist_tracks(playlist):
+def append_data_and_add_single_playlist_positions(playlist):
     try:
         tracks_list = []
         tracks_dict = {}
 
-        tracks_list = get_tracks_by_playlist(playlist['owner_id'], playlist['playlist_id'])
+        # get tracks for the playlist from the API
+        tracks_list = fetch_playlist_tracks_from_api(playlist['owner_id'], playlist['playlist_id'])
 
         if len(tracks_list) > 0:
             tracks_dict = convert_list_to_dict_by_attribute(tracks_list, 'track_id')
@@ -1625,13 +1625,13 @@ def append_single_playlist_tracks(playlist):
 
 def append_all_playlist_tracks(playlists):
     for playlist_id, playlist in playlists.items():
-        append_single_playlist_tracks(playlist)
+        append_data_and_add_single_playlist_positions(playlist)
 
 def append_playlist_tracks(playlists):
     for playlist_id, playlist in playlists.items():
         try:
             # if daily track position is not processed
-            if not db.is_playlist_track_position_processed(playlist['db_playlist_id'], playlist['snapshot_id']):
+            if not db.is_playlist_position_processed(playlist['db_playlist_id'], playlist['snapshot_id']):
                 playlists[playlist_id].setdefault('tracks', {})
                 playlists[playlist_id].setdefault('is_track_list_from_db', False) # flag for how to insert tracks into db
 
@@ -1643,7 +1643,7 @@ def append_playlist_tracks(playlists):
                 # NOTE: we will not be writing to the DB when the playlist version is the same. Rather, the tracks for a
                 # playlist version will be queried on report runtime generation
                 #
-                if playlist.get('playlist_version_same'):
+                if playlist.get('is_playlist_version_same'):
                     playlists[playlist_id]['is_track_list_from_db'] = True
                     tracks_list = db.get_db_tracks_by_playlist(playlist_id, playlist['snapshot_id'])
                     tracks_dict = convert_list_to_dict_by_attribute(tracks_list, 'track_id') # track_id is spotify track id (not db track id)
@@ -1657,7 +1657,7 @@ def append_playlist_tracks(playlists):
                     playlists[playlist_id]['is_track_list_from_db'] = False # reset flag
 
                     # construct the tracks list
-                    tracks_list = get_tracks_by_playlist(playlist['owner_id'], playlist['playlist_id'])
+                    tracks_list = fetch_playlist_tracks_from_api(playlist['owner_id'], playlist['playlist_id'])
                     tracks_dict = convert_list_to_dict_by_attribute(tracks_list, 'track_id')
                     # tracks_dict = playlists[playlist_id].setdefault('tracks', {})
                     tracks_dict = append_db_ids(tracks_dict)
@@ -1669,7 +1669,6 @@ def append_playlist_tracks(playlists):
                 playlists[playlist_id]['tracks'] = tracks_dict
 
                 # write to database, batman
-                # db.add_playlist_tracks(TODAY, playlist['db_playlist_id'], playlist['snapshot_id'], tracks_dict, playlist['is_track_list_from_db'])
                 db.add_playlist_tracks(TODAY, playlist['db_playlist_id'], playlist['snapshot_id'], tracks_dict)
 
                 # mark it as Processed, hulkster
@@ -1726,18 +1725,6 @@ def unique_everseen(iterable, key=None):
                 seen_add(k)
                 yield element
 
-"""
-0. Create Playlist TABLE
-0. Create Playlist Creator TABLE
-0. Create song Playlist table
-
-
-4. get position:
-    https://developer.spotify.com/web-api/get-playlist/
-        r.items.xxx.popularity
-
-    https://api.spotify.com/v1/users/{user_id}/playlists/{playlist_id}/tracks
-"""
 
 # NOTE: batch update by users once a week or something. Not Used YET!!!
 def refresh_playlists_of_users(users):
@@ -1745,9 +1732,7 @@ def refresh_playlists_of_users(users):
     service_name = 'Spotify'
 
     # NOTE: DO NOT GET ALL PLAYLISTS EVERY TIME
-    playlists_list = get_all_playlists(users)
-    pprint('update_all_playlists_by_users debug: playlist list is this long: {}'.format(len(playlists_list)))
-
+    playlists_list = get_all_playlists_for_users(users)
     playlists = convert_list_to_dict_by_attribute(playlists_list, 'playlist_id')
     playlists = append_db_owner_id(playlists)
     playlists = append_db_playlist_info(playlists)
@@ -1784,9 +1769,9 @@ def process_daily_track_position(playlists_list):
         # count is updated daily.
         #
         if playlist['snapshot_id'] != db.get_playlist_version(playlist):
-            db.update_playlist_latest_version(playlist)
+            db.update_latest_version(playlist)
             try:
-                append_single_playlist_tracks(playlist)
+                append_data_and_add_single_playlist_positions(playlist)
                 db.set_playlist_processed(playlist['db_playlist_id'], playlist['snapshot_id'], TODAY, is_track_position_processed = True)
             except TypeError:
                 db.set_playlist_processed(playlist['db_playlist_id'], playlist['snapshot_id'], TODAY, is_track_position_processed = False)
@@ -1797,16 +1782,18 @@ def process_daily_track_position(playlists_list):
 
 # processes all playlist track positions, does not check for playlist version before processing
 #
-def periodic_process_daily_track_position(playlists_list):
+def fetch_all_playlist_positions(playlists_list):
     # playlists_list = db.get_playlists_with_minimum_follower_count_from_db(followers = 1000)
     playlists = convert_list_to_dict_by_attribute(playlists_list, 'playlist_id')
+    playlists = append_db_playlist_info(playlists)
 
     for playlist_id, playlist in playlists.items():
-        db.update_playlist_latest_version(playlist)
-
         try:
-            did_succeed = append_single_playlist_tracks(playlist)
+            if not db.is_playlist_position_processed(playlist['db_playlist_id'], playlist['snapshot_id']):
+                did_succeed = append_data_and_add_single_playlist_positions(playlist)
+
             if did_succeed:
+                print('PLAYLIST POSITIONS PROCESSED', playlist['db_playlist_id'], playlist['snapshot_id'])
                 db.set_playlist_processed(playlist['db_playlist_id'], playlist['snapshot_id'], TODAY, is_track_position_processed = True)
             else:
                 db.set_playlist_processed(playlist['db_playlist_id'], playlist['snapshot_id'], TODAY, is_track_position_processed = False)
@@ -1817,137 +1804,15 @@ def periodic_process_daily_track_position(playlists_list):
 
     return 'periodic processing complete - processed daily track positions for all playlists'
 
-def process():
-    """
-    Process each region for "date" mode
-    Can be YYYY-MM-DD, "watch", "all", or "latest"
-    """
-    starttime_total = datetime.now() # timestamping
-
-    # INITIALIZE VARIABLES
-    service_name = 'Spotify'
-
-    # 1. GET LIST OF ALL PLAYLISTS BY LIST OF USERS (ids)
-    # ---------
-    print('GETTING ALL PLAYLISTS FOR {} USERS'.format(len(USERS)))
-    print_divider('*', 40)
-    # playlists_list = get_all_playlists(USERS)
-
-    #----------GET ONE USERS PLAYLIST -- TESTING ONLY ------------!!!
-    playlists_list = get_all_playlists(['filtr'])
-    # pprint(playlists_list)
-    # TODO:  Does it make sense to grab playlists not from all users? Maybe from the db? YESSSSS
-    # playlists = get_relevant_playlists_from_db()
-
-    # 2. DE-DUPLICATE PLAYLISTS
-    # playlists may be duplicated by different users. Gather all playlists first from all users, then dedupe them here.
-    # ---------
-    # print('PLAYLIST LENGTH BEFORE UNIQUE= {}'.format(len(playlists_list)))
-    playlists_list = list(unique_everseen(playlists_list, key=lambda e: '{uri}'.format(**e)))
-    print('TOTAL UNIQUE PLAYLISTS {}'.format(len(playlists_list)))
-
-    # 3. CONVERT TO USABLE DICTIONARY
-    # ---------
-    playlists = convert_list_to_dict_by_attribute(playlists_list, 'playlist_id')
-
-
-    # 4. ADD OWNER OR CREATE OWNER
-    # ---------
-    starttime = datetime.now() # timestamp
-
-    playlists = append_db_owner_id(playlists)
-
-    endtime = datetime.now()
-    processtime = endtime - starttime
-    processtime_running_total = endtime - starttime_total
-    print('Processing time: %i minutes, %i seconds' % divmod(processtime.days * 86400 + processtime.seconds, 60))
-    print('Total time: %i minutes, %i seconds' % divmod(processtime_running_total.days * 86400 + processtime_running_total.seconds, 60))
-    #----------TESTING ONLY ------------!!!
-    # NOTE: user is TEST_USERS = ['radioactivehits']
-    # playlist_id_single = '2JmG2Y8eqoKGtDaNUcnAks'
-    # playlists = {playlist_id_single: playlists[playlist_id_single]}
-
-
-    # 5. ADD PLAYLIST OR CREATE PLAYLIST
-    starttime = datetime.now() # timestamp
-
-    playlists = append_db_playlist_info(playlists)
-
-    endtime = datetime.now()
-    processtime = endtime - starttime
-    processtime_running_total = endtime - starttime_total
-    print('Processing time: %i minutes, %i seconds' % divmod(processtime.days * 86400 + processtime.seconds, 60))
-    print('Total time: %i minutes, %i seconds' % divmod(processtime_running_total.days * 86400 + processtime_running_total.seconds, 60))
-
-    # 6. COMPARE AND UPDATE LATEST VERSION
-    # NOTE: insert new 'latest_version' for playlist_track_position
-    # https://stackoverflow.com/questions/3634984/insert-if-not-exists-else-update
-
-    #----------TESTING ONLY ------------!!!
-    # import random
-    # random_id = random.choice(list(playlists))
-    # print('TAKING A RANDOM PLAYLIST...{}'.format(random_id))
-    # playlists = {random_id: playlists[random_id]}
-
-    # 7. GET FOLLOWERS FOR ALL PLAYLISTS
-    # 8. ADD FOLLOWERS TO DB
-    starttime = datetime.now() # timestamp
-
-    playlists = append_playlist_followers_and_update_version(playlists)
-
-    endtime = datetime.now()
-    processtime = endtime - starttime
-    processtime_running_total = endtime - starttime_total
-    print('Processing time: %i minutes, %i seconds' % divmod(processtime.days * 86400 + processtime.seconds, 60))
-    print('Total time: %i minutes, %i seconds' % divmod(processtime_running_total.days * 86400 + processtime_running_total.seconds, 60))
-
-
-    # 9. APPEND TRACKS TO PLAYLIST OBJECT FROM API OR DB
-    starttime = datetime.now() # timestamp
-
-    playlists = append_playlist_tracks(playlists)
-
-    endtime = datetime.now()
-    processtime = endtime - starttime
-    processtime_running_total = endtime - starttime_total
-    print('Processing time: %i minutes, %i seconds' % divmod(processtime.days * 86400 + processtime.seconds, 60))
-    print('Total time: %i minutes, %i seconds' % divmod(processtime_running_total.days * 86400 + processtime_running_total.seconds, 60))
-
-
-    # timestamping
-    endtime_total = datetime.now()
-    processtime_total = endtime_total - starttime_total
-    print('Finished processing at', endtime_total.strftime('%H:%M:%S %m-%d-%y'))
-    print('Total processing time: %i minutes, %i seconds' % divmod(processtime_total.days * 86400 + processtime_total.seconds, 60))
-    print('-' * 40)
-
-
+# fetches all track popularities in a playlist list
+def fetch_playlist_track_popularity(playlists_list):
+    return
 ### AWS LAMBDA HANDLERS
 #
 #
 #
 #
 #
-
-def handler(event, context):
-    global spotify
-    global db
-
-    # setup db
-    db = TrackDatabase()
-
-    # setup Spotify auth and client for API calls
-    spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
-
-    # prompt for date/mode
-    process()
-
-    db.show_table_stats()
-
-    # clean up
-    db.close_database()
-    print('closed database connection')
-    return 'finished spotify'
 
 def refresh_playlists_of_users_handler(event, context):
     global spotify
@@ -1996,7 +1861,6 @@ def fetch_playlist_followers_handler(event, context):
     print('closed database connection')
     return 'finished playlist followers'
 
-
 def fetch_playlist_positions_handler(event, context):
     global spotify
     global db
@@ -2026,44 +1890,16 @@ def get_playlists_with_minimum_follower_count_from_db_handler(event, context):
 
     return playlists
 
-
-# Lambda input should have { "should_process_date": true, "date_str": "2018-01-18"}
-# The issue with this strategy is that with the same list of failing (either from timeouts or otherwise) playlists
-# come up time and again.
-#
-def get_daily_unprocessed_playlists_tracks_handler(event, context):
-    global db
-    db = TrackDatabase()
-
-    # if given date to process, use it
-    if event.get('should_process_date'):
-        unprocessed_playlists = get_daily_unprocessed_playlists_tracks(event.get('date_str'))
-    else:
-        unprocessed_playlists = get_daily_unprocessed_playlists_tracks()
-
-    batch_playlists = temporary_remove_unwanted_playlists(unprocessed_playlists)[0:15]
-    print(batch_playlists)
-
-    db.close_database()
-    return batch_playlists
-
-
-def unprocessed_track_playlists(event, context):
+def retrieve_unprocessed_playlist_position_handler(event, context):
     global db
     db = TrackDatabase()
     min_follower_pl = db.get_playlists_with_minimum_follower_count_from_db()
 
-    # filter out playlists... if it's been attempted at all (ie. is_track_position_processed true or false, false if it failed for some reason like URLError)
-    # if it's NULL in the db, then it hasn't been attempted yet
-    #
-    # NOTE: also can use is_version_updated boolean to help determine whether to process it or not.
-    #
+    # get all unprocessed playlists
     unprocessed = [pl for pl in min_follower_pl if not db.is_playlist_track_position_attempted(pl['db_playlist_id'], pl['snapshot_id'])]
 
-    # batch returns just the first 15 playlists.
-    # NOTE: Not sure this is could do a simliar thing like the apple/spotify streaming where you count
-     #
-    batch = temporary_remove_unwanted_playlists(unprocessed)[0:15]
+    # return just 15 of them in a batch
+    batch = remove_unwanted_playlists(unprocessed)[0:15]
 
     db.close_database()
 
@@ -2081,13 +1917,13 @@ def get_daily_unprocessed_playlists_followers_handler(event, context):
 
 
     unprocessed_playlists = get_daily_unprocessed_playlists_followers()
-    unprocessed_playlists = temporary_remove_unwanted_playlists(unprocessed_playlists)
+    unprocessed_playlists = remove_unwanted_playlists(unprocessed_playlists)
 
     db.close_database()
 
     return unprocessed_playlists
 
-def periodic_process_daily_track_position_handler(event, context):
+def fetch_all_playlist_positions_handler(event, context):
     global spotify
     global db
 
@@ -2100,8 +1936,27 @@ def periodic_process_daily_track_position_handler(event, context):
     # input is a list of playlist objects from the db
     playlists_list = event
 
-    periodic_process_daily_track_position(playlists_list)
+    fetch_all_playlist_positions(playlists_list)
 
     db.close_database()
     print('closed database connection')
     return 'finished playlist track positions'
+
+def fetch_playlist_track_popularity_handler(event, context):
+    global spotify
+    global db
+
+    # setup db
+    db = TrackDatabase()
+
+    # setup Spotify auth and client for API calls
+    spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
+
+    # input is a list of playlist objects from the db
+    playlists_list = event
+
+    fetch_playlist_track_popularity(playlists_list)
+
+    db.close_database()
+    print('closed database connection')
+    return 'finished playlist track popularity'

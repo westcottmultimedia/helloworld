@@ -90,12 +90,6 @@ functions:
     timeout: 300
 
   # ---- PLAYLIST ADMIN / SEEDING DATA
-  # Recommended to update followers for ALL playlists, once a week or once a month
-  # This will catch and release playlists that hit or fall below the 1000 (?) follower count threshold
-  # !!! IMPORTANT: to update the DATE_STR of getting the minimum follower count from the db function once this function is re-run.
-  FetchAllPlaylistPositions:
-    handler: playlist_lambda.fetch_all_playlist_positions_handler
-    timeout: 300
 
   # Refresh all playlists' info of selected users
   # This function retrieves new playlists from our user list from the Spotify API.
@@ -109,12 +103,19 @@ functions:
     handler: playlist_lambda.get_daily_unprocessed_playlists_tracks_handler
     timeout: 30
 
-  unprocessed_track_playlists:
-    handler: playlist_lambda.unprocessed_track_playlists
+  RetrieveUnprocessedPlaylistPosition:
+    handler: playlist_lambda.retrieve_unprocessed_playlist_position_handler
     timeout: 30
 
   FetchPlaylistPositions:
     handler: playlist_lambda.fetch_playlist_positions_handler
+    timeout: 300
+
+  # Recommended to update followers for ALL playlists, once a week or once a month
+  # This will catch and release playlists that hit or fall below the 1000 (?) follower count threshold
+  # !!! IMPORTANT: to update the DATE_STR of getting the minimum follower count from the db function once this function is re-run.
+  FetchAllPlaylistPositions:
+    handler: playlist_lambda.fetch_all_playlist_positions_handler
     timeout: 300
 
   # ----- GENERATE REPORTING
@@ -207,7 +208,7 @@ stepFunctions:
     spotify_streaming_songs:
       events:
         # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
-        - schedule: cron(30 23 * * ? *)
+        - schedule: cron(10 23 * * ? *)
       name: SpotifyStreamingSongs
       definition:
         Comment: "Spotify - Streaming - Spotify Top Songs."
@@ -669,7 +670,7 @@ stepFunctions:
       name: AppleSalesMusicVideos
       events:
         # music videos are updated later in the day, so we set it to run later
-        - schedule: cron(0 4 * * ? *)
+        - schedule: cron(0 1 * * ? *)
         - schedule: cron(30 5 * * ? *)
         - schedule: cron(20 7 * * ? *)
       definition:
@@ -784,6 +785,8 @@ stepFunctions:
     # NOTE: TODO: implement similar playlist length in ResultPath, OutputPath to do a ProcessingCHoice check that's smarter than =0 and >0 (leads to endless loop)
     FetchPlaylistFollowers:
       name: FetchPlaylistFollowers
+      events:
+        - schedule: cron(30 1 * * ? *)
       definition:
         Comment: "Playlist - Daily Follower data for all playlists."
         StartAt: GetUnprocessedPlaylists
@@ -861,6 +864,135 @@ stepFunctions:
             Type: Pass
             End: true
 
+    FetchPlaylistPositions:
+      name: FetchPlaylistPositions
+      events:
+        - schedule: cron(0 2 * * ? *)
+      definition:
+        Comment: "Get playlists from the db to process track positions, with 15 playlists at a time"
+        StartAt: GetUnprocessedPlaylists
+        States:
+          CleanInput:
+            Type: Pass
+            Result: {}
+            Next: GetUnprocessedPlaylists
+          GetUnprocessedPlaylists:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-RetrieveUnprocessedPlaylistPosition"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetArrayLength
+          GetArrayLength:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.playlists"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Default: Process Playlists ABC
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              # - Variable: "$.length"
+              #   NumericGreaterThan: 0
+              #   Next: Process Playlists ABC
+          Process Playlists ABC:
+            Type: Parallel
+            Branches:
+              - StartAt: Process Playlists A
+                States:
+                  Process Playlists A:
+                    InputPath: "$.playlists[0:5]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
+                    End: true
+              - StartAt: Process Playlists B
+                States:
+                  Process Playlists B:
+                    InputPath: "$.playlists[5:10]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
+                    End: true
+              - StartAt: Process Playlists C
+                States:
+                  Process Playlists C:
+                    InputPath: "$.playlists[10:15]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
+                    End: true
+            Next: CleanInput
+          Done:
+            Type: Pass
+            End: true
+
+    FetchAllPlaylistPositions:
+      name: FetchAllPlaylistPositions
+      definition:
+        Comment: "Get all playlists from the db to process track positions"
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result: {}
+            ResultPath: "$"
+            Next: GetUnprocessedPlaylists
+          GetUnprocessedPlaylists:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-RetrieveUnprocessedPlaylistPosition"
+            InputPath: "$"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetArrayLength
+          GetArrayLength:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.playlists"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Default: Process Playlists ABC
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              # - Variable: "$.length"
+              #   NumericLessThan: 15
+              #   Next: Process Playlists ABC
+          Process Playlists ABC:
+            Type: Parallel
+            Branches:
+              - StartAt: Process Playlists A
+                States:
+                  Process Playlists A:
+                    InputPath: "$.playlists[0:5]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchAllPlaylistPositions"
+                    End: true
+              - StartAt: Process Playlists B
+                States:
+                  Process Playlists B:
+                    InputPath: "$.playlists[5:10]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchAllPlaylistPositions"
+                    End: true
+              - StartAt: Process Playlists C
+                States:
+                  Process Playlists C:
+                    InputPath: "$.playlists[10:15]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchAllPlaylistPositions"
+                    End: true
+            Next: CleanInput
+          Done:
+            Type: Pass
+            End: true
+
+
     RefreshPlaylistsOfUsers:
       events:
         # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
@@ -933,185 +1065,7 @@ stepFunctions:
                 MaxAttempts: 10
                 BackoffRate: 1.5
             End: true
-
-    FetchPlaylistPositions:
-      name: FetchPlaylistPositions
-      definition:
-        Comment: "Get playlists from the db to process track positions, with 15 playlists at a time"
-        StartAt: GetUnprocessedPlaylists
-        States:
-          CleanInput:
-            Type: Pass
-            Result: {}
-            Next: GetUnprocessedPlaylists
-          GetUnprocessedPlaylists:
-            Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-unprocessed_track_playlists"
-            ResultPath: "$.playlists"
-            OutputPath: "$"
-            Next: GetArrayLength
-          GetArrayLength:
-            Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
-            InputPath: "$.playlists"
-            ResultPath: "$.length"
-            OutputPath: "$"
-            Next: ProcessingChoice
-          ProcessingChoice:
-            Type: Choice
-            Choices:
-              - Variable: "$.length"
-                NumericEquals: 0
-                Next: Done
-              - Variable: "$.length"
-                NumericGreaterThan: 0
-                Next: Process Playlists ABC
-          Process Playlists ABC:
-            Type: Parallel
-            Branches:
-              - StartAt: Process Playlists A
-                States:
-                  Process Playlists A:
-                    InputPath: "$.playlists[0:5]"
-                    Type: Task
-                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
-                    End: true
-                    Retry:
-                      - ErrorEquals: ["States.Timeout"]
-                        IntervalSeconds: 3
-                        MaxAttempts: 10
-                        BackoffRate: 1.5
-                      - ErrorEquals: ["States.TaskFailed"]
-                        IntervalSeconds: 3
-                        MaxAttempts: 10
-                        BackoffRate: 1.5
-              - StartAt: Process Playlists B
-                States:
-                  Process Playlists B:
-                    InputPath: "$.playlists[5:10]"
-                    Type: Task
-                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
-                    End: true
-                    Retry:
-                      - ErrorEquals: ["States.Timeout"]
-                        IntervalSeconds: 3
-                        MaxAttempts: 10
-                        BackoffRate: 1.5
-                      - ErrorEquals: ["States.TaskFailed"]
-                        IntervalSeconds: 3
-                        MaxAttempts: 10
-                        BackoffRate: 1.5
-              - StartAt: Process Playlists C
-                States:
-                  Process Playlists C:
-                    InputPath: "$.playlists[10:15]"
-                    Type: Task
-                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
-                    End: true
-                    Retry:
-                      - ErrorEquals: ["States.Timeout"]
-                        IntervalSeconds: 3
-                        MaxAttempts: 10
-                        BackoffRate: 1.5
-                      - ErrorEquals: ["States.TaskFailed"]
-                        IntervalSeconds: 3
-                        MaxAttempts: 10
-                        BackoffRate: 1.5
-            Next: CleanInput
-          Done:
-            Type: Pass
-            End: true
-
-    FetchAllPlaylistPositions:
-      name: FetchAllPlaylistPositions
-      definition:
-        Comment: "Get all playlists from the db to process track positions"
-        StartAt: CleanInput
-        States:
-          CleanInput:
-            Type: Pass
-            Result: {}
-            ResultPath: "$"
-            Next: GetUnprocessedPlaylists
-          GetUnprocessedPlaylists:
-            Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-unprocessed_track_playlists"
-            InputPath: "$"
-            ResultPath: "$.playlists"
-            OutputPath: "$"
-            Next: GetArrayLength
-          GetArrayLength:
-            Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
-            InputPath: "$.playlists"
-            ResultPath: "$.length"
-            OutputPath: "$"
-            Next: ProcessingChoice
-          ProcessingChoice:
-            Type: Choice
-            Choices:
-              - Variable: "$.length"
-                NumericEquals: 0
-                Next: Done
-              - Variable: "$.length"
-                NumericGreaterThan: 0
-                Next: Process Playlists ABC
-          Process Playlists ABC:
-            Type: Parallel
-            Branches:
-              - StartAt: Process Playlists A
-                States:
-                  Process Playlists A:
-                    InputPath: "$.playlists[0:5]"
-                    Type: Task
-                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchAllPlaylistPositions"
-                    End: true
-                    Retry:
-                      - ErrorEquals: ["States.Timeout"]
-                        IntervalSeconds: 3
-                        MaxAttempts: 2
-                        BackoffRate: 1.5
-                      - ErrorEquals: ["States.TaskFailed"]
-                        IntervalSeconds: 3
-                        MaxAttempts: 2
-                        BackoffRate: 1.5
-              - StartAt: Process Playlists B
-                States:
-                  Process Playlists B:
-                    InputPath: "$.playlists[5:10]"
-                    Type: Task
-                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchAllPlaylistPositions"
-                    End: true
-                    Retry:
-                      - ErrorEquals: ["States.Timeout"]
-                        IntervalSeconds: 3
-                        MaxAttempts: 2
-                        BackoffRate: 1.5
-                      - ErrorEquals: ["States.TaskFailed"]
-                        IntervalSeconds: 3
-                        MaxAttempts: 2
-                        BackoffRate: 1.5
-              - StartAt: Process Playlists C
-                States:
-                  Process Playlists C:
-                    InputPath: "$.playlists[10:15]"
-                    Type: Task
-                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchAllPlaylistPositions"
-                    End: true
-                    Retry:
-                      - ErrorEquals: ["States.Timeout"]
-                        IntervalSeconds: 3
-                        MaxAttempts: 2
-                        BackoffRate: 1.5
-                      - ErrorEquals: ["States.TaskFailed"]
-                        IntervalSeconds: 3
-                        MaxAttempts: 2
-                        BackoffRate: 1.5
-            Next: CleanInput
-          Done:
-            Type: Pass
-            End: true
-
+    
     # -------- REPORTING ------
     generate_reporting_for_sales:
       name: GenerateReportingForSales
