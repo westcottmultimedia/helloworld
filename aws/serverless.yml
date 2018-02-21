@@ -84,6 +84,13 @@ functions:
     timeout: 300
 
   # ---- PLAYLISTS ----
+  CreatePlaylistProcessedEntry:
+    handler: playlist_lambda.create_playlist_processed_entry_handler
+    timeout: 200
+
+  FetchPlaylistVersions:
+    handler: playlist_lambda.fetch_playlist_versions_handler
+    timeout: 300
   # ---- FOLLOWERS
   FetchPlaylistFollowers:
     handler: playlist_lambda.fetch_playlist_followers_handler
@@ -118,6 +125,10 @@ functions:
     handler: playlist_lambda.fetch_all_playlist_positions_handler
     timeout: 300
 
+  FetchPlaylistPopularities:
+    handler: playlist_lambda.fetch_playlist_popularities_handler
+    timeout: 300
+
   # ----- GENERATE REPORTING
   GenerateReportingForSales:
     handler: generate_reporting_for_sales_and_streaming.generate_reporting_for_sales_handler
@@ -139,6 +150,18 @@ functions:
 
   get_daily_unprocessed_playlists_followers:
     handler: playlist_lambda.get_daily_unprocessed_playlists_followers_handler
+    timeout: 30
+
+  GetDailyUnprocessedPlaylistsFollowersLength:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_followers_length_handler
+    timeout: 30
+
+  GetDailyUnprocessedPlaylistsVersions:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_versions_handler
+    timeout: 30
+
+  GetDailyUnprocessedPlaylistsVersionsLength:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_versions_length_handler
     timeout: 30
 
   GetUnprocessedAppleRegions:
@@ -164,7 +187,7 @@ stepFunctions:
     # for PST time, subtract 8 hours (-8) from schedule time
     StartRDSBeats:
       events:
-        - schedule: cron(0 23 * * ? *)
+        - schedule: cron(0 8 * * ? *)
       name: StartRDSBeats
       definition:
         Comment: "Start the RDS instance of Beats"
@@ -187,7 +210,7 @@ stepFunctions:
     #
     StopRDSBeats:
       events:
-        - schedule: cron(0 11 * * ? *)
+        - schedule: cron(0 14 * * ? *)
       name: StopRDSBeats
       definition:
         Comment: "Stop the RDS instance of Beats"
@@ -208,7 +231,7 @@ stepFunctions:
     spotify_streaming_songs:
       events:
         # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
-        - schedule: cron(10 23 * * ? *)
+        - schedule: cron(0 12 * * ? *)
       name: SpotifyStreamingSongs
       definition:
         Comment: "Spotify - Streaming - Spotify Top Songs."
@@ -217,6 +240,7 @@ stepFunctions:
           CleanInput:
             Type: Pass
             Result:
+              # You can input the date_str variable to process an user-defined day
               # date_str: '2018-02-08'
               done: False
             Next: GetUnprocessedRegionsPre
@@ -320,9 +344,10 @@ stepFunctions:
     apple_streaming_songs:
       name: AppleStreamingSongs
       events:
-        - schedule: cron(30 23 * * ? *)
-        - schedule: cron(30 5 * * ? *)
-        - schedule: cron(30 7 * * ? *)
+        # we run these for the previous day (so, 8:30 UTC is 12:30AM PST, so
+        # it's running for the previous day)
+        - schedule: cron(30 8 * * ? *)
+        - schedule: cron(30 10 * * ? *)
       definition:
         Comment: "Apple Music for Streaming Songs"
         StartAt: CleanInput
@@ -436,9 +461,8 @@ stepFunctions:
     apple_sales_songs:
       name: AppleSalesSongs
       events:
-        - schedule: cron(0 0 * * ? *)
-        - schedule: cron(50 5 * * ? *)
-        - schedule: cron(40 7 * * ? *)
+        - schedule: cron(0 9 * * ? *)
+        - schedule: cron(50 10 * * ? *)
       definition:
         Comment: "Apple iTunes Sales for Songs"
         StartAt: CleanInput
@@ -446,7 +470,7 @@ stepFunctions:
           CleanInput:
             Type: Pass
             Result:
-              # date_str: '2018-02-06' #for user-defined processing of a specific date... shouldn't have to be used, however.
+              # date_str: '2018-02-14' #for user-defined processing of a specific date... shouldn't have to be used, however.
               chartIndex: 1
               chart_service: 'itunes-music'
               kind: 'top-songs'
@@ -553,9 +577,8 @@ stepFunctions:
     apple_sales_albums:
       name: AppleSalesAlbums
       events:
-        - schedule: cron(30 0 * * ? *)
-        - schedule: cron(10 6 * * ? *)
-        - schedule: cron(50 7 * * ? *)
+        - schedule: cron(30 9 * * ? *)
+        - schedule: cron(10 11 * * ? *)
       definition:
         Comment: "Apple iTunes Sales for Albums"
         StartAt: CleanInput
@@ -563,7 +586,7 @@ stepFunctions:
           CleanInput:
             Type: Pass
             Result:
-              # date_str: '2018-02-02'
+              # date_str: '2018-02-14'
               chartIndex: 2
               chart_service: 'itunes-music'
               kind: 'top-albums'
@@ -670,9 +693,8 @@ stepFunctions:
       name: AppleSalesMusicVideos
       events:
         # music videos are updated later in the day, so we set it to run later
-        - schedule: cron(0 1 * * ? *)
-        - schedule: cron(30 5 * * ? *)
-        - schedule: cron(20 7 * * ? *)
+        - schedule: cron(0 10 * * ? *)
+        - schedule: cron(30 11 * * ? *)
       definition:
         Comment: "Apple iTunes Sales for Music Videos"
         StartAt: CleanInput
@@ -680,6 +702,8 @@ stepFunctions:
           CleanInput:
             Type: Pass
             Result:
+              # You can input the date_str variable to process an individual date
+              # date_str: '2018-02-14'
               chartIndex: 3
               chart_service: 'music-videos'
               kind: 'top-music-videos'
@@ -783,6 +807,131 @@ stepFunctions:
             End: true
 
     # NOTE: TODO: implement similar playlist length in ResultPath, OutputPath to do a ProcessingCHoice check that's smarter than =0 and >0 (leads to endless loop)
+    CreatePlaylistProcessedEntry:
+      name: CreatePlaylistProcessedEntry
+      events:
+        - schedule: cron(25 1 * * ? *)
+      definition:
+        Comment: "Playlist - create daily entry in the playlist processed table."
+        StartAt: CreatePlaylistProcessedEntry
+        States:
+          CreatePlaylistProcessedEntry:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-CreatePlaylistProcessedEntry"
+            End: True
+
+    FetchPlaylistVersions:
+      name: FetchPlaylistVersions
+      events:
+        - schedule: cron(30 1 * * ? *)
+      definition:
+        Comment: "Playlist - Daily Version data for all playlists."
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result:
+              length_post: 0
+              done: False
+            Next: GetUnprocessedPlaylistsPre
+          GetUnprocessedPlaylistsPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsVersions"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPre
+          GetUnprocessedTotalPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsVersionsLength"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
+                Next: Playlist Versions ABC
+          Playlist Versions ABC:
+            Type: Parallel
+            Next: GetUnprocessedPlaylistsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
+            Branches:
+              - StartAt: Playlist Versions A
+                States:
+                  # input is 250 playlist objects
+                  Playlist Versions A:
+                    InputPath: "$.playlists[0:50]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-FetchPlaylistVersions"
+                    Retry:
+                      - ErrorEquals:
+                        - "States.Timeout"
+                        IntervalSeconds: 3
+                        MaxAttempts: 4
+                        BackoffRate: 1.5
+                    End: true
+              - StartAt: Playlist Versions B
+                States:
+                  Playlist Versions B:
+                    InputPath: "$.playlists[50:100]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-FetchPlaylistVersions"
+                    Retry:
+                      - ErrorEquals:
+                        - "States.Timeout"
+                        IntervalSeconds: 3
+                        MaxAttempts: 4
+                        BackoffRate: 1.5
+                    End: true
+              - StartAt: Playlist Versions C
+                States:
+                  Playlist Versions C:
+                    InputPath: "$.playlists[100:150]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-FetchPlaylistVersions"
+                    Retry:
+                      - ErrorEquals:
+                        - "States.Timeout"
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+                    End: true
+          GetUnprocessedPlaylistsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsVersions"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPost
+          GetUnprocessedTotalPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsVersionsLength"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          Done:
+            Type: Pass
+            End: true
+
     FetchPlaylistFollowers:
       name: FetchPlaylistFollowers
       events:
@@ -992,6 +1141,69 @@ stepFunctions:
             Type: Pass
             End: true
 
+    FetchPlaylistPopularities:
+      name: FetchPlaylistPopularities
+      definition:
+        Comment: "Get all popularities for playlists"
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result: {}
+            ResultPath: "$"
+            Next: GetUnprocessedPlaylists
+          GetUnprocessedPlaylists:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-RetrieveUnprocessedPlaylistPosition"
+            InputPath: "$"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetArrayLength
+          GetArrayLength:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.playlists"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Default: Process Playlists ABC
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              # - Variable: "$.length"
+              #   NumericLessThan: 15
+              #   Next: Process Playlists ABC
+          Process Playlists ABC:
+            Type: Parallel
+            Branches:
+              - StartAt: Process Playlists A
+                States:
+                  Process Playlists A:
+                    InputPath: "$.playlists[0:5]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPopularities"
+                    End: true
+              - StartAt: Process Playlists B
+                States:
+                  Process Playlists B:
+                    InputPath: "$.playlists[5:10]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPopularities"
+                    End: true
+              - StartAt: Process Playlists C
+                States:
+                  Process Playlists C:
+                    InputPath: "$.playlists[10:15]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPopularities"
+                    End: true
+            Next: CleanInput
+          Done:
+            Type: Pass
+            End: true
 
     RefreshPlaylistsOfUsers:
       events:
@@ -1065,7 +1277,7 @@ stepFunctions:
                 MaxAttempts: 10
                 BackoffRate: 1.5
             End: true
-    
+
     # -------- REPORTING ------
     generate_reporting_for_sales:
       name: GenerateReportingForSales
