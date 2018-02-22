@@ -148,7 +148,7 @@ functions:
     handler: helpers.test_length_equality
     timeout: 10
 
-  get_daily_unprocessed_playlists_followers:
+  GetDailyUnprocessedPlaylistsFollowers:
     handler: playlist_lambda.get_daily_unprocessed_playlists_followers_handler
     timeout: 30
 
@@ -938,22 +938,23 @@ stepFunctions:
         - schedule: cron(30 1 * * ? *)
       definition:
         Comment: "Playlist - Daily Follower data for all playlists."
-        StartAt: GetUnprocessedPlaylists
+        StartAt: CleanInput
         States:
           CleanInput:
             Type: Pass
-            Result: {}
-            Next: GetUnprocessedPlaylists
-          GetUnprocessedPlaylists:
+            Result:
+              length_post: 0
+              done: False
+            Next: GetUnprocessedPlaylistsPre
+          GetUnprocessedPlaylistsPre:
             Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_daily_unprocessed_playlists_followers"
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsFollowers"
             ResultPath: "$.playlists"
             OutputPath: "$"
-            Next: GetArrayLength
-          GetArrayLength:
+            Next: GetUnprocessedTotalPre
+          GetUnprocessedTotalPre:
             Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
-            InputPath: "$.playlists"
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsFollowersLength"
             ResultPath: "$.length"
             OutputPath: "$"
             Next: ProcessingChoice
@@ -963,11 +964,17 @@ stepFunctions:
               - Variable: "$.length"
                 NumericEquals: 0
                 Next: Done
-              - Variable: "$.length"
-                NumericGreaterThan: 0
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
                 Next: Playlist Followers ABC
           Playlist Followers ABC:
             Type: Parallel
+            Next: GetUnprocessedPlaylistsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
             Branches:
               - StartAt: Playlist Followers A
                 States:
@@ -1008,7 +1015,30 @@ stepFunctions:
                         MaxAttempts: 10
                         BackoffRate: 1.5
                     End: true
-            Next: CleanInput
+          GetUnprocessedPlaylistsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsFollowers"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPost
+          GetUnprocessedTotalPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsFollowersLength"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
           Done:
             Type: Pass
             End: true

@@ -1880,8 +1880,14 @@ def process_daily_followers(playlists_list):
     playlists = append_playlist_followers_and_update_version(playlists)
 
 def append_followers_from_api(playlist):
-    playlist['followers'], playlist['version_from_api'] = get_followers_for_playlist_from_api(owner_id, playlist_id)
+    playlist['followers'], playlist['version_from_api'] = get_followers_for_playlist_from_api(playlist['owner_id'], playlist['spotify_playlist_id'] )
     return playlist
+
+def is_followers_appended(playlist):
+    if playlist['followers'] is None or playlist['version_from_api'] is None:
+        return False
+    else:
+        return True
 
 # appends latest version (ie. snapshot_id from spotify api)
 def append_version_from_api(playlist):
@@ -2115,19 +2121,18 @@ def fetch_playlist_followers_handler(event, context):
         # If you want to be 100% clear, check 'version_from_api' = 'db_playlist_version'
 
         # Add followers to db table
-        is_followers_added = db.add_playlist_followers(SERVICE_ID, TODAY, playlist['db_playlist_id'], playlist['db_playlist_version'], playlist['followers'])
-
-        # Update playlist processed flag
         processed_id = db.get_processed_id(playlist['db_playlist_id'], TODAY)
+
+
+        # if followers are valid from api, and added to db successfully...
+        if is_followers_appended(playlist) and db.add_playlist_followers(SERVICE_ID, TODAY, playlist['db_playlist_id'], playlist['db_playlist_version'], playlist['followers']):
+            db.update_processed_followers(processed_id, True)
+        else:
+            db.update_processed_followers(processed_id, False)
 
         # NOTE: cleanup: set_playlist_processed() is probably not used.
         # NOTE: cleanup: append_playlist_followers_and_update_version() is probably not used
         # NOTE: cleanup: process_daily_followers() is probably not used.
-
-        if is_followers_added:
-            db.update_processed_followers(processed_id, True)
-        else:
-            db.db.update_processed_followers(processed_id, False)
 
     # clean up
     db.close_database()
