@@ -65,6 +65,11 @@ package:
     - aws_packages/**
     # - aws/common/** # this works, but common_copy see
 
+# plugins for serverless
+plugins:
+  - serverless-pseudo-parameters
+  - serverless-step-functions
+
 # define your functions and handlers here
 functions:
   # ---- STREAMING AND ITUNES SALES ----
@@ -106,12 +111,12 @@ functions:
     timeout: 300
 
   # ---- POSITION
-  get_daily_unprocessed_playlists_tracks:
-    handler: playlist_lambda.get_daily_unprocessed_playlists_tracks_handler
+  GetDailyUnprocessedPlaylistsPositions:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_positions_handler
     timeout: 30
 
-  RetrieveUnprocessedPlaylistPosition:
-    handler: playlist_lambda.retrieve_unprocessed_playlist_position_handler
+  GetDailyUnprocessedPlaylistsPositionsLength:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_positions_length_handler
     timeout: 30
 
   FetchPlaylistPositions:
@@ -172,11 +177,6 @@ functions:
     handler: playlist_lambda.get_playlists_with_minimum_follower_count_from_db_handler
     timeout: 10
 
-# plugins for serverless
-plugins:
-  - serverless-pseudo-parameters
-  - serverless-step-functions
-
 # step functions definitions
 # https://github.com/horike37/serverless-step-functions
 stepFunctions:
@@ -188,6 +188,7 @@ stepFunctions:
     StartRDSBeats:
       events:
         - schedule: cron(0 8 * * ? *)
+        - schedule: cron(10 1 * * ? *)
       name: StartRDSBeats
       definition:
         Comment: "Start the RDS instance of Beats"
@@ -211,6 +212,7 @@ stepFunctions:
     StopRDSBeats:
       events:
         - schedule: cron(0 14 * * ? *)
+        - schedule: cron(10 3 * * ? *)
       name: StopRDSBeats
       definition:
         Comment: "Stop the RDS instance of Beats"
@@ -1049,37 +1051,43 @@ stepFunctions:
         - schedule: cron(0 2 * * ? *)
       definition:
         Comment: "Get playlists from the db to process track positions, with 15 playlists at a time"
-        StartAt: GetUnprocessedPlaylists
+        StartAt: CleanInput
         States:
           CleanInput:
             Type: Pass
-            Result: {}
-            Next: GetUnprocessedPlaylists
-          GetUnprocessedPlaylists:
+            Result:
+              length_post: 0
+              done: False
+            Next: GetUnprocessedPlaylistsPre
+          GetUnprocessedPlaylistsPre:
             Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-RetrieveUnprocessedPlaylistPosition"
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPositions"
             ResultPath: "$.playlists"
             OutputPath: "$"
-            Next: GetArrayLength
-          GetArrayLength:
+            Next: GetUnprocessedTotalPre
+          GetUnprocessedTotalPre:
             Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
-            InputPath: "$.playlists"
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPositionsLength"
             ResultPath: "$.length"
             OutputPath: "$"
             Next: ProcessingChoice
           ProcessingChoice:
             Type: Choice
-            Default: Process Playlists ABC
             Choices:
               - Variable: "$.length"
                 NumericEquals: 0
                 Next: Done
-              # - Variable: "$.length"
-              #   NumericGreaterThan: 0
-              #   Next: Process Playlists ABC
-          Process Playlists ABC:
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
+                Next: Playlist Positions ABC
+          Playlist Positions ABC:
             Type: Parallel
+            Next: GetUnprocessedPlaylistsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
             Branches:
               - StartAt: Process Playlists A
                 States:
@@ -1102,11 +1110,35 @@ stepFunctions:
                     Type: Task
                     Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
                     End: true
-            Next: CleanInput
+          GetUnprocessedPlaylistsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPositions"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPost
+          GetUnprocessedTotalPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPositionsLength"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
           Done:
             Type: Pass
             End: true
 
+    # MUST rework the getunprocessedplaylist function
     FetchAllPlaylistPositions:
       name: FetchAllPlaylistPositions
       definition:
