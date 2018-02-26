@@ -72,8 +72,13 @@ plugins:
 
 # define your functions and handlers here
 functions:
+  # -------------------
   # ---- STREAMING AND ITUNES SALES ----
-  # ---- SPOTIFY
+  # -------------------
+
+  # -------------------
+  # ---- SPOTIFY ----
+  # -------------------
   spotify_streaming:
     handler: spotify_streaming_lambda.handler
     timeout: 300
@@ -82,35 +87,55 @@ functions:
     handler: spotify_streaming_lambda.get_unprocessed_spotify_regions_handler
     timeout: 30
 
-  #  ---- APPLE & ITUNES (songs, albums and music videos)
-  #  ----
+  # -------------------
+  #  ---- APPLE & ITUNES ----
+  #  songs, albums and music videos
+  # -------------------
+  GetUnprocessedAppleRegions:
+    handler: apple_streaming_sales_lambda.get_unprocessed_apple_regions
+    timeout: 30
+
   apple_streaming_sales:
     handler: apple_streaming_sales_lambda.handler
     timeout: 300
 
+
+
+  # -------------------
   # ---- PLAYLISTS ----
+  # -------------------
   CreatePlaylistProcessedEntry:
     handler: playlist_lambda.create_playlist_processed_entry_handler
     timeout: 200
 
+  # ----  VERSIONS ----
+  GetDailyUnprocessedPlaylistsVersions:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_versions_handler
+    timeout: 30
+
+  GetDailyUnprocessedPlaylistsVersionsLength:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_versions_length_handler
+    timeout: 30
+
   FetchPlaylistVersions:
     handler: playlist_lambda.fetch_playlist_versions_handler
     timeout: 300
-  # ---- FOLLOWERS
+
+
+  # ---- FOLLOWERS ----
+  GetDailyUnprocessedPlaylistsFollowers:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_followers_handler
+    timeout: 30
+
+  GetDailyUnprocessedPlaylistsFollowersLength:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_followers_length_handler
+    timeout: 30
+
   FetchPlaylistFollowers:
     handler: playlist_lambda.fetch_playlist_followers_handler
     timeout: 300
 
-  # ---- PLAYLIST ADMIN / SEEDING DATA
-
-  # Refresh all playlists' info of selected users
-  # This function retrieves new playlists from our user list from the Spotify API.
-  # Periodically run this to update the list of playlists
-  RefreshPlaylistsOfUsers:
-    handler: playlist_lambda.refresh_playlists_of_users_handler
-    timeout: 300
-
-  # ---- POSITION
+  # ---- POSITION ----
   GetDailyUnprocessedPlaylistsPositions:
     handler: playlist_lambda.get_daily_unprocessed_playlists_positions_handler
     timeout: 30
@@ -123,18 +148,41 @@ functions:
     handler: playlist_lambda.fetch_playlist_positions_handler
     timeout: 300
 
-  # Recommended to update followers for ALL playlists, once a week or once a month
-  # This will catch and release playlists that hit or fall below the 1000 (?) follower count threshold
-  # !!! IMPORTANT: to update the DATE_STR of getting the minimum follower count from the db function once this function is re-run.
   FetchAllPlaylistPositions:
     handler: playlist_lambda.fetch_all_playlist_positions_handler
     timeout: 300
+
+  # ---- POPULARITY ----
+  GetDailyUnprocessedPlaylistsPopularities:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_popularities_handler
+    timeout: 30
+
+  # TODO: implement
+  GetDailyUnprocessedPlaylistsPopularitiesLength:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_popularities_length_handler
+    timeout: 30
 
   FetchPlaylistPopularities:
     handler: playlist_lambda.fetch_playlist_popularities_handler
     timeout: 300
 
-  # ----- GENERATE REPORTING
+  # ---- ADMIN / SEED DATA
+
+  # Refresh all playlists' info of selected users
+  # This function retrieves new playlists from our user list from the Spotify API.
+  # Periodically run this to update the list of playlists
+  RefreshPlaylistsOfUsers:
+    handler: playlist_lambda.refresh_playlists_of_users_handler
+    timeout: 300
+
+
+
+  # Recommended to update followers for ALL playlists, once a week or once a month
+  # This will catch and release playlists that hit or fall below the 1000 (?) follower count threshold
+  # !!! IMPORTANT: to update the DATE_STR of getting the minimum follower count from the db function once this function is re-run.
+
+
+  # ----- REPORTING -----
   GenerateReportingForSales:
     handler: generate_reporting_for_sales_and_streaming.generate_reporting_for_sales_handler
     timeout: 300
@@ -144,37 +192,13 @@ functions:
     timeout: 300
 
 
-  # pre-processing helpers
+  # ----- HELPERS -----
   get_array_length:
     handler: helpers.get_array_length
     timeout: 5
 
   test_length_equality:
     handler: helpers.test_length_equality
-    timeout: 10
-
-  GetDailyUnprocessedPlaylistsFollowers:
-    handler: playlist_lambda.get_daily_unprocessed_playlists_followers_handler
-    timeout: 30
-
-  GetDailyUnprocessedPlaylistsFollowersLength:
-    handler: playlist_lambda.get_daily_unprocessed_playlists_followers_length_handler
-    timeout: 30
-
-  GetDailyUnprocessedPlaylistsVersions:
-    handler: playlist_lambda.get_daily_unprocessed_playlists_versions_handler
-    timeout: 30
-
-  GetDailyUnprocessedPlaylistsVersionsLength:
-    handler: playlist_lambda.get_daily_unprocessed_playlists_versions_length_handler
-    timeout: 30
-
-  GetUnprocessedAppleRegions:
-    handler: apple_streaming_sales_lambda.get_unprocessed_apple_regions
-    timeout: 30
-
-  get_playlists_with_followers_from_db:
-    handler: playlist_lambda.get_playlists_with_minimum_follower_count_from_db_handler
     timeout: 10
 
 # step functions definitions
@@ -187,8 +211,8 @@ stepFunctions:
     # for PST time, subtract 8 hours (-8) from schedule time
     StartRDSBeats:
       events:
-        - schedule: cron(0 8 * * ? *)
-        - schedule: cron(10 1 * * ? *)
+        - schedule: cron(0 8 * * ? *) # midnight, 12:00am
+        - schedule: cron(10 1 * * ? *) # 5:10pm
       name: StartRDSBeats
       definition:
         Comment: "Start the RDS instance of Beats"
@@ -211,8 +235,8 @@ stepFunctions:
     #
     StopRDSBeats:
       events:
-        - schedule: cron(0 14 * * ? *)
-        - schedule: cron(10 3 * * ? *)
+        - schedule: cron(0 14 * * ? *) # 6:00am
+        - schedule: cron(10 3 * * ? *) # 7:10pm
       name: StopRDSBeats
       definition:
         Comment: "Stop the RDS instance of Beats"
@@ -1138,7 +1162,8 @@ stepFunctions:
             Type: Pass
             End: true
 
-    # MUST rework the getunprocessedplaylist function
+    # NOTE: CURRENTLY UNDER CONSTRUCTION...
+    # NOTE: MUST rework the GetUnprocessedPlaylists state.
     FetchAllPlaylistPositions:
       name: FetchAllPlaylistPositions
       definition:
@@ -1152,7 +1177,7 @@ stepFunctions:
             Next: GetUnprocessedPlaylists
           GetUnprocessedPlaylists:
             Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-RetrieveUnprocessedPlaylistPosition"
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-DOESNOTEXIST"
             InputPath: "$"
             ResultPath: "$.playlists"
             OutputPath: "$"
@@ -1206,67 +1231,97 @@ stepFunctions:
     FetchPlaylistPopularities:
       name: FetchPlaylistPopularities
       definition:
-        Comment: "Get all popularities for playlists"
+        Comment: "Playlist - Daily Popularity data for all playlists."
         StartAt: CleanInput
         States:
           CleanInput:
             Type: Pass
-            Result: {}
-            ResultPath: "$"
-            Next: GetUnprocessedPlaylists
-          GetUnprocessedPlaylists:
+            Result:
+              length_post: 0
+              done: False
+            Next: GetUnprocessedPlaylistsPre
+          GetUnprocessedPlaylistsPre:
             Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-RetrieveUnprocessedPlaylistPosition"
-            InputPath: "$"
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPopularities"
             ResultPath: "$.playlists"
             OutputPath: "$"
-            Next: GetArrayLength
-          GetArrayLength:
+            Next: GetUnprocessedTotalPre
+          GetUnprocessedTotalPre:
             Type: Task
-            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
-            InputPath: "$.playlists"
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPopularitiesLength"
             ResultPath: "$.length"
             OutputPath: "$"
             Next: ProcessingChoice
           ProcessingChoice:
             Type: Choice
-            Default: Process Playlists ABC
             Choices:
               - Variable: "$.length"
                 NumericEquals: 0
                 Next: Done
-              # - Variable: "$.length"
-              #   NumericLessThan: 15
-              #   Next: Process Playlists ABC
-          Process Playlists ABC:
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
+                Next: Playlist Popularities ABC
+          Playlist Popularities ABC:
             Type: Parallel
+            Next: GetUnprocessedPlaylistsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
             Branches:
-              - StartAt: Process Playlists A
+              - StartAt: Playlist Popularities A
                 States:
-                  Process Playlists A:
-                    InputPath: "$.playlists[0:5]"
+                  Playlist Popularities A:
+                    InputPath: "$.playlists[0:20]"
                     Type: Task
                     Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPopularities"
                     End: true
-              - StartAt: Process Playlists B
+              - StartAt: Playlist Popularities B
                 States:
-                  Process Playlists B:
-                    InputPath: "$.playlists[5:10]"
+                  Playlist Popularities B:
+                    InputPath: "$.playlists[20:40]"
                     Type: Task
                     Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPopularities"
                     End: true
-              - StartAt: Process Playlists C
+              - StartAt: Playlist Popularities C
                 States:
-                  Process Playlists C:
-                    InputPath: "$.playlists[10:15]"
+                  Playlist Popularities C:
+                    InputPath: "$.playlists[40:60]"
                     Type: Task
                     Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPopularities"
                     End: true
-            Next: CleanInput
+          GetUnprocessedPlaylistsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPopularities"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPost
+          GetUnprocessedTotalPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPopularitiesLength"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
           Done:
             Type: Pass
             End: true
 
+    # NOTE: re-work RefreshPlaylistsOfUsers, as it still uses refresh_playlists_of_users(),
+    # which still uses deprecated append_playlist_followers_and_update_version()
+    #
     RefreshPlaylistsOfUsers:
       events:
         # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
