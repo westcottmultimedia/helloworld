@@ -60,6 +60,7 @@ package:
     - apple_api_ec.config
     - apple_streaming_sales_lambda.py
     - playlist_lambda.py
+    - genre_lambda.py
     - generate_reporting_for_sales_and_streaming.py
     - helpers.py
     - aws_packages/**
@@ -182,6 +183,11 @@ functions:
   # !!! IMPORTANT: to update the DATE_STR of getting the minimum follower count from the db function once this function is re-run.
 
 
+  # ----- GENRE -----
+  TestGenre:
+    handler: genre_lambda.test_handler
+    timeout: 20
+    
   # ----- REPORTING -----
   GenerateReportingForSales:
     handler: generate_reporting_for_sales_and_streaming.generate_reporting_for_sales_handler
