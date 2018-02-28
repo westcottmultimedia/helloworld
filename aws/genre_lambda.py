@@ -71,12 +71,28 @@ class TrackDatabase(object):
         row = self.c.fetchone()
         if row:
             return row[0]
-
-    def get_artist_ids_for_collection_ids():
         return
+
+    def get_artist_id_from_collection_id(self, kind_db_table, collection_db_table, collection_id):
+        # kind = track
+        # collection is
+        query = """
+            SELECT artist.id FROM artist
+            INNER JOIN {0} ON artist.id = {0}.artist_id
+            WHERE {0}.id = %s
+        """.format(kind_db_table)
+
+        try:
+            self.c.execute(query, [collection_id])
+            return self.c.fetchone()[0]
+        except Exception as e:
+            raise
+            return None
 
 class GenreRanks:
     def __init__(self, service, territory, kind, collection_type, date_str = 'latest'):
+        self.db = TrackDatabase()
+
         self._service = service # spotify, apple
         self._territory = territory # the territory/region code, ie. 'jp', 'dk', 'us'
         self._kind = kind # track, album, music video
@@ -84,17 +100,12 @@ class GenreRanks:
         self._collection_type = collection_type # stream, sales VS. playlist
         self._collection_db_table = ''
         self.collection_ids = [] # db ids of collection items
-        self.artists = [] # list of ARTISTS in a collection of kinds (ie. stream list of songs, playlist of songs, sale list of music videos)
+        self.artist_ids = [] # list of ARTISTS in a collection of kinds (ie. stream list of songs, playlist of songs, sale list of music videos)
         self.genres = [] # list of all genres for self.artists
         self.genre_counts = {} # {genre: count, 'pop-rock': 5, ...} - counts of all genres for the list of artists
         self.date = date_str # can also be for a specific date
-        self.db = TrackDatabase()
 
         self._map_db_tables()
-        self.parrot_attributes()
-
-    def parrot_attributes(self):
-        print('parroting...', self._kind_db_table, self._collection_db_table)
 
     def _map_db_tables(self):
         if self._collection_type == 'streaming':
@@ -126,14 +137,23 @@ class GenreRanks:
         self.collection_ids = self.db.get_collection_ids(self._service, self._territory, self._kind_db_table, self._collection_db_table, latest_date)
         return True
 
+    def load_artist_ids(self):
+        artist_ids = []
+        for collection_id in self.collection_ids:
+            artist_ids.append(self.db.get_artist_id_from_collection_id(self._kind_db_table, self._collection_db_table, collection_id))
+
+        self.artist_ids = artist_ids
+        print(self.artist_ids)
+        return True
+
 def test_handler(event, context):
         global db
 
         db = TrackDatabase()
         gr = GenreRanks(1, 1, 'track', 'streaming')
 
-        gr.parrot_attributes()
         gr.load_collection_ids()
+        gr.load_artist_ids()
 
         db.close_database()
         print('closed database connection')
