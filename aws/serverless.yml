@@ -186,7 +186,7 @@ functions:
   # ----- GENRE -----
   TestGenre:
     handler: genre_lambda.test_handler
-    timeout: 20
+    timeout: 60
 
   # ----- REPORTING -----
   GenerateReportingForSales:

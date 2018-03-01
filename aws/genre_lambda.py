@@ -231,7 +231,7 @@ class GenreRanks:
             genre_percentages[genre] = count/total
 
         self.genre_percentages = genre_percentages
-        print(self.genre_percentages = genre_percentages)
+        print(self.genre_percentages)
         return
 
     # ranks: how many ranks to return? ie. ranks = 3 returns top 3 ranked genres
