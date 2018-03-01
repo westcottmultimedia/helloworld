@@ -35,7 +35,7 @@ class TrackDatabase(object):
             print('cannot close db')
         return True
 
-    def get_collection_ids(self, service_id, territory_id, kind_db_table, collection_db_table, date_str): # could add in (... date_str = TODAY)
+    def get_chart_collection_ids(self, service_id, territory_id, kind_db_table, collection_db_table, date_str): # could add in (... date_str = TODAY)
         query = """
             SELECT {}_id FROM {}
             WHERE
@@ -55,9 +55,32 @@ class TrackDatabase(object):
             return ids
         except Exception as e:
             print('failed getting collection ids:', e)
+            raise
             return []
 
-    def get_latest_date_for_collection(self, service_id, territory_id, kind_db_table, collection_db_table):
+    def get_playlist_collection_ids(self, playlist_id, playlist_db_table, date_str):
+        query = """
+            SELECT track_id FROM {}
+            WHERE
+                playlist_id = %s
+                AND
+                date_str = %s
+        """.format(playlist_db_table)
+
+        try:
+            self.c.execute(query, (playlist_id, date_str))
+
+            ids = []
+            for row in self.c.fetchall():
+                ids.append(row[0])
+            return ids
+
+        except Exception as e:
+            print('failed getting playlist collection ids:', e)
+            raise
+            return []
+
+    def get_latest_date_for_chart_collection(self, service_id, territory_id, kind_db_table, collection_db_table):
         query = """
             SELECT max(date_str) FROM {}
             WHERE
@@ -72,6 +95,15 @@ class TrackDatabase(object):
         if row:
             return row[0]
         return
+
+    def get_latest_date_for_playlist_collection(self, playlist_id, playlist_db_table):
+        query = """
+            SELECT max(date_str) from {}
+            WHERE
+                playlist_id = %s
+        """.format(playlist_db_table)
+
+        self.c.execute(query, [playlist_id])
 
     def get_artist_id_from_collection_id(self, kind_db_table, collection_db_table, collection_id):
         # kind = track
@@ -110,7 +142,7 @@ class TrackDatabase(object):
         return []
 
 class GenreRanks:
-    def __init__(self, service, territory, kind, collection_type, date_str = 'latest'):
+    def __init__(self, service, territory, kind, collection_type, playlist_id = None, date_str = 'latest'):
         self.db = TrackDatabase()
 
         self._service = service # spotify, apple
@@ -125,7 +157,7 @@ class GenreRanks:
         self.genre_counts = {} # {genre: count, 'pop-rock': 5, ...} - counts of all genres for the list of artists
         self.genre_percentages = {}
         self.date = date_str # can also be for a specific date
-
+        self.playlist_id = playlist_id
         self._map_db_tables()
 
     def _map_db_tables(self):
@@ -153,9 +185,14 @@ class GenreRanks:
         # populate kind db table and collection_db_table
 
     # For everything NOT a playlist
-    def load_collection_ids(self):
-        latest_date = self.db.get_latest_date_for_collection(self._service, self._territory, self._kind_db_table, self._collection_db_table)
-        self.collection_ids = self.db.get_collection_ids(self._service, self._territory, self._kind_db_table, self._collection_db_table, latest_date)
+    def load_chart_collection_ids(self):
+        latest_date = self.db.get_latest_date_for_chart_collection(self._service, self._territory, self._kind_db_table, self._collection_db_table)
+        self.collection_ids = self.db.get_chart_collection_ids(self._service, self._territory, self._kind_db_table, self._collection_db_table, latest_date)
+        return True
+
+    def load_playlist_collection_ids(self):
+        latest_date = self.db.get_latest_date_for_playlist_collection(self.playlist_id, self._collection_db_table)
+        self.collection_ids = self.db.get_playlist_collection_ids(self.playlist_id, self._collection_db_table, latest_date)
         return True
 
     def load_artist_ids(self):
@@ -164,6 +201,7 @@ class GenreRanks:
             artist_ids.append(self.db.get_artist_id_from_collection_id(self._kind_db_table, self._collection_db_table, collection_id))
 
         self.artist_ids = artist_ids
+        print(self.artist_ids)
         return True
 
     def load_genres_ids(self):
@@ -193,6 +231,7 @@ class GenreRanks:
             genre_percentages[genre] = count/total
 
         self.genre_percentages = genre_percentages
+        print(self.genre_percentages = genre_percentages)
         return
 
     # ranks: how many ranks to return? ie. ranks = 3 returns top 3 ranked genres
@@ -203,14 +242,25 @@ def test_handler(event, context):
         global db
 
         db = TrackDatabase()
-        gr = GenreRanks(1, 1, 'track', 'streaming')
+        gr_chart = GenreRanks(1, 1, 'track', 'streaming')
 
-        gr.load_collection_ids()
-        gr.load_artist_ids()
-        gr.load_genres_ids()
-        gr.calculate_genre_counts()
-        gr.calculate_genre_percentage()
-        gr.get_top_genres()
+        # get genres for charts - Spotify streaming, Apple Streaming, iTunes Sales charts
+        #
+        gr_chart.load_chart_collection_ids()
+        gr_chart.load_artist_ids()
+        gr_chart.load_genres_ids()
+        gr_chart.calculate_genre_counts()
+        gr_chart.calculate_genre_percentage()
+        gr_chart.get_top_genres()
+
+        # get genres for playlists
+        gr_playlist = GenreRanks(1, 1, 'track', 'playlist', playlist_id = 2795)
+        gr_playlist.load_playlist_collection_ids()
+        gr_chart.load_artist_ids()
+        gr_chart.load_genres_ids()
+        gr_chart.calculate_genre_counts()
+        gr_chart.calculate_genre_percentage()
+        gr_chart.get_top_genres()
 
         db.close_database()
         print('closed database connection')
