@@ -232,7 +232,7 @@ class GenreRanks:
 
         self.genre_percentages = genre_percentages
         print(self.genre_percentages)
-        return
+        return True
 
     # ranks: how many ranks to return? ie. ranks = 3 returns top 3 ranked genres
     def get_top_genres(self, ranks = 3):
@@ -256,11 +256,30 @@ def test_handler(event, context):
         # get genres for playlists
         gr_playlist = GenreRanks(1, 1, 'track', 'playlist', playlist_id = 2795)
         gr_playlist.load_playlist_collection_ids()
-        gr_chart.load_artist_ids()
-        gr_chart.load_genres_ids()
-        gr_chart.calculate_genre_counts()
-        gr_chart.calculate_genre_percentage()
-        gr_chart.get_top_genres()
+        gr_playlist.load_artist_ids()
+        gr_playlist.load_genres_ids()
+        gr_playlist.calculate_genre_counts()
+        gr_playlist.calculate_genre_percentage()
+        gr_playlist.get_top_genres()
 
         db.close_database()
         print('closed database connection')
+
+# ---- AWS LAMBDA, API GATEWAY ----
+# How to structure json response
+# https://goonan.io/a-simple-python3-lambda-function-on-aws-with-an-api-gateway/
+def genre_api_response(message, status_code):
+    return {
+        "statusCode": str(status_code),
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+        },
+        "body": json.dumps(message)
+     }
+
+def genre_api_handler(event, context):
+    try:
+        return genre_api_response({ "message": "Hello World!" }, 200)
+    except Exception as e:
+        return genre_api_response({'message': e.message}, 400)

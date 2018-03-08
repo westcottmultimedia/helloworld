@@ -207,6 +207,16 @@ functions:
     handler: helpers.test_length_equality
     timeout: 10
 
+
+  # ------ API GATEWAY ----
+  # ------ GENRE
+  GenreApiHandler:
+    handler: genre_lambda.genre_api_handler
+    timeout: 60
+    events:
+      - http: GET hello
+
+      
 # step functions definitions
 # https://github.com/horike37/serverless-step-functions
 stepFunctions:
