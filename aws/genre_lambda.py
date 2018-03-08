@@ -35,6 +35,33 @@ class TrackDatabase(object):
             print('cannot close db')
         return True
 
+    # For sales charts
+    def get_chart_sales_collection_ids(self, service_id, territory_id, kind_db_table, collection_db_table, date_str): # could add in (... date_str = TODAY)
+        query = """
+            SELECT media_id FROM {}
+            WHERE
+                service_id = %s
+                AND
+                territory_id = %s
+                AND
+                date_str = %s
+                AND
+                media_type = %s
+        """.format(collection_db_table)
+
+        try:
+            self.c.execute(query, (service_id, territory_id, date_str, kind_db_table))
+            ids = []
+
+            for row in self.c.fetchall():
+                ids.append(row[0])
+            return ids
+        except Exception as e:
+            print('failed getting collection ids:', e)
+            raise
+            return []
+
+    # For streaming charts
     def get_chart_collection_ids(self, service_id, territory_id, kind_db_table, collection_db_table, date_str): # could add in (... date_str = TODAY)
         query = """
             SELECT {}_id FROM {}
@@ -187,7 +214,10 @@ class GenreRanks:
     # For everything NOT a playlist
     def load_chart_collection_ids(self):
         latest_date = self.db.get_latest_date_for_chart_collection(self._service, self._territory, self._kind_db_table, self._collection_db_table)
-        self.collection_ids = self.db.get_chart_collection_ids(self._service, self._territory, self._kind_db_table, self._collection_db_table, latest_date)
+        if self._collection_type == 'streaming':
+            self.collection_ids = self.db.get_chart_collection_ids(self._service, self._territory, self._kind_db_table, self._collection_db_table, latest_date)
+        elif self._collection_type == 'sales':
+            self.collection_ids = self.db.get_chart_sales_collection_ids(self._service, self._territory, self._kind_db_table, self._collection_db_table, latest_date)
         return True
 
     def load_playlist_collection_ids(self):
