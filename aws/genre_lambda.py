@@ -238,6 +238,7 @@ class GenreRanks:
     def get_top_genres(self, ranks = 3):
         return sorted(self.genre_counts, reverse = True, key = self.genre_counts.__getitem__)[0:ranks]
 
+
 def test_handler(event, context):
         global db
 
@@ -246,6 +247,7 @@ def test_handler(event, context):
 
         # get genres for charts - Spotify streaming, Apple Streaming, iTunes Sales charts
         #
+        # TODO: change for sALES and STREAMING...
         gr_chart.load_chart_collection_ids()
         gr_chart.load_artist_ids()
         gr_chart.load_genres_ids()
@@ -265,6 +267,43 @@ def test_handler(event, context):
         db.close_database()
         print('closed database connection')
 
+def service_mapping(service_name):
+    if service_name == 'spotify':
+        return 1
+    elif service_name == 'apple':
+        return 2
+
+def territory_mapping(territory):
+    # DB call looking for territory name in table, returning id
+    return 2 # placeholder for testing
+
+def genre_api_charts(service, territory, kind, collection_type):
+    global db
+    db = TrackDatabase()
+    gr_chart = GenreRanks(service_mapping(service), territory_mapping(territory), kind, collection_type)
+
+    # get genres for charts - Spotify streaming, Apple Streaming, iTunes Sales charts
+    #
+    gr_chart.load_chart_collection_ids()
+    gr_chart.load_artist_ids()
+    gr_chart.load_genres_ids()
+    gr_chart.calculate_genre_counts()
+    gr_chart.calculate_genre_percentage()
+    return gr_chart.get_top_genres()
+
+def genre_api_playlists(service, territory, playlist_id):
+    global db
+    db = TrackDatabase()
+
+    # get genres for playlists
+    gr_playlist = GenreRanks(1, 1, 'track', 'playlist', playlist_id = 2795)
+    gr_playlist.load_playlist_collection_ids()
+    gr_playlist.load_artist_ids()
+    gr_playlist.load_genres_ids()
+    gr_playlist.calculate_genre_counts()
+    gr_playlist.calculate_genre_percentage()
+    return gr_playlist.get_top_genres()
+
 # ---- AWS LAMBDA, API GATEWAY ----
 # How to structure json response
 # https://goonan.io/a-simple-python3-lambda-function-on-aws-with-an-api-gateway/
@@ -278,8 +317,43 @@ def genre_api_response(message, status_code):
         "body": json.dumps(message)
      }
 
+# serverless:
+# path: /genre/test/{collection_type}/{kind}
+#
+# Options for path parameters:
+# {collection_type} = streaming,sales
+# {kind} = track, album, music video
+# {service} = spotify, apple
+# {territory} = two letter character code... 'na', 'gb', etc... # maybe map ids to the database ids for territory
+
+# https://v9smm139ul.execute-api.us-west-2.amazonaws.com/dev/genre/test/stream/track/
 def genre_api_handler(event, context):
     try:
-        return genre_api_response({ "message": "Hello World!" }, 200)
+        collection_type = event['pathParameters']['collection_type']
+        kind = event['pathParameters']['kind']
+        # https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
+        return genre_api_response({'collection_type': collection_type, 'kind': kind}, 200)
+    except Exception as e:
+        return genre_api_response({'message': e.message}, 400)
+
+# path: /genre/chart/{collection_type}/{kind}/{service}/{territory}
+#
+def genre_api_charts_handler(event, context):
+    try:
+        service = event['pathParameters']['service']
+        territory = event['pathParameters']['territory']
+        kind = event['pathParameters']['kind']
+        collection_type = event['pathParameters']['collection_type']
+        return genre_api_response(genre_api_charts(service, territory, kind, collection_type), 200)
+        # return genre_api_response({'service': service, 'territory': territory, 'kind': kind, 'collection_type': collection_type}, 200)
+    except Exception as e:
+        return genre_api_response({'message': e.get('message')}, 400)
+
+def genre_api_playlists_handler(event, context):
+    try:
+        service = event['pathParameters']['service']
+        territory = event['pathParameters']['territory']
+        playlist_id = event['pathParameters']['playlist_id']
+        return genre_api_response(genre_api_playlists(service, territory, playlist_id), 200)
     except Exception as e:
         return genre_api_response({'message': e.message}, 400)

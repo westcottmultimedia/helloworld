@@ -210,13 +210,42 @@ functions:
 
   # ------ API GATEWAY ----
   # ------ GENRE
+  # original simple example: https://goonan.io/a-simple-python3-lambda-function-on-aws-with-an-api-gateway/
+  # parameters and querystrings: https://serverless.com/blog/serverless-v1.18.0/
   GenreApiHandler:
     handler: genre_lambda.genre_api_handler
     timeout: 60
     events:
-      - http: GET hello
+      # Options for path parameters:
+      # {collection_type} = stream,sales
+      # {kind} = track, album, music video
+      # {service} = spotify, apple
+      # {territory} = two letter character code... 'na', 'gb', etc... # maybe map ids to the database ids for territory
+      - http:
+          path: /genre/test/{collection_type}/{kind}
+          method: GET
 
-      
+  GenreApiChartsHandler:
+    handler: genre_lambda.genre_api_charts_handler
+    timeout: 60
+    events:
+      # Options for path parameters:
+      # {collection_type} = stream,sales
+      # {kind} = track, album, music video
+      # {service} = spotify, apple
+      # {territory} = two letter character code... 'na', 'gb', etc... # maybe map ids to the database ids for territory
+      - http:
+          path: /genre/chart/{collection_type}/{kind}/{service}/{territory}
+          method: GET
+
+  GenreApiPlaylistsHandler:
+    handler: genre_lambda.genre_api_playlists_handler
+    timeout: 60
+    events:
+      - http:
+          path: /genre/playlist/track/{service}/{territory}/track/{playlist_id}
+          method: GET
+
 # step functions definitions
 # https://github.com/horike37/serverless-step-functions
 stepFunctions:
