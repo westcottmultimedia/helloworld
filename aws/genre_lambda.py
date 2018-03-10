@@ -196,6 +196,7 @@ class GenreRanks:
         self.genres = [] # list of all genres for self.artists
         self.genre_counts = {} # {genre: count, 'pop-rock': 5, ...} - counts of all genres for the list of artists
         self.genre_percentages = {}
+        self.top_genres = []
         self.date = date_str # can also be for a specific date
         self.playlist_id = playlist_id
         self._map_db_tables()
@@ -278,9 +279,9 @@ class GenreRanks:
         return True
 
     # ranks: how many ranks to return? ie. ranks = 3 returns top 3 ranked genres
-    def get_top_genres(self, ranks = 3):
-        return sorted(self.genre_counts, reverse = True, key = self.genre_counts.__getitem__)[0:ranks]
-
+    def get_top_genres(self, ranks = 5):
+        self.top_genres = sorted(self.genre_counts, reverse = True, key = self.genre_counts.__getitem__)[0:ranks]
+        return self.top_genres
 
 def test_handler(event, context):
         global db
@@ -332,7 +333,12 @@ def genre_api_charts(service, territory_code, kind, collection_type):
     gr_chart.load_genres_ids()
     gr_chart.calculate_genre_counts()
     gr_chart.calculate_genre_percentage()
-    return gr_chart.get_top_genres()
+
+    # new format
+    return {
+        'genres_streaming': gr_chart.get_top_genres(),
+        'genre_percentages': gr_chart.genre_percentages
+    }
 
 def genre_api_playlists(service, territory_code, playlist_id):
     global db
@@ -345,7 +351,7 @@ def genre_api_playlists(service, territory_code, playlist_id):
     gr_playlist.load_genres_ids()
     gr_playlist.calculate_genre_counts()
     gr_playlist.calculate_genre_percentage()
-    return gr_playlist.get_top_genres()
+    return gr_playlist.get_top_genres() # TODO: change to be like streaming endpoint
 
 # ---- AWS LAMBDA, API GATEWAY ----
 # How to structure json response
@@ -389,10 +395,7 @@ def genre_api_charts_handler(event, context):
         collection_type = event['pathParameters']['collection_type']
 
         print('params from event are', service, territory, kind, collection_type)
-        return genre_api_response(
-            {'genres_streaming': genre_api_charts(service, territory, kind, collection_type)},
-            200
-        )
+        return genre_api_response(genre_api_charts(service, territory, kind, collection_type), 200)
         # return genre_api_response({'service': service, 'territory': territory, 'kind': kind, 'collection_type': collection_type}, 200)
     except Exception as e:
         print(e)
