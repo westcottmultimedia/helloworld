@@ -26,6 +26,7 @@ CACHE_ENABLED = False
 # TODAY is day in UTC - 8hrs, or PST
 # https://julien.danjou.info/blog/2015/python-and-timezones
 TODAY = (datetime.utcnow() - timedelta(hours=8)).strftime('%Y-%m-%d')
+YESTERDAY = (datetime.utcnow() - timedelta(hours=32)).strftime('%Y-%m-%d')
 
 # the Apple API url
 # ie. https://api.music.apple.com/v1/catalog/{storefront}/genres/{id}
@@ -386,7 +387,7 @@ def append_artist_data(tracks, region):
 #   url is a processed url from the db
 #
 
-def unprocessed_regions(chart_service, kind, date_str = TODAY):
+def unprocessed_regions(chart_service, kind, date_str = YESTERDAY):
     processed_urls = db.get_processed_by_kind(chart_service, kind, date_str)
 
     processed_regions = []
@@ -489,7 +490,7 @@ class TrackDatabase(object):
         self.table_stats['playlist_track_position']['start_count'] = ptps
         print("# Track Position Stats: {}".format(ptps))
 
-    def print_region_status_stats(self, date_stats = TODAY):
+    def print_region_status_stats(self, date_stats = YESTERDAY):
         query_str = '''
             SELECT *
             FROM processed
@@ -1321,6 +1322,7 @@ def handler(event, context):
     chartIndex = event['chartIndex'] # pass in index for chunking the processing
     if chartIndex >= 0 and chartIndex <= 3: # ensure santizied input
         charts = [CHARTS[chartIndex]] # recreate array structure of CHARTS
+
 
     # event = {'regions': ['us', 'ab', '<ETC>'] ...}
     regions = event['regions']

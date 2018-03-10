@@ -531,7 +531,9 @@ class TrackDatabase(object):
         query = "SELECT * FROM processed WHERE url = %s"
         self.c.execute(query, [url])
 
-        if self.c.fetchone():
+        row = self.c.fetchone()
+        if row:
+            print('return result of processed', row[0])
             return True
         return False
 
@@ -851,6 +853,7 @@ def process(mode = YESTERDAY, regions = REGIONS):
                 print('Starting processing at', starttime.strftime('%H:%M:%S %m-%d-%y'))
                 print('Loading tracks for region "%s" on "%s"...' % (region, date_to_process))
                 url = get_spotify_csv_url(region, date_to_process)
+                print(url)
                 if db.is_processed(url):
                     print('Already processed, skipping...')
                     print('-' * 40)

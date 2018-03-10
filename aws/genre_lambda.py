@@ -390,13 +390,13 @@ def genre_api_charts_handler(event, context):
 
         print('params from event are', service, territory, kind, collection_type)
         return genre_api_response(
-            {'genres': genre_api_charts(service, territory, kind, collection_type)},
+            {'genres_streaming': genre_api_charts(service, territory, kind, collection_type)},
             200
         )
         # return genre_api_response({'service': service, 'territory': territory, 'kind': kind, 'collection_type': collection_type}, 200)
     except Exception as e:
         print(e)
-        return genre_api_response({'message': 'genre_api_charts_handler error'}, 400)
+        return genre_api_response({'genres_streaming': []}, 400)
 
 def genre_api_playlists_handler(event, context):
     try:
@@ -408,4 +408,4 @@ def genre_api_playlists_handler(event, context):
             200
         )
     except Exception as e:
-        return genre_api_response({'message': e.message}, 400)
+        return genre_api_response({'genres_playlists': []}, 400)
