@@ -168,6 +168,19 @@ class TrackDatabase(object):
 
         return []
 
+    def territory_mapping_code_to_db_id(self, territory_code):
+        query = """
+            SELECT id FROM territory
+            WHERE code = %s
+        """
+
+        try:
+            self.c.execute(query, [territory_code])
+            return self.c.fetchone()[0]
+        except Exception as e:
+            raise
+            return None
+
 class GenreRanks:
     def __init__(self, service, territory, kind, collection_type, playlist_id = None, date_str = 'latest'):
         self.db = TrackDatabase()
@@ -303,14 +316,14 @@ def service_mapping(service_name):
     elif service_name == 'apple':
         return 2
 
-def territory_mapping(territory):
-    # DB call looking for territory name in table, returning id
-    return 2 # placeholder for testing
+def territory_mapping(territory_code):
+    return db.territory_mapping_code_to_db_id(territory_code)
 
-def genre_api_charts(service, territory, kind, collection_type):
+def genre_api_charts(service, territory_code, kind, collection_type):
     global db
     db = TrackDatabase()
-    gr_chart = GenreRanks(service_mapping(service), territory_mapping(territory), kind, collection_type)
+    gr_chart = GenreRanks(service_mapping(service), territory_mapping(territory_code), kind, collection_type)
+    # gr_chart = GenreRanks(service_mapping(service), 2, kind, collection_type)
 
     # get genres for charts - Spotify streaming, Apple Streaming, iTunes Sales charts
     #
@@ -321,7 +334,7 @@ def genre_api_charts(service, territory, kind, collection_type):
     gr_chart.calculate_genre_percentage()
     return gr_chart.get_top_genres()
 
-def genre_api_playlists(service, territory, playlist_id):
+def genre_api_playlists(service, territory_code, playlist_id):
     global db
     db = TrackDatabase()
 
@@ -374,16 +387,25 @@ def genre_api_charts_handler(event, context):
         territory = event['pathParameters']['territory']
         kind = event['pathParameters']['kind']
         collection_type = event['pathParameters']['collection_type']
-        return genre_api_response(genre_api_charts(service, territory, kind, collection_type), 200)
+
+        print('params from event are', service, territory, kind, collection_type)
+        return genre_api_response(
+            {'genres': genre_api_charts(service, territory, kind, collection_type)},
+            200
+        )
         # return genre_api_response({'service': service, 'territory': territory, 'kind': kind, 'collection_type': collection_type}, 200)
     except Exception as e:
-        return genre_api_response({'message': e.get('message')}, 400)
+        print(e)
+        return genre_api_response({'message': 'genre_api_charts_handler error'}, 400)
 
 def genre_api_playlists_handler(event, context):
     try:
         service = event['pathParameters']['service']
         territory = event['pathParameters']['territory']
         playlist_id = event['pathParameters']['playlist_id']
-        return genre_api_response(genre_api_playlists(service, territory, playlist_id), 200)
+        return genre_api_response(
+            {'genres': genre_api_playlists(service, territory, playlist_id)},
+            200
+        )
     except Exception as e:
         return genre_api_response({'message': e.message}, 400)
