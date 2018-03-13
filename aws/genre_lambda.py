@@ -245,7 +245,6 @@ class GenreRanks:
             artist_ids.append(self.db.get_artist_id_from_collection_id(self._kind_db_table, self._collection_db_table, collection_id))
 
         self.artist_ids = artist_ids
-        print(self.artist_ids)
         return True
 
     def load_genres_ids(self):
@@ -275,7 +274,6 @@ class GenreRanks:
             genre_percentages[genre] = count/total
 
         self.genre_percentages = genre_percentages
-        print(self.genre_percentages)
         return True
 
     # ranks: how many ranks to return? ie. ranks = 3 returns top 3 ranked genres
@@ -324,7 +322,6 @@ def genre_api_charts(service, territory_code, kind, collection_type):
     global db
     db = TrackDatabase()
     gr_chart = GenreRanks(service_mapping(service), territory_mapping(territory_code), kind, collection_type)
-    # gr_chart = GenreRanks(service_mapping(service), 2, kind, collection_type)
 
     # get genres for charts - Spotify streaming, Apple Streaming, iTunes Sales charts
     #
@@ -336,7 +333,7 @@ def genre_api_charts(service, territory_code, kind, collection_type):
 
     # new format
     return {
-        'genres_streaming': gr_chart.get_top_genres(),
+        'genres': gr_chart.get_top_genres(),
         'genre_percentages': gr_chart.genre_percentages
     }
 
@@ -366,6 +363,8 @@ def genre_api_response(message, status_code):
         "body": json.dumps(message)
      }
 
+# ----- AWS SERVERLESS HANDLERS -----
+#
 # serverless:
 # path: /genre/test/{collection_type}/{kind}
 #
@@ -374,8 +373,7 @@ def genre_api_response(message, status_code):
 # {kind} = track, album, music video
 # {service} = spotify, apple
 # {territory} = two letter character code... 'na', 'gb', etc... # maybe map ids to the database ids for territory
-
-# https://v9smm139ul.execute-api.us-west-2.amazonaws.com/dev/genre/test/stream/track/
+# based on: https://v9smm139ul.execute-api.us-west-2.amazonaws.com/dev/genre/test/stream/track/
 def genre_api_handler(event, context):
     try:
         collection_type = event['pathParameters']['collection_type']
@@ -399,7 +397,7 @@ def genre_api_charts_handler(event, context):
         # return genre_api_response({'service': service, 'territory': territory, 'kind': kind, 'collection_type': collection_type}, 200)
     except Exception as e:
         print(e)
-        return genre_api_response({'genres_streaming': []}, 400)
+        return genre_api_response({'genres': []}, 400)
 
 def genre_api_playlists_handler(event, context):
     try:
