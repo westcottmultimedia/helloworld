@@ -331,6 +331,7 @@ def genre_api_charts(service, territory_code, kind, collection_type):
     gr_chart.calculate_genre_counts()
     gr_chart.calculate_genre_percentage()
 
+    db.close_database()
     # new format
     return {
         'genres': gr_chart.get_top_genres(),
@@ -348,6 +349,8 @@ def genre_api_playlists(service, territory_code, playlist_id):
     gr_playlist.load_genres_ids()
     gr_playlist.calculate_genre_counts()
     gr_playlist.calculate_genre_percentage()
+
+    db.close_database()
     return gr_playlist.get_top_genres() # TODO: change to be like streaming endpoint
 
 # ---- AWS LAMBDA, API GATEWAY ----
