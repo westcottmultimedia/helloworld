@@ -1,0 +1,2973 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "The AWS CloudFormation template for this Serverless application",
+  "Resources": {
+    "ServerlessDeploymentBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccelerateConfiguration": {
+          "AccelerationStatus": "Suspended"
+        }
+      }
+    },
+    "SpotifyUnderscorestreamingLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-spotify_streaming"
+      }
+    },
+    "GetUnprocessedSpotifyRegionsLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GetUnprocessedSpotifyRegions"
+      }
+    },
+    "GetUnprocessedAppleRegionsLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GetUnprocessedAppleRegions"
+      }
+    },
+    "AppleUnderscorestreamingUnderscoresalesLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-apple_streaming_sales"
+      }
+    },
+    "CreatePlaylistProcessedEntryLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-CreatePlaylistProcessedEntry"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsVersionsLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsVersions"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsVersionsLengthLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsVersionsLength"
+      }
+    },
+    "FetchPlaylistVersionsLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-FetchPlaylistVersions"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsFollowersLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsFollowers"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsFollowersLengthLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsFollowersLength"
+      }
+    },
+    "FetchPlaylistFollowersLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-FetchPlaylistFollowers"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsPositionsLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsPositions"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsPositionsLengthLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsPositionsLength"
+      }
+    },
+    "FetchPlaylistPositionsLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-FetchPlaylistPositions"
+      }
+    },
+    "FetchAllPlaylistPositionsLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-FetchAllPlaylistPositions"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsPopularitiesLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsPopularities"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsPopularitiesLengthLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsPopularitiesLength"
+      }
+    },
+    "FetchPlaylistPopularitiesLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-FetchPlaylistPopularities"
+      }
+    },
+    "RefreshPlaylistsOfUsersLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-RefreshPlaylistsOfUsers"
+      }
+    },
+    "TestGenreLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-TestGenre"
+      }
+    },
+    "GenerateReportingForSalesLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GenerateReportingForSales"
+      }
+    },
+    "GenerateReportingForStreamingLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GenerateReportingForStreaming"
+      }
+    },
+    "GetUnderscorearrayUnderscorelengthLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-get_array_length"
+      }
+    },
+    "TestUnderscorelengthUnderscoreequalityLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-test_length_equality"
+      }
+    },
+    "GenreApiHandlerLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GenreApiHandler"
+      }
+    },
+    "GenreApiChartsHandlerLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GenreApiChartsHandler"
+      }
+    },
+    "GenreApiPlaylistsHandlerLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/beats-dev-GenreApiPlaylistsHandler"
+      }
+    },
+    "IamRoleLambdaExecution": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [
+                  "dev",
+                  "beats",
+                  "lambda"
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-spotify_streaming:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetUnprocessedSpotifyRegions:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetUnprocessedAppleRegions:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-apple_streaming_sales:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-CreatePlaylistProcessedEntry:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsVersions:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsVersionsLength:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-FetchPlaylistVersions:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsFollowers:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsFollowersLength:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-FetchPlaylistFollowers:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsPositions:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsPositionsLength:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-FetchPlaylistPositions:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-FetchAllPlaylistPositions:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsPopularities:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsPopularitiesLength:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-FetchPlaylistPopularities:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-RefreshPlaylistsOfUsers:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-TestGenre:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GenerateReportingForSales:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GenerateReportingForStreaming:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-get_array_length:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-test_length_equality:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GenreApiHandler:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GenreApiChartsHandler:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GenreApiPlaylistsHandler:*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-spotify_streaming:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetUnprocessedSpotifyRegions:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetUnprocessedAppleRegions:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-apple_streaming_sales:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-CreatePlaylistProcessedEntry:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsVersions:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsVersionsLength:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-FetchPlaylistVersions:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsFollowers:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsFollowersLength:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-FetchPlaylistFollowers:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsPositions:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsPositionsLength:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-FetchPlaylistPositions:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-FetchAllPlaylistPositions:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsPopularities:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GetDailyUnprocessedPlaylistsPopularitiesLength:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-FetchPlaylistPopularities:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-RefreshPlaylistsOfUsers:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-TestGenre:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GenerateReportingForSales:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GenerateReportingForStreaming:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-get_array_length:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-test_length_equality:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GenreApiHandler:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GenreApiChartsHandler:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/beats-dev-GenreApiPlaylistsHandler:*:*"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "Path": "/",
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              "beats",
+              "dev",
+              "us-west-2",
+              "lambdaRole"
+            ]
+          ]
+        }
+      }
+    },
+    "SpotifyUnderscorestreamingLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-spotify_streaming",
+        "Handler": "spotify_streaming_lambda.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 300
+      },
+      "DependsOn": [
+        "SpotifyUnderscorestreamingLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "SpotifyUnderscorestreamingLambdaVersionFakPKIy4DMLzfcjeNQhJh1Q6x6y8pvkfZ190Se59zQ": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "SpotifyUnderscorestreamingLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GetUnprocessedSpotifyRegionsLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GetUnprocessedSpotifyRegions",
+        "Handler": "spotify_streaming_lambda.get_unprocessed_spotify_regions_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 30
+      },
+      "DependsOn": [
+        "GetUnprocessedSpotifyRegionsLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GetUnprocessedSpotifyRegionsLambdaVersionTQQq1YLjhr7Zejjdv4OYcomKtFTeJfkfDcADeB8tPo": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GetUnprocessedSpotifyRegionsLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GetUnprocessedAppleRegionsLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GetUnprocessedAppleRegions",
+        "Handler": "apple_streaming_sales_lambda.get_unprocessed_apple_regions",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 30
+      },
+      "DependsOn": [
+        "GetUnprocessedAppleRegionsLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GetUnprocessedAppleRegionsLambdaVersionaYxxhZ3uGoPmabeGtIxZab855NPJDqIAaTzTTEqSfI": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GetUnprocessedAppleRegionsLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "AppleUnderscorestreamingUnderscoresalesLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-apple_streaming_sales",
+        "Handler": "apple_streaming_sales_lambda.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 300
+      },
+      "DependsOn": [
+        "AppleUnderscorestreamingUnderscoresalesLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "AppleUnderscorestreamingUnderscoresalesLambdaVersionDGRfXbYrAQ8mSehR8xbMs5A7WcOEeR6hcEbnPRhZfs": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "AppleUnderscorestreamingUnderscoresalesLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "CreatePlaylistProcessedEntryLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-CreatePlaylistProcessedEntry",
+        "Handler": "playlist_lambda.create_playlist_processed_entry_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 200
+      },
+      "DependsOn": [
+        "CreatePlaylistProcessedEntryLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "CreatePlaylistProcessedEntryLambdaVersionFV4gUEkmc4MM1DJZDJ190vHJt7cDsv9cksQHC1To": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "CreatePlaylistProcessedEntryLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GetDailyUnprocessedPlaylistsVersionsLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GetDailyUnprocessedPlaylistsVersions",
+        "Handler": "playlist_lambda.get_daily_unprocessed_playlists_versions_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 30
+      },
+      "DependsOn": [
+        "GetDailyUnprocessedPlaylistsVersionsLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GetDailyUnprocessedPlaylistsVersionsLambdaVersiondfeG29Bve8pBTJk7UY1AXr7lzB3vpZPMwghh4f1Kjw": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GetDailyUnprocessedPlaylistsVersionsLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GetDailyUnprocessedPlaylistsVersionsLengthLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GetDailyUnprocessedPlaylistsVersionsLength",
+        "Handler": "playlist_lambda.get_daily_unprocessed_playlists_versions_length_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 30
+      },
+      "DependsOn": [
+        "GetDailyUnprocessedPlaylistsVersionsLengthLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GetDailyUnprocessedPlaylistsVersionsLengthLambdaVersionMERkoiUS72uGwMgxs8sTy5cpNquvZwbhKcp8KlJJwLQ": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GetDailyUnprocessedPlaylistsVersionsLengthLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "FetchPlaylistVersionsLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-FetchPlaylistVersions",
+        "Handler": "playlist_lambda.fetch_playlist_versions_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 300
+      },
+      "DependsOn": [
+        "FetchPlaylistVersionsLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "FetchPlaylistVersionsLambdaVersionZcKJY8qGuineQxLjGU6XviqbjYuT0736C69Q7LiYCPA": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "FetchPlaylistVersionsLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GetDailyUnprocessedPlaylistsFollowersLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GetDailyUnprocessedPlaylistsFollowers",
+        "Handler": "playlist_lambda.get_daily_unprocessed_playlists_followers_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 30
+      },
+      "DependsOn": [
+        "GetDailyUnprocessedPlaylistsFollowersLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GetDailyUnprocessedPlaylistsFollowersLambdaVersioniiLDGBPgp5Fd7aa1ocCLG1IcbWonOk3CZmwlDYXPS9E": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GetDailyUnprocessedPlaylistsFollowersLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GetDailyUnprocessedPlaylistsFollowersLengthLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GetDailyUnprocessedPlaylistsFollowersLength",
+        "Handler": "playlist_lambda.get_daily_unprocessed_playlists_followers_length_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 30
+      },
+      "DependsOn": [
+        "GetDailyUnprocessedPlaylistsFollowersLengthLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GetDailyUnprocessedPlaylistsFollowersLengthLambdaVersion6N1yBgbPB3Eltfoq8oNdjaK08Q0LNjMZgyxhX24Cbc": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GetDailyUnprocessedPlaylistsFollowersLengthLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "FetchPlaylistFollowersLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-FetchPlaylistFollowers",
+        "Handler": "playlist_lambda.fetch_playlist_followers_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 300
+      },
+      "DependsOn": [
+        "FetchPlaylistFollowersLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "FetchPlaylistFollowersLambdaVersion2OwknstEnbBDkDlS9tA4Gdqj3fTs1RWBZVUVYB1hxE": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "FetchPlaylistFollowersLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GetDailyUnprocessedPlaylistsPositionsLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GetDailyUnprocessedPlaylistsPositions",
+        "Handler": "playlist_lambda.get_daily_unprocessed_playlists_positions_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 30
+      },
+      "DependsOn": [
+        "GetDailyUnprocessedPlaylistsPositionsLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GetDailyUnprocessedPlaylistsPositionsLambdaVersionREHvf5ghq3AitBfLracr4CMyrEFWLwQlylavCEM": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GetDailyUnprocessedPlaylistsPositionsLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GetDailyUnprocessedPlaylistsPositionsLengthLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GetDailyUnprocessedPlaylistsPositionsLength",
+        "Handler": "playlist_lambda.get_daily_unprocessed_playlists_positions_length_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 30
+      },
+      "DependsOn": [
+        "GetDailyUnprocessedPlaylistsPositionsLengthLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GetDailyUnprocessedPlaylistsPositionsLengthLambdaVersionUyhfmllTf9YiB0WVdA9DGBN9YfduXRjnnIvnkspIMs": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GetDailyUnprocessedPlaylistsPositionsLengthLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "FetchPlaylistPositionsLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-FetchPlaylistPositions",
+        "Handler": "playlist_lambda.fetch_playlist_positions_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 300
+      },
+      "DependsOn": [
+        "FetchPlaylistPositionsLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "FetchPlaylistPositionsLambdaVersion76wjUxieTFdvS3ctUQox13tMhFihLnJa4CLUdmwFU": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "FetchPlaylistPositionsLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "FetchAllPlaylistPositionsLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-FetchAllPlaylistPositions",
+        "Handler": "playlist_lambda.fetch_all_playlist_positions_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 300
+      },
+      "DependsOn": [
+        "FetchAllPlaylistPositionsLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "FetchAllPlaylistPositionsLambdaVersion7jlue5vSIv6W4ABbO4dXITaXRsz6nNRJiZixiTWM": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "FetchAllPlaylistPositionsLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GetDailyUnprocessedPlaylistsPopularitiesLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GetDailyUnprocessedPlaylistsPopularities",
+        "Handler": "playlist_lambda.get_daily_unprocessed_playlists_popularities_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 30
+      },
+      "DependsOn": [
+        "GetDailyUnprocessedPlaylistsPopularitiesLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GetDailyUnprocessedPlaylistsPopularitiesLambdaVersiont0e7Oh3GblWvSsOKb0oSBUydC7qMcnEMFr2hjTyVm4": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GetDailyUnprocessedPlaylistsPopularitiesLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GetDailyUnprocessedPlaylistsPopularitiesLengthLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GetDailyUnprocessedPlaylistsPopularitiesLength",
+        "Handler": "playlist_lambda.get_daily_unprocessed_playlists_popularities_length_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 30
+      },
+      "DependsOn": [
+        "GetDailyUnprocessedPlaylistsPopularitiesLengthLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GetDailyUnprocessedPlaylistsPopularitiesLengthLambdaVersion2rkZsW3hVypyOnv3jD1PbU86fad9PK13vtNw9MQQRk": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GetDailyUnprocessedPlaylistsPopularitiesLengthLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "FetchPlaylistPopularitiesLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-FetchPlaylistPopularities",
+        "Handler": "playlist_lambda.fetch_playlist_popularities_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 300
+      },
+      "DependsOn": [
+        "FetchPlaylistPopularitiesLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "FetchPlaylistPopularitiesLambdaVersionwDpnUPDrFWIeTD6XA1tyBYzcltcKIETpiKLEzN2wIU": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "FetchPlaylistPopularitiesLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "RefreshPlaylistsOfUsersLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-RefreshPlaylistsOfUsers",
+        "Handler": "playlist_lambda.refresh_playlists_of_users_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 300
+      },
+      "DependsOn": [
+        "RefreshPlaylistsOfUsersLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "RefreshPlaylistsOfUsersLambdaVersionfIpiYV88NdiS5BgJO3zjBQ4iWzYcjwCRla50cy6tlY": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "RefreshPlaylistsOfUsersLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "TestGenreLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-TestGenre",
+        "Handler": "genre_lambda.test_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 60
+      },
+      "DependsOn": [
+        "TestGenreLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "TestGenreLambdaVersionaiNtoDp6vLCzIfLjp5w84q53EGnDu2WCK0NgMmC0qU": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "TestGenreLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GenerateReportingForSalesLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GenerateReportingForSales",
+        "Handler": "generate_reporting_for_sales_and_streaming.generate_reporting_for_sales_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 300
+      },
+      "DependsOn": [
+        "GenerateReportingForSalesLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GenerateReportingForSalesLambdaVersionYGuoVqz0j86iMTyvPCjJUcXLstlujXNK3Y8aw08WU": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GenerateReportingForSalesLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GenerateReportingForStreamingLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GenerateReportingForStreaming",
+        "Handler": "generate_reporting_for_sales_and_streaming.generate_reporting_for_streaming_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 300
+      },
+      "DependsOn": [
+        "GenerateReportingForStreamingLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GenerateReportingForStreamingLambdaVersionTSgxm4EBeUVLjSgIcUVjdHuCuMv11Eo5HHkXKmuC2A": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GenerateReportingForStreamingLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GetUnderscorearrayUnderscorelengthLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-get_array_length",
+        "Handler": "helpers.get_array_length",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 5
+      },
+      "DependsOn": [
+        "GetUnderscorearrayUnderscorelengthLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GetUnderscorearrayUnderscorelengthLambdaVersionIsoIpPR5VsiMhgogQgCsrgKOdpY3DAQIe9rEVOKaL3o": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GetUnderscorearrayUnderscorelengthLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "TestUnderscorelengthUnderscoreequalityLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-test_length_equality",
+        "Handler": "helpers.test_length_equality",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 10
+      },
+      "DependsOn": [
+        "TestUnderscorelengthUnderscoreequalityLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "TestUnderscorelengthUnderscoreequalityLambdaVersionLWZJs3NyPzyZUDbtVkC1vUlNUJMT7R2rHdYi9lpLZPw": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "TestUnderscorelengthUnderscoreequalityLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GenreApiHandlerLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GenreApiHandler",
+        "Handler": "genre_lambda.genre_api_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 60
+      },
+      "DependsOn": [
+        "GenreApiHandlerLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GenreApiHandlerLambdaVersionS1BmEHzrc4GQQJMoamm8JnL12UdGDcohLc2IAKPJBw": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GenreApiHandlerLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GenreApiChartsHandlerLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GenreApiChartsHandler",
+        "Handler": "genre_lambda.genre_api_charts_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 60
+      },
+      "DependsOn": [
+        "GenreApiChartsHandlerLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GenreApiChartsHandlerLambdaVersiono2EbibsBqB31S2FUd8N0WSL5tcFMHCyHyEIoaCbBM": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GenreApiChartsHandlerLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "GenreApiPlaylistsHandlerLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/beats/dev/1521571057504-2018-03-20T18:37:37.504Z/beats.zip"
+        },
+        "FunctionName": "beats-dev-GenreApiPlaylistsHandler",
+        "Handler": "genre_lambda.genre_api_playlists_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Timeout": 60
+      },
+      "DependsOn": [
+        "GenreApiPlaylistsHandlerLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "GenreApiPlaylistsHandlerLambdaVersionTHGDnx1Ob8edmWhQV6uzBNOrgjnzRnq1jFOAH9ZNm8": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GenreApiPlaylistsHandlerLambdaFunction"
+        },
+        "CodeSha256": "I1DipW1MqkbK69zOdsu5z+5R33ehVoySfFEuJ6K1+d0="
+      }
+    },
+    "IamRoleStateMachineExecution": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "states.us-west-2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "dev-us-west-2-beats-statemachine",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "StartRDSBeats": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Start the RDS instance of Beats\",\"StartAt\":\"action\",\"States\":{\"action\":{\"Type\":\"Pass\",\"Result\":{\"instances\":[\"beats\"],\"action\":\"start\"},\"Next\":\"execute\"},\"execute\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:RDS-Start-Stop\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "StartRDSBeats"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "StopRDSBeats": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Stop the RDS instance of Beats\",\"StartAt\":\"action\",\"States\":{\"action\":{\"Type\":\"Pass\",\"Result\":{\"instances\":[\"beats\"],\"action\":\"stop\"},\"Next\":\"execute\"},\"execute\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:RDS-Start-Stop\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "StopRDSBeats"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "SpotifyStreamingSongs": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Spotify - Streaming - Spotify Top Songs.\",\"StartAt\":\"CleanInput\",\"States\":{\"CleanInput\":{\"Type\":\"Pass\",\"Result\":{\"done\":false},\"Next\":\"GetUnprocessedRegionsPre\"},\"GetUnprocessedRegionsPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetUnprocessedSpotifyRegions\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"GetArrayLengthPre\"},\"GetArrayLengthPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-get_array_length\",\"InputPath\":\"$.regions\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"ProcessingChoice\":{\"Type\":\"Choice\",\"Choices\":[{\"Variable\":\"$.length\",\"NumericEquals\":0,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":true,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":false,\"Next\":\"Spotify ABC\"}]},\"Spotify ABC\":{\"Type\":\"Parallel\",\"Next\":\"GetUnprocessedRegionsPost\",\"ResultPath\":\"$.job_status\",\"OutputPath\":\"$\",\"Branches\":[{\"StartAt\":\"Regions A\",\"States\":{\"Regions A\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[0:10]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Spotify A\"},\"Spotify A\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-spotify_streaming\",\"End\":true}}},{\"StartAt\":\"Regions B\",\"States\":{\"Regions B\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[10:20]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Spotify B\"},\"Spotify B\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-spotify_streaming\",\"End\":true}}},{\"StartAt\":\"Regions C\",\"States\":{\"Regions C\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[20:30]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Spotify C\"},\"Spotify C\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-spotify_streaming\",\"End\":true}}}]},\"GetUnprocessedRegionsPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetUnprocessedSpotifyRegions\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"GetArrayLengthPost\"},\"GetArrayLengthPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-get_array_length\",\"InputPath\":\"$.regions\",\"ResultPath\":\"$.length_post\",\"OutputPath\":\"$\",\"Next\":\"TestLengthEquality\"},\"TestLengthEquality\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-test_length_equality\",\"InputPath\":\"$\",\"ResultPath\":\"$.done\",\"OutputPath\":\"$\",\"Next\":\"SaveLength\"},\"SaveLength\":{\"Type\":\"Pass\",\"InputPath\":\"$.length_post\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"Done\":{\"Type\":\"Pass\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "SpotifyStreamingSongs"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "AppleStreamingSongs": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Apple Music for Streaming Songs\",\"StartAt\":\"CleanInput\",\"States\":{\"CleanInput\":{\"Type\":\"Pass\",\"Result\":{\"chartIndex\":0,\"chart_service\":\"apple-music\",\"kind\":\"top-songs\",\"length_post\":0,\"done\":false},\"Next\":\"GetUnprocessedRegionsPre\"},\"GetUnprocessedRegionsPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetUnprocessedAppleRegions\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"GetArrayLengthPre\"},\"GetArrayLengthPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-get_array_length\",\"InputPath\":\"$.regions\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"ProcessingChoice\":{\"Type\":\"Choice\",\"Choices\":[{\"Variable\":\"$.length\",\"NumericEquals\":0,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":true,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":false,\"Next\":\"Apple ABC\"}]},\"Apple ABC\":{\"Type\":\"Parallel\",\"Next\":\"GetUnprocessedRegionsPost\",\"ResultPath\":\"$.job_status\",\"OutputPath\":\"$\",\"Branches\":[{\"StartAt\":\"Regions A\",\"States\":{\"Regions A\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[0:5]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Apple A\"},\"Apple A\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-apple_streaming_sales\",\"End\":true}}},{\"StartAt\":\"Regions B\",\"States\":{\"Regions B\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[5:10]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Apple B\"},\"Apple B\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-apple_streaming_sales\",\"End\":true}}},{\"StartAt\":\"Regions C\",\"States\":{\"Regions C\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[10:15]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Apple C\"},\"Apple C\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-apple_streaming_sales\",\"End\":true}}}]},\"GetUnprocessedRegionsPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetUnprocessedAppleRegions\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"GetArrayLengthPost\"},\"GetArrayLengthPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-get_array_length\",\"InputPath\":\"$.regions\",\"ResultPath\":\"$.length_post\",\"OutputPath\":\"$\",\"Next\":\"TestLengthEquality\"},\"TestLengthEquality\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-test_length_equality\",\"ResultPath\":\"$.done\",\"OutputPath\":\"$\",\"Next\":\"SaveLength\"},\"SaveLength\":{\"Type\":\"Pass\",\"InputPath\":\"$.length_post\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"Done\":{\"Type\":\"Pass\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "AppleStreamingSongs"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "AppleSalesSongs": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Apple iTunes Sales for Songs\",\"StartAt\":\"CleanInput\",\"States\":{\"CleanInput\":{\"Type\":\"Pass\",\"Result\":{\"chartIndex\":1,\"chart_service\":\"itunes-music\",\"kind\":\"top-songs\",\"length_post\":0,\"done\":false},\"Next\":\"GetUnprocessedRegionsPre\"},\"GetUnprocessedRegionsPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetUnprocessedAppleRegions\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"GetArrayLengthPre\"},\"GetArrayLengthPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-get_array_length\",\"InputPath\":\"$.regions\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"ProcessingChoice\":{\"Type\":\"Choice\",\"Choices\":[{\"Variable\":\"$.length\",\"NumericEquals\":0,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":true,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":false,\"Next\":\"Apple ABC\"}]},\"Apple ABC\":{\"Type\":\"Parallel\",\"Next\":\"GetUnprocessedRegionsPost\",\"ResultPath\":\"$.job_status\",\"OutputPath\":\"$\",\"Branches\":[{\"StartAt\":\"Regions A\",\"States\":{\"Regions A\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[0:5]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Apple A\"},\"Apple A\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-apple_streaming_sales\",\"End\":true}}},{\"StartAt\":\"Regions B\",\"States\":{\"Regions B\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[5:10]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Apple B\"},\"Apple B\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-apple_streaming_sales\",\"End\":true}}},{\"StartAt\":\"Regions C\",\"States\":{\"Regions C\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[10:15]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Apple C\"},\"Apple C\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-apple_streaming_sales\",\"End\":true}}}]},\"GetUnprocessedRegionsPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetUnprocessedAppleRegions\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"GetArrayLengthPost\"},\"GetArrayLengthPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-get_array_length\",\"InputPath\":\"$.regions\",\"ResultPath\":\"$.length_post\",\"OutputPath\":\"$\",\"Next\":\"TestLengthEquality\"},\"TestLengthEquality\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-test_length_equality\",\"InputPath\":\"$\",\"ResultPath\":\"$.done\",\"OutputPath\":\"$\",\"Next\":\"SaveLength\"},\"SaveLength\":{\"Type\":\"Pass\",\"InputPath\":\"$.length_post\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"Done\":{\"Type\":\"Pass\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "AppleSalesSongs"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "AppleSalesAlbums": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Apple iTunes Sales for Albums\",\"StartAt\":\"CleanInput\",\"States\":{\"CleanInput\":{\"Type\":\"Pass\",\"Result\":{\"chartIndex\":2,\"chart_service\":\"itunes-music\",\"kind\":\"top-albums\",\"length_post\":0,\"done\":false},\"Next\":\"GetUnprocessedRegionsPre\"},\"GetUnprocessedRegionsPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetUnprocessedAppleRegions\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"GetArrayLengthPre\"},\"GetArrayLengthPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-get_array_length\",\"InputPath\":\"$.regions\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"ProcessingChoice\":{\"Type\":\"Choice\",\"Choices\":[{\"Variable\":\"$.length\",\"NumericEquals\":0,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":true,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":false,\"Next\":\"Apple ABC\"}]},\"Apple ABC\":{\"Type\":\"Parallel\",\"Next\":\"GetUnprocessedRegionsPost\",\"ResultPath\":\"$.job_status\",\"OutputPath\":\"$\",\"Branches\":[{\"StartAt\":\"Regions A\",\"States\":{\"Regions A\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[0:5]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Apple A\"},\"Apple A\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-apple_streaming_sales\",\"End\":true}}},{\"StartAt\":\"Regions B\",\"States\":{\"Regions B\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[5:10]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Apple B\"},\"Apple B\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-apple_streaming_sales\",\"End\":true}}},{\"StartAt\":\"Regions C\",\"States\":{\"Regions C\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[10:15]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Apple C\"},\"Apple C\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-apple_streaming_sales\",\"End\":true}}}]},\"GetUnprocessedRegionsPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetUnprocessedAppleRegions\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"GetArrayLengthPost\"},\"GetArrayLengthPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-get_array_length\",\"InputPath\":\"$.regions\",\"ResultPath\":\"$.length_post\",\"OutputPath\":\"$\",\"Next\":\"TestLengthEquality\"},\"TestLengthEquality\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-test_length_equality\",\"ResultPath\":\"$.done\",\"OutputPath\":\"$\",\"Next\":\"SaveLength\"},\"SaveLength\":{\"Type\":\"Pass\",\"InputPath\":\"$.length_post\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"Done\":{\"Type\":\"Pass\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "AppleSalesAlbums"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "AppleSalesMusicVideos": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Apple iTunes Sales for Music Videos\",\"StartAt\":\"CleanInput\",\"States\":{\"CleanInput\":{\"Type\":\"Pass\",\"Result\":{\"chartIndex\":3,\"chart_service\":\"music-videos\",\"kind\":\"top-music-videos\",\"length_post\":0,\"done\":false},\"Next\":\"GetUnprocessedRegionsPre\"},\"GetUnprocessedRegionsPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetUnprocessedAppleRegions\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"GetArrayLengthPre\"},\"GetArrayLengthPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-get_array_length\",\"InputPath\":\"$.regions\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"ProcessingChoice\":{\"Type\":\"Choice\",\"Choices\":[{\"Variable\":\"$.length\",\"NumericEquals\":0,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":true,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":false,\"Next\":\"Apple ABC\"}]},\"Apple ABC\":{\"Type\":\"Parallel\",\"Next\":\"GetUnprocessedRegionsPost\",\"ResultPath\":\"$.job_status\",\"OutputPath\":\"$\",\"Branches\":[{\"StartAt\":\"Regions A\",\"States\":{\"Regions A\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[0:5]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Apple A\"},\"Apple A\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-apple_streaming_sales\",\"End\":true}}},{\"StartAt\":\"Regions B\",\"States\":{\"Regions B\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[5:10]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Apple B\"},\"Apple B\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-apple_streaming_sales\",\"End\":true}}},{\"StartAt\":\"Regions C\",\"States\":{\"Regions C\":{\"Type\":\"Pass\",\"InputPath\":\"$.regions[10:15]\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"Apple C\"},\"Apple C\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-apple_streaming_sales\",\"End\":true}}}]},\"GetUnprocessedRegionsPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetUnprocessedAppleRegions\",\"ResultPath\":\"$.regions\",\"OutputPath\":\"$\",\"Next\":\"GetArrayLengthPost\"},\"GetArrayLengthPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-get_array_length\",\"InputPath\":\"$.regions\",\"ResultPath\":\"$.length_post\",\"OutputPath\":\"$\",\"Next\":\"TestLengthEquality\"},\"TestLengthEquality\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-test_length_equality\",\"ResultPath\":\"$.done\",\"OutputPath\":\"$\",\"Next\":\"SaveLength\"},\"SaveLength\":{\"Type\":\"Pass\",\"InputPath\":\"$.length_post\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"Done\":{\"Type\":\"Pass\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "AppleSalesMusicVideos"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "CreatePlaylistProcessedEntry": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Playlist - create daily entry in the playlist processed table.\",\"StartAt\":\"CreatePlaylistProcessedEntry\",\"States\":{\"CreatePlaylistProcessedEntry\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-CreatePlaylistProcessedEntry\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "CreatePlaylistProcessedEntry"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "FetchPlaylistVersions": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Playlist - Daily Version data for all playlists.\",\"StartAt\":\"CleanInput\",\"States\":{\"CleanInput\":{\"Type\":\"Pass\",\"Result\":{\"length_post\":0,\"done\":false},\"Next\":\"GetUnprocessedPlaylistsPre\"},\"GetUnprocessedPlaylistsPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsVersions\",\"ResultPath\":\"$.playlists\",\"OutputPath\":\"$\",\"Next\":\"GetUnprocessedTotalPre\"},\"GetUnprocessedTotalPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsVersionsLength\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"ProcessingChoice\":{\"Type\":\"Choice\",\"Choices\":[{\"Variable\":\"$.length\",\"NumericEquals\":0,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":true,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":false,\"Next\":\"Playlist Versions ABC\"}]},\"Playlist Versions ABC\":{\"Type\":\"Parallel\",\"Next\":\"GetUnprocessedPlaylistsPost\",\"ResultPath\":\"$.job_status\",\"OutputPath\":\"$\",\"Branches\":[{\"StartAt\":\"Playlist Versions A\",\"States\":{\"Playlist Versions A\":{\"InputPath\":\"$.playlists[0:50]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-FetchPlaylistVersions\",\"Retry\":[{\"ErrorEquals\":[\"States.Timeout\"],\"IntervalSeconds\":3,\"MaxAttempts\":4,\"BackoffRate\":1.5}],\"End\":true}}},{\"StartAt\":\"Playlist Versions B\",\"States\":{\"Playlist Versions B\":{\"InputPath\":\"$.playlists[50:100]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-FetchPlaylistVersions\",\"Retry\":[{\"ErrorEquals\":[\"States.Timeout\"],\"IntervalSeconds\":3,\"MaxAttempts\":4,\"BackoffRate\":1.5}],\"End\":true}}},{\"StartAt\":\"Playlist Versions C\",\"States\":{\"Playlist Versions C\":{\"InputPath\":\"$.playlists[100:150]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-FetchPlaylistVersions\",\"Retry\":[{\"ErrorEquals\":[\"States.Timeout\"],\"IntervalSeconds\":3,\"MaxAttempts\":10,\"BackoffRate\":1.5}],\"End\":true}}}]},\"GetUnprocessedPlaylistsPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsVersions\",\"ResultPath\":\"$.playlists\",\"OutputPath\":\"$\",\"Next\":\"GetUnprocessedTotalPost\"},\"GetUnprocessedTotalPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsVersionsLength\",\"ResultPath\":\"$.length_post\",\"OutputPath\":\"$\",\"Next\":\"TestLengthEquality\"},\"TestLengthEquality\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-test_length_equality\",\"ResultPath\":\"$.done\",\"OutputPath\":\"$\",\"Next\":\"SaveLength\"},\"SaveLength\":{\"Type\":\"Pass\",\"InputPath\":\"$.length_post\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"Done\":{\"Type\":\"Pass\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "FetchPlaylistVersions"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "FetchPlaylistFollowers": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Playlist - Daily Follower data for all playlists.\",\"StartAt\":\"CleanInput\",\"States\":{\"CleanInput\":{\"Type\":\"Pass\",\"Result\":{\"length_post\":0,\"done\":false},\"Next\":\"GetUnprocessedPlaylistsPre\"},\"GetUnprocessedPlaylistsPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsFollowers\",\"ResultPath\":\"$.playlists\",\"OutputPath\":\"$\",\"Next\":\"GetUnprocessedTotalPre\"},\"GetUnprocessedTotalPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsFollowersLength\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"ProcessingChoice\":{\"Type\":\"Choice\",\"Choices\":[{\"Variable\":\"$.length\",\"NumericEquals\":0,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":true,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":false,\"Next\":\"Playlist Followers ABC\"}]},\"Playlist Followers ABC\":{\"Type\":\"Parallel\",\"Next\":\"GetUnprocessedPlaylistsPost\",\"ResultPath\":\"$.job_status\",\"OutputPath\":\"$\",\"Branches\":[{\"StartAt\":\"Playlist Followers A\",\"States\":{\"Playlist Followers A\":{\"InputPath\":\"$.playlists[0:50]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-FetchPlaylistFollowers\",\"Retry\":[{\"ErrorEquals\":[\"States.Timeout\"],\"IntervalSeconds\":3,\"MaxAttempts\":4,\"BackoffRate\":1.5}],\"End\":true}}},{\"StartAt\":\"Playlist Followers B\",\"States\":{\"Playlist Followers B\":{\"InputPath\":\"$.playlists[50:100]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-FetchPlaylistFollowers\",\"Retry\":[{\"ErrorEquals\":[\"States.Timeout\"],\"IntervalSeconds\":3,\"MaxAttempts\":4,\"BackoffRate\":1.5}],\"End\":true}}},{\"StartAt\":\"Playlist Followers C\",\"States\":{\"Playlist Followers C\":{\"InputPath\":\"$.playlists[100:150]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-FetchPlaylistFollowers\",\"Retry\":[{\"ErrorEquals\":[\"States.Timeout\"],\"IntervalSeconds\":3,\"MaxAttempts\":10,\"BackoffRate\":1.5}],\"End\":true}}}]},\"GetUnprocessedPlaylistsPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsFollowers\",\"ResultPath\":\"$.playlists\",\"OutputPath\":\"$\",\"Next\":\"GetUnprocessedTotalPost\"},\"GetUnprocessedTotalPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsFollowersLength\",\"ResultPath\":\"$.length_post\",\"OutputPath\":\"$\",\"Next\":\"TestLengthEquality\"},\"TestLengthEquality\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-test_length_equality\",\"ResultPath\":\"$.done\",\"OutputPath\":\"$\",\"Next\":\"SaveLength\"},\"SaveLength\":{\"Type\":\"Pass\",\"InputPath\":\"$.length_post\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"Done\":{\"Type\":\"Pass\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "FetchPlaylistFollowers"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "FetchPlaylistPositions": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Get playlists from the db to process track positions, with 15 playlists at a time\",\"StartAt\":\"CleanInput\",\"States\":{\"CleanInput\":{\"Type\":\"Pass\",\"Result\":{\"length_post\":0,\"done\":false},\"Next\":\"GetUnprocessedPlaylistsPre\"},\"GetUnprocessedPlaylistsPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsPositions\",\"ResultPath\":\"$.playlists\",\"OutputPath\":\"$\",\"Next\":\"GetUnprocessedTotalPre\"},\"GetUnprocessedTotalPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsPositionsLength\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"ProcessingChoice\":{\"Type\":\"Choice\",\"Choices\":[{\"Variable\":\"$.length\",\"NumericEquals\":0,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":true,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":false,\"Next\":\"Playlist Positions ABC\"}]},\"Playlist Positions ABC\":{\"Type\":\"Parallel\",\"Next\":\"GetUnprocessedPlaylistsPost\",\"ResultPath\":\"$.job_status\",\"OutputPath\":\"$\",\"Branches\":[{\"StartAt\":\"Process Playlists A\",\"States\":{\"Process Playlists A\":{\"InputPath\":\"$.playlists[0:5]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-FetchPlaylistPositions\",\"End\":true}}},{\"StartAt\":\"Process Playlists B\",\"States\":{\"Process Playlists B\":{\"InputPath\":\"$.playlists[5:10]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-FetchPlaylistPositions\",\"End\":true}}},{\"StartAt\":\"Process Playlists C\",\"States\":{\"Process Playlists C\":{\"InputPath\":\"$.playlists[10:15]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-FetchPlaylistPositions\",\"End\":true}}}]},\"GetUnprocessedPlaylistsPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsPositions\",\"ResultPath\":\"$.playlists\",\"OutputPath\":\"$\",\"Next\":\"GetUnprocessedTotalPost\"},\"GetUnprocessedTotalPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsPositionsLength\",\"ResultPath\":\"$.length_post\",\"OutputPath\":\"$\",\"Next\":\"TestLengthEquality\"},\"TestLengthEquality\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-test_length_equality\",\"ResultPath\":\"$.done\",\"OutputPath\":\"$\",\"Next\":\"SaveLength\"},\"SaveLength\":{\"Type\":\"Pass\",\"InputPath\":\"$.length_post\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"Done\":{\"Type\":\"Pass\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "FetchPlaylistPositions"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "FetchAllPlaylistPositions": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Get all playlists from the db to process track positions\",\"StartAt\":\"CleanInput\",\"States\":{\"CleanInput\":{\"Type\":\"Pass\",\"Result\":{},\"ResultPath\":\"$\",\"Next\":\"GetUnprocessedPlaylists\"},\"GetUnprocessedPlaylists\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-DOESNOTEXIST\",\"InputPath\":\"$\",\"ResultPath\":\"$.playlists\",\"OutputPath\":\"$\",\"Next\":\"GetArrayLength\"},\"GetArrayLength\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-get_array_length\",\"InputPath\":\"$.playlists\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"ProcessingChoice\":{\"Type\":\"Choice\",\"Default\":\"Process Playlists ABC\",\"Choices\":[{\"Variable\":\"$.length\",\"NumericEquals\":0,\"Next\":\"Done\"}]},\"Process Playlists ABC\":{\"Type\":\"Parallel\",\"Branches\":[{\"StartAt\":\"Process Playlists A\",\"States\":{\"Process Playlists A\":{\"InputPath\":\"$.playlists[0:5]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-FetchAllPlaylistPositions\",\"End\":true}}},{\"StartAt\":\"Process Playlists B\",\"States\":{\"Process Playlists B\":{\"InputPath\":\"$.playlists[5:10]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-FetchAllPlaylistPositions\",\"End\":true}}},{\"StartAt\":\"Process Playlists C\",\"States\":{\"Process Playlists C\":{\"InputPath\":\"$.playlists[10:15]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-FetchAllPlaylistPositions\",\"End\":true}}}],\"Next\":\"CleanInput\"},\"Done\":{\"Type\":\"Pass\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "FetchAllPlaylistPositions"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "FetchPlaylistPopularities": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Playlist - Daily Popularity data for all playlists.\",\"StartAt\":\"CleanInput\",\"States\":{\"CleanInput\":{\"Type\":\"Pass\",\"Result\":{\"length_post\":0,\"done\":false},\"Next\":\"GetUnprocessedPlaylistsPre\"},\"GetUnprocessedPlaylistsPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsPopularities\",\"ResultPath\":\"$.playlists\",\"OutputPath\":\"$\",\"Next\":\"GetUnprocessedTotalPre\"},\"GetUnprocessedTotalPre\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsPopularitiesLength\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"ProcessingChoice\":{\"Type\":\"Choice\",\"Choices\":[{\"Variable\":\"$.length\",\"NumericEquals\":0,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":true,\"Next\":\"Done\"},{\"Variable\":\"$.done\",\"BooleanEquals\":false,\"Next\":\"Playlist Popularities ABC\"}]},\"Playlist Popularities ABC\":{\"Type\":\"Parallel\",\"Next\":\"GetUnprocessedPlaylistsPost\",\"ResultPath\":\"$.job_status\",\"OutputPath\":\"$\",\"Branches\":[{\"StartAt\":\"Playlist Popularities A\",\"States\":{\"Playlist Popularities A\":{\"InputPath\":\"$.playlists[0:20]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-FetchPlaylistPopularities\",\"End\":true}}},{\"StartAt\":\"Playlist Popularities B\",\"States\":{\"Playlist Popularities B\":{\"InputPath\":\"$.playlists[20:40]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-FetchPlaylistPopularities\",\"End\":true}}},{\"StartAt\":\"Playlist Popularities C\",\"States\":{\"Playlist Popularities C\":{\"InputPath\":\"$.playlists[40:60]\",\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-FetchPlaylistPopularities\",\"End\":true}}}]},\"GetUnprocessedPlaylistsPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsPopularities\",\"ResultPath\":\"$.playlists\",\"OutputPath\":\"$\",\"Next\":\"GetUnprocessedTotalPost\"},\"GetUnprocessedTotalPost\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GetDailyUnprocessedPlaylistsPopularitiesLength\",\"ResultPath\":\"$.length_post\",\"OutputPath\":\"$\",\"Next\":\"TestLengthEquality\"},\"TestLengthEquality\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-test_length_equality\",\"ResultPath\":\"$.done\",\"OutputPath\":\"$\",\"Next\":\"SaveLength\"},\"SaveLength\":{\"Type\":\"Pass\",\"InputPath\":\"$.length_post\",\"ResultPath\":\"$.length\",\"OutputPath\":\"$\",\"Next\":\"ProcessingChoice\"},\"Done\":{\"Type\":\"Pass\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "FetchPlaylistPopularities"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "RefreshPlaylistsOfUsers": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"Playlist - Update all playlists by users. Once a week or month update. Input can be a 'user' key with an array of spotify users, or defaults to all users in the db\",\"StartAt\":\"Playlist Update All ABCD\",\"States\":{\"Playlist Update All ABCD\":{\"Type\":\"Parallel\",\"Branches\":[{\"StartAt\":\"Playlist Users A\",\"States\":{\"Playlist Users A\":{\"Type\":\"Pass\",\"Result\":{\"users\":[\"spotify\"]},\"Next\":\"Playlist Update All A\"},\"Playlist Update All A\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-RefreshPlaylistsOfUsers\",\"End\":true}}},{\"StartAt\":\"Playlist Users B\",\"States\":{\"Playlist Users B\":{\"Type\":\"Pass\",\"Result\":{\"users\":[\"digster.fr\",\"universalmusicse\",\"udiscovermusic\",\"digster.fm\",\"thecompletecollection\",\"topsify\",\"filtr\",\"radioactivehits\",\"digster.ee\"]},\"Next\":\"Playlist Update All B\"},\"Playlist Update All B\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-RefreshPlaylistsOfUsers\",\"End\":true}}},{\"StartAt\":\"Playlist Users C\",\"States\":{\"Playlist Users C\":{\"Type\":\"Pass\",\"Result\":{\"users\":[\"digster.dk\",\"digster.co.uk\",\"hhheroes\",\"digster.lt\",\"capitolchristianmusicgroup\",\"capitolrecords\",\"digsterca\",\"11145233736\",\"12150271040\",\"digsterdeutschland\",\"digstercz\",\"digster.lv\",\"hollywdrecrds\",\"record_club_umc\",\"sozoofficial\",\"116734391\",\"digsterhu\",\"getmusicasia\",\"disney_pixar_\",\"digstersk\",\"deutschegrammophon\",\"11152361853\",\"100keepit\",\"universal.fm\",\"digsternl\",\"12150809594\",\"thisisofficial\",\"universalmusicargentina\",\"udiscover\",\"umusicnz\",\"universalmusicitalia\",\"progrocksmusic\"]},\"Next\":\"Playlist Update All C\"},\"Playlist Update All C\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-RefreshPlaylistsOfUsers\",\"End\":true}}},{\"StartAt\":\"Playlist Users D\",\"States\":{\"Playlist Users D\":{\"Type\":\"Pass\",\"Result\":{\"users\":[\"digsterargentina\",\"abbaspotify\",\"defjamrecordings\",\"digsterno\",\"digster.au\",\"100yearsoftheblues\",\"universal.pictures.de\",\"o.owner_id\",\"128899670\",\"digstergreece\",\"universalmusica\",\"digster.fi\",\"digster.se\",\"universalmusictaiwan\",\"classicmotownrecords\",\"digster_italy\",\"digster_brasil\",\"thejazzlabels\",\"universalmusicireland\",\"wowilovechristianmusic\",\"digsterchile\",\"disney_music_uk\",\"universal_music_rock_legends\",\"digster.pt\"]},\"Next\":\"Playlist Update All D\"},\"Playlist Update All D\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-west-2:903653902323:function:beats-dev-RefreshPlaylistsOfUsers\",\"End\":true}}}],\"Retry\":[{\"ErrorEquals\":[\"States.Timeout\"],\"IntervalSeconds\":3,\"MaxAttempts\":10,\"BackoffRate\":1.5}],\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "RefreshPlaylistsOfUsers"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "GenerateReportingForSales": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"\",\"StartAt\":\"input\",\"States\":{\"input\":{\"Type\":\"Pass\",\"Result\":null,\"Next\":\"generate_reporting\"},\"generate_reporting\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GenerateReportingForSales\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "GenerateReportingForSales"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "GenerateReportingForStreaming": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "DefinitionString": "{\"Comment\":\"\",\"StartAt\":\"input\",\"States\":{\"input\":{\"Type\":\"Pass\",\"Result\":null,\"Next\":\"generate_reporting\"},\"generate_reporting\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:beats-dev-GenerateReportingForStreaming\",\"End\":true}}}",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "IamRoleStateMachineExecution",
+            "Arn"
+          ]
+        },
+        "StateMachineName": "GenerateReportingForStreaming"
+      },
+      "DependsOn": "IamRoleStateMachineExecution"
+    },
+    "ApiGatewayRestApi": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "dev-beats",
+        "EndpointConfiguration": {
+          "Types": [
+            "EDGE"
+          ]
+        }
+      }
+    },
+    "ApiGatewayResourceGenre": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "genre",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceGenreTest": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Ref": "ApiGatewayResourceGenre"
+        },
+        "PathPart": "test",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceGenreChart": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Ref": "ApiGatewayResourceGenre"
+        },
+        "PathPart": "chart",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceGenrePlaylist": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Ref": "ApiGatewayResourceGenre"
+        },
+        "PathPart": "playlist",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceGenreTestCollectiontypeVar": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Ref": "ApiGatewayResourceGenreTest"
+        },
+        "PathPart": "{collection_type}",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceGenreChartCollectiontypeVar": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Ref": "ApiGatewayResourceGenreChart"
+        },
+        "PathPart": "{collection_type}",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceGenrePlaylistPlaylistidVar": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Ref": "ApiGatewayResourceGenrePlaylist"
+        },
+        "PathPart": "{playlist_id}",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceGenreTestCollectiontypeVarKindVar": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Ref": "ApiGatewayResourceGenreTestCollectiontypeVar"
+        },
+        "PathPart": "{kind}",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceGenreChartCollectiontypeVarKindVar": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Ref": "ApiGatewayResourceGenreChartCollectiontypeVar"
+        },
+        "PathPart": "{kind}",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceGenreChartCollectiontypeVarKindVarServiceVar": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Ref": "ApiGatewayResourceGenreChartCollectiontypeVarKindVar"
+        },
+        "PathPart": "{service}",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceGenreChartCollectiontypeVarKindVarServiceVarTerritoryVar": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Ref": "ApiGatewayResourceGenreChartCollectiontypeVarKindVarServiceVar"
+        },
+        "PathPart": "{territory}",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayMethodGenreTestCollectiontypeVarKindVarGet": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "GET",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceGenreTestCollectiontypeVarKindVar"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:aws:apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "GenreApiHandlerLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      }
+    },
+    "ApiGatewayMethodGenreChartCollectiontypeVarKindVarServiceVarTerritoryVarGet": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "GET",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceGenreChartCollectiontypeVarKindVarServiceVarTerritoryVar"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:aws:apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "GenreApiChartsHandlerLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      }
+    },
+    "ApiGatewayMethodGenrePlaylistPlaylistidVarGet": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "GET",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceGenrePlaylistPlaylistidVar"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:aws:apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "GenreApiPlaylistsHandlerLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      }
+    },
+    "ApiGatewayDeployment1521571058945": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "StageName": "dev"
+      },
+      "DependsOn": [
+        "ApiGatewayMethodGenreTestCollectiontypeVarKindVarGet",
+        "ApiGatewayMethodGenreChartCollectiontypeVarKindVarServiceVarTerritoryVarGet",
+        "ApiGatewayMethodGenrePlaylistPlaylistidVarGet"
+      ]
+    },
+    "GenreApiHandlerLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "GenreApiHandlerLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "GenreApiChartsHandlerLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "GenreApiChartsHandlerLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "GenreApiPlaylistsHandlerLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "GenreApiPlaylistsHandlerLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "SpotifyUnderscorestreamingUnderscoresongsStepFunctionsEventsRuleSchedule1": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(0 12 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "SpotifyStreamingSongs"
+            },
+            "Id": "spotify_streaming_songsStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "SpotifyUnderscorestreamingUnderscoresongsScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "SpotifyUnderscorestreamingUnderscoresongsScheduleToStepFunctionsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "dev-us-west-2-beats-spotify_streaming_songs-schedule",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:StartExecution"
+                  ],
+                  "Resource": {
+                    "Ref": "SpotifyStreamingSongs"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscorestreamingUnderscoresongsStepFunctionsEventsRuleSchedule1": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(30 8 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "AppleStreamingSongs"
+            },
+            "Id": "apple_streaming_songsStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "AppleUnderscorestreamingUnderscoresongsScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscorestreamingUnderscoresongsScheduleToStepFunctionsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "dev-us-west-2-beats-apple_streaming_songs-schedule",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:StartExecution"
+                  ],
+                  "Resource": {
+                    "Ref": "AppleStreamingSongs"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscorestreamingUnderscoresongsStepFunctionsEventsRuleSchedule2": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(30 10 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "AppleStreamingSongs"
+            },
+            "Id": "apple_streaming_songsStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "AppleUnderscorestreamingUnderscoresongsScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscorestreamingUnderscoresongsStepFunctionsEventsRuleSchedule3": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(30 2 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "AppleStreamingSongs"
+            },
+            "Id": "apple_streaming_songsStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "AppleUnderscorestreamingUnderscoresongsScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscoresalesUnderscoresongsStepFunctionsEventsRuleSchedule1": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(0 9 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "AppleSalesSongs"
+            },
+            "Id": "apple_sales_songsStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "AppleUnderscoresalesUnderscoresongsScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscoresalesUnderscoresongsScheduleToStepFunctionsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "dev-us-west-2-beats-apple_sales_songs-schedule",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:StartExecution"
+                  ],
+                  "Resource": {
+                    "Ref": "AppleSalesSongs"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscoresalesUnderscoresongsStepFunctionsEventsRuleSchedule2": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(50 10 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "AppleSalesSongs"
+            },
+            "Id": "apple_sales_songsStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "AppleUnderscoresalesUnderscoresongsScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscoresalesUnderscoresongsStepFunctionsEventsRuleSchedule3": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(50 2 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "AppleSalesSongs"
+            },
+            "Id": "apple_sales_songsStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "AppleUnderscoresalesUnderscoresongsScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscoresalesUnderscorealbumsStepFunctionsEventsRuleSchedule1": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(30 9 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "AppleSalesAlbums"
+            },
+            "Id": "apple_sales_albumsStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "AppleUnderscoresalesUnderscorealbumsScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscoresalesUnderscorealbumsScheduleToStepFunctionsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "dev-us-west-2-beats-apple_sales_albums-schedule",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:StartExecution"
+                  ],
+                  "Resource": {
+                    "Ref": "AppleSalesAlbums"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscoresalesUnderscorealbumsStepFunctionsEventsRuleSchedule2": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(10 11 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "AppleSalesAlbums"
+            },
+            "Id": "apple_sales_albumsStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "AppleUnderscoresalesUnderscorealbumsScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscoresalesUnderscorealbumsStepFunctionsEventsRuleSchedule3": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(10 3 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "AppleSalesAlbums"
+            },
+            "Id": "apple_sales_albumsStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "AppleUnderscoresalesUnderscorealbumsScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscoresalesUnderscoremusicUnderscorevideosStepFunctionsEventsRuleSchedule1": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(0 10 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "AppleSalesMusicVideos"
+            },
+            "Id": "apple_sales_music_videosStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "AppleUnderscoresalesUnderscoremusicUnderscorevideosScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscoresalesUnderscoremusicUnderscorevideosScheduleToStepFunctionsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "dev-us-west-2-beats-apple_sales_music_videos-schedule",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:StartExecution"
+                  ],
+                  "Resource": {
+                    "Ref": "AppleSalesMusicVideos"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscoresalesUnderscoremusicUnderscorevideosStepFunctionsEventsRuleSchedule2": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(30 11 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "AppleSalesMusicVideos"
+            },
+            "Id": "apple_sales_music_videosStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "AppleUnderscoresalesUnderscoremusicUnderscorevideosScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppleUnderscoresalesUnderscoremusicUnderscorevideosStepFunctionsEventsRuleSchedule3": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(30 3 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "AppleSalesMusicVideos"
+            },
+            "Id": "apple_sales_music_videosStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "AppleUnderscoresalesUnderscoremusicUnderscorevideosScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "CreatePlaylistProcessedEntryStepFunctionsEventsRuleSchedule1": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(25 1 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "CreatePlaylistProcessedEntry"
+            },
+            "Id": "CreatePlaylistProcessedEntryStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "CreatePlaylistProcessedEntryScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "CreatePlaylistProcessedEntryScheduleToStepFunctionsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "dev-us-west-2-beats-CreatePlaylistProcessedEntry-schedule",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:StartExecution"
+                  ],
+                  "Resource": {
+                    "Ref": "CreatePlaylistProcessedEntry"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "FetchPlaylistVersionsStepFunctionsEventsRuleSchedule1": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(30 1 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "FetchPlaylistVersions"
+            },
+            "Id": "FetchPlaylistVersionsStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "FetchPlaylistVersionsScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "FetchPlaylistVersionsScheduleToStepFunctionsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "dev-us-west-2-beats-FetchPlaylistVersions-schedule",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:StartExecution"
+                  ],
+                  "Resource": {
+                    "Ref": "FetchPlaylistVersions"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "FetchPlaylistFollowersStepFunctionsEventsRuleSchedule1": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(30 1 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "FetchPlaylistFollowers"
+            },
+            "Id": "FetchPlaylistFollowersStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "FetchPlaylistFollowersScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "FetchPlaylistFollowersScheduleToStepFunctionsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "dev-us-west-2-beats-FetchPlaylistFollowers-schedule",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:StartExecution"
+                  ],
+                  "Resource": {
+                    "Ref": "FetchPlaylistFollowers"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "FetchPlaylistPositionsStepFunctionsEventsRuleSchedule1": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(0 2 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "FetchPlaylistPositions"
+            },
+            "Id": "FetchPlaylistPositionsStepFunctionsSchedule",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "FetchPlaylistPositionsScheduleToStepFunctionsRole",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "FetchPlaylistPositionsScheduleToStepFunctionsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "dev-us-west-2-beats-FetchPlaylistPositions-schedule",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:StartExecution"
+                  ],
+                  "Resource": {
+                    "Ref": "FetchPlaylistPositions"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "ServerlessDeploymentBucketName": {
+      "Value": {
+        "Ref": "ServerlessDeploymentBucket"
+      }
+    },
+    "SpotifyUnderscorestreamingLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "SpotifyUnderscorestreamingLambdaVersionFakPKIy4DMLzfcjeNQhJh1Q6x6y8pvkfZ190Se59zQ"
+      }
+    },
+    "GetUnprocessedSpotifyRegionsLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GetUnprocessedSpotifyRegionsLambdaVersionTQQq1YLjhr7Zejjdv4OYcomKtFTeJfkfDcADeB8tPo"
+      }
+    },
+    "GetUnprocessedAppleRegionsLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GetUnprocessedAppleRegionsLambdaVersionaYxxhZ3uGoPmabeGtIxZab855NPJDqIAaTzTTEqSfI"
+      }
+    },
+    "AppleUnderscorestreamingUnderscoresalesLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "AppleUnderscorestreamingUnderscoresalesLambdaVersionDGRfXbYrAQ8mSehR8xbMs5A7WcOEeR6hcEbnPRhZfs"
+      }
+    },
+    "CreatePlaylistProcessedEntryLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "CreatePlaylistProcessedEntryLambdaVersionFV4gUEkmc4MM1DJZDJ190vHJt7cDsv9cksQHC1To"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsVersionsLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GetDailyUnprocessedPlaylistsVersionsLambdaVersiondfeG29Bve8pBTJk7UY1AXr7lzB3vpZPMwghh4f1Kjw"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsVersionsLengthLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GetDailyUnprocessedPlaylistsVersionsLengthLambdaVersionMERkoiUS72uGwMgxs8sTy5cpNquvZwbhKcp8KlJJwLQ"
+      }
+    },
+    "FetchPlaylistVersionsLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "FetchPlaylistVersionsLambdaVersionZcKJY8qGuineQxLjGU6XviqbjYuT0736C69Q7LiYCPA"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsFollowersLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GetDailyUnprocessedPlaylistsFollowersLambdaVersioniiLDGBPgp5Fd7aa1ocCLG1IcbWonOk3CZmwlDYXPS9E"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsFollowersLengthLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GetDailyUnprocessedPlaylistsFollowersLengthLambdaVersion6N1yBgbPB3Eltfoq8oNdjaK08Q0LNjMZgyxhX24Cbc"
+      }
+    },
+    "FetchPlaylistFollowersLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "FetchPlaylistFollowersLambdaVersion2OwknstEnbBDkDlS9tA4Gdqj3fTs1RWBZVUVYB1hxE"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsPositionsLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GetDailyUnprocessedPlaylistsPositionsLambdaVersionREHvf5ghq3AitBfLracr4CMyrEFWLwQlylavCEM"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsPositionsLengthLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GetDailyUnprocessedPlaylistsPositionsLengthLambdaVersionUyhfmllTf9YiB0WVdA9DGBN9YfduXRjnnIvnkspIMs"
+      }
+    },
+    "FetchPlaylistPositionsLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "FetchPlaylistPositionsLambdaVersion76wjUxieTFdvS3ctUQox13tMhFihLnJa4CLUdmwFU"
+      }
+    },
+    "FetchAllPlaylistPositionsLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "FetchAllPlaylistPositionsLambdaVersion7jlue5vSIv6W4ABbO4dXITaXRsz6nNRJiZixiTWM"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsPopularitiesLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GetDailyUnprocessedPlaylistsPopularitiesLambdaVersiont0e7Oh3GblWvSsOKb0oSBUydC7qMcnEMFr2hjTyVm4"
+      }
+    },
+    "GetDailyUnprocessedPlaylistsPopularitiesLengthLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GetDailyUnprocessedPlaylistsPopularitiesLengthLambdaVersion2rkZsW3hVypyOnv3jD1PbU86fad9PK13vtNw9MQQRk"
+      }
+    },
+    "FetchPlaylistPopularitiesLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "FetchPlaylistPopularitiesLambdaVersionwDpnUPDrFWIeTD6XA1tyBYzcltcKIETpiKLEzN2wIU"
+      }
+    },
+    "RefreshPlaylistsOfUsersLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "RefreshPlaylistsOfUsersLambdaVersionfIpiYV88NdiS5BgJO3zjBQ4iWzYcjwCRla50cy6tlY"
+      }
+    },
+    "TestGenreLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "TestGenreLambdaVersionaiNtoDp6vLCzIfLjp5w84q53EGnDu2WCK0NgMmC0qU"
+      }
+    },
+    "GenerateReportingForSalesLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GenerateReportingForSalesLambdaVersionYGuoVqz0j86iMTyvPCjJUcXLstlujXNK3Y8aw08WU"
+      }
+    },
+    "GenerateReportingForStreamingLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GenerateReportingForStreamingLambdaVersionTSgxm4EBeUVLjSgIcUVjdHuCuMv11Eo5HHkXKmuC2A"
+      }
+    },
+    "GetUnderscorearrayUnderscorelengthLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GetUnderscorearrayUnderscorelengthLambdaVersionIsoIpPR5VsiMhgogQgCsrgKOdpY3DAQIe9rEVOKaL3o"
+      }
+    },
+    "TestUnderscorelengthUnderscoreequalityLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "TestUnderscorelengthUnderscoreequalityLambdaVersionLWZJs3NyPzyZUDbtVkC1vUlNUJMT7R2rHdYi9lpLZPw"
+      }
+    },
+    "GenreApiHandlerLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GenreApiHandlerLambdaVersionS1BmEHzrc4GQQJMoamm8JnL12UdGDcohLc2IAKPJBw"
+      }
+    },
+    "GenreApiChartsHandlerLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GenreApiChartsHandlerLambdaVersiono2EbibsBqB31S2FUd8N0WSL5tcFMHCyHyEIoaCbBM"
+      }
+    },
+    "GenreApiPlaylistsHandlerLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GenreApiPlaylistsHandlerLambdaVersionTHGDnx1Ob8edmWhQV6uzBNOrgjnzRnq1jFOAH9ZNm8"
+      }
+    },
+    "StartRDSBeatsArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "StartRDSBeats"
+      }
+    },
+    "StopRDSBeatsArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "StopRDSBeats"
+      }
+    },
+    "SpotifyStreamingSongsArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "SpotifyStreamingSongs"
+      }
+    },
+    "AppleStreamingSongsArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "AppleStreamingSongs"
+      }
+    },
+    "AppleSalesSongsArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "AppleSalesSongs"
+      }
+    },
+    "AppleSalesAlbumsArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "AppleSalesAlbums"
+      }
+    },
+    "AppleSalesMusicVideosArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "AppleSalesMusicVideos"
+      }
+    },
+    "CreatePlaylistProcessedEntryArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "CreatePlaylistProcessedEntry"
+      }
+    },
+    "FetchPlaylistVersionsArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "FetchPlaylistVersions"
+      }
+    },
+    "FetchPlaylistFollowersArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "FetchPlaylistFollowers"
+      }
+    },
+    "FetchPlaylistPositionsArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "FetchPlaylistPositions"
+      }
+    },
+    "FetchAllPlaylistPositionsArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "FetchAllPlaylistPositions"
+      }
+    },
+    "FetchPlaylistPopularitiesArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "FetchPlaylistPopularities"
+      }
+    },
+    "RefreshPlaylistsOfUsersArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "RefreshPlaylistsOfUsers"
+      }
+    },
+    "GenerateReportingForSalesArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "GenerateReportingForSales"
+      }
+    },
+    "GenerateReportingForStreamingArn": {
+      "Description": "Current StateMachine Arn",
+      "Value": {
+        "Ref": "GenerateReportingForStreaming"
+      }
+    },
+    "ServiceEndpoint": {
+      "Description": "URL of the service endpoint",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "ApiGatewayRestApi"
+            },
+            ".execute-api.us-west-2.amazonaws.com/dev"
+          ]
+        ]
+      }
+    }
+  }
+}

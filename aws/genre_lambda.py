@@ -204,11 +204,12 @@ class GenreRanks:
         self.genre_percentages = {}
         self.top_genres = []
         self.date = date_str # can also be for a specific date
-        self.playlist_id = int(playlist_id)
+        if playlist_id:
+            self.playlist_id = int(playlist_id)
 
         # work work work
         self._map_db_tables()
-        self.inspect_attrs()
+        # self.inspect_attrs()
 
     def inspect_attrs(self):
         print('', self.playlist_id, self._kind_db_table, self._collection_type)
