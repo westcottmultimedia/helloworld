@@ -85,17 +85,17 @@ class TrackDatabase(object):
             raise
             return []
 
-    def get_playlist_collection_ids(self, playlist_id, playlist_db_table, date_str):
+    def get_playlist_collection_ids(self, playlist_id, playlist_db_table, version):
         query = """
             SELECT track_id FROM {}
             WHERE
                 playlist_id = %s
                 AND
-                date_str = %s
+                playlist_version = %s
         """.format(playlist_db_table)
 
         try:
-            self.c.execute(query, (playlist_id, date_str))
+            self.c.execute(query, (playlist_id, version))
 
             ids = []
             for row in self.c.fetchall():
@@ -123,14 +123,19 @@ class TrackDatabase(object):
             return row[0]
         return
 
-    def get_latest_date_for_playlist_collection(self, playlist_id, playlist_db_table):
+    def get_latest_version_for_playlist(self, playlist_id):
         query = """
-            SELECT max(date_str) from {}
+            SELECT latest_version FROM playlist
             WHERE
-                playlist_id = %s
-        """.format(playlist_db_table)
+                id = %s
+        """
 
-        self.c.execute(query, [playlist_id])
+        try:
+            self.c.execute(query, [playlist_id])
+            return self.c.fetchone()[0]
+        except Exception as e:
+            raise
+            return None
 
     def get_artist_id_from_collection_id(self, kind_db_table, collection_db_table, collection_id):
         # kind = track
@@ -185,6 +190,7 @@ class GenreRanks:
     def __init__(self, service, territory, kind, collection_type, playlist_id = None, date_str = 'latest'):
         self.db = TrackDatabase()
 
+        # set attributes
         self._service = service # spotify, apple
         self._territory = territory # the territory/region code, ie. 'jp', 'dk', 'us'
         self._kind = kind # track, album, music video
@@ -198,8 +204,14 @@ class GenreRanks:
         self.genre_percentages = {}
         self.top_genres = []
         self.date = date_str # can also be for a specific date
-        self.playlist_id = playlist_id
+        self.playlist_id = int(playlist_id)
+
+        # work work work
         self._map_db_tables()
+        self.inspect_attrs()
+
+    def inspect_attrs(self):
+        print('', self.playlist_id, self._kind_db_table, self._collection_type)
 
     def _map_db_tables(self):
         if self._collection_type == 'streaming':
@@ -235,8 +247,8 @@ class GenreRanks:
         return True
 
     def load_playlist_collection_ids(self):
-        latest_date = self.db.get_latest_date_for_playlist_collection(self.playlist_id, self._collection_db_table)
-        self.collection_ids = self.db.get_playlist_collection_ids(self.playlist_id, self._collection_db_table, latest_date)
+        latest_version = self.db.get_latest_version_for_playlist(self.playlist_id)
+        self.collection_ids = self.db.get_playlist_collection_ids(self.playlist_id, self._collection_db_table, latest_version)
         return True
 
     def load_artist_ids(self):
@@ -285,7 +297,7 @@ def test_handler(event, context):
         global db
 
         db = TrackDatabase()
-        gr_chart = GenreRanks(1, 1, 'track', 'streaming')
+        gr_chart = GenreRanks('spotify', 'us', 'track', 'streaming')
 
         # get genres for charts - Spotify streaming, Apple Streaming, iTunes Sales charts
         #
@@ -298,7 +310,7 @@ def test_handler(event, context):
         gr_chart.get_top_genres()
 
         # get genres for playlists
-        gr_playlist = GenreRanks(1, 1, 'track', 'playlist', playlist_id = 2795)
+        gr_playlist = GenreRanks('spotify', 'us', 'track', 'playlist', playlist_id = 2795)
         gr_playlist.load_playlist_collection_ids()
         gr_playlist.load_artist_ids()
         gr_playlist.load_genres_ids()
@@ -338,12 +350,12 @@ def genre_api_charts(service, territory_code, kind, collection_type):
         'genre_percentages': gr_chart.genre_percentages
     }
 
-def genre_api_playlists(service, territory_code, playlist_id):
+def genre_api_playlists(playlist_id = 2795):
     global db
     db = TrackDatabase()
 
     # get genres for playlists
-    gr_playlist = GenreRanks(1, 1, 'track', 'playlist', playlist_id = 2795)
+    gr_playlist = GenreRanks(service_mapping('spotify'), 'us', 'track', 'playlist', playlist_id)
     gr_playlist.load_playlist_collection_ids()
     gr_playlist.load_artist_ids()
     gr_playlist.load_genres_ids()
@@ -351,7 +363,10 @@ def genre_api_playlists(service, territory_code, playlist_id):
     gr_playlist.calculate_genre_percentage()
 
     db.close_database()
-    return gr_playlist.get_top_genres() # TODO: change to be like streaming endpoint
+    return {
+        'genres': gr_playlist.get_top_genres(),
+        'genre_percentages': gr_playlist.genre_percentages
+    }
 
 # ---- AWS LAMBDA, API GATEWAY ----
 # How to structure json response
@@ -382,7 +397,10 @@ def genre_api_handler(event, context):
         collection_type = event['pathParameters']['collection_type']
         kind = event['pathParameters']['kind']
         # https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-        return genre_api_response({'collection_type': collection_type, 'kind': kind}, 200)
+        return genre_api_response({
+            'collection_type': collection_type,
+            'kind': kind
+        }, 200)
     except Exception as e:
         return genre_api_response({'message': e.message}, 400)
 
@@ -395,21 +413,29 @@ def genre_api_charts_handler(event, context):
         kind = event['pathParameters']['kind']
         collection_type = event['pathParameters']['collection_type']
 
-        print('params from event are', service, territory, kind, collection_type)
-        return genre_api_response(genre_api_charts(service, territory, kind, collection_type), 200)
-        # return genre_api_response({'service': service, 'territory': territory, 'kind': kind, 'collection_type': collection_type}, 200)
-    except Exception as e:
-        print(e)
-        return genre_api_response({'genres': []}, 400)
-
-def genre_api_playlists_handler(event, context):
-    try:
-        service = event['pathParameters']['service']
-        territory = event['pathParameters']['territory']
-        playlist_id = event['pathParameters']['playlist_id']
         return genre_api_response(
-            {'genres': genre_api_playlists(service, territory, playlist_id)},
+            genre_api_charts(service, territory, kind, collection_type),
             200
         )
     except Exception as e:
-        return genre_api_response({'genres_playlists': []}, 400)
+        print(e)
+        return genre_api_response({
+            'genres': [],
+            'genre_percentages': {}
+        }, 400)
+
+# path: /genre/playlist/:id
+def genre_api_playlists_handler(event, context):
+    try:
+        playlist_id = event['pathParameters']['playlist_id']
+        return genre_api_response(
+            genre_api_playlists(playlist_id),
+            200
+        )
+    except Exception as e:
+        print(e)
+        return genre_api_response({
+            'message': e,
+            'genres': [],
+            'genre_percentages': {}
+        }, 400)

@@ -243,7 +243,7 @@ functions:
     timeout: 60
     events:
       - http:
-          path: /genre/playlist/track/{service}/{territory}/track/{playlist_id}
+          path: /genre/playlist/{playlist_id}
           method: GET
 
 # step functions definitions
@@ -255,9 +255,9 @@ stepFunctions:
     # start the RDS instance
     # for PST time, subtract 8 hours (-8) from schedule time
     StartRDSBeats:
-      events:
-        - schedule: cron(0 8 * * ? *) # midnight, 12:00am
-        - schedule: cron(10 1 * * ? *) # 5:10pm
+      # events:
+      #   - schedule: cron(0 8 * * ? *) # midnight, 12:00am
+      #   - schedule: cron(10 4 * * ? *) # 5:10pm
       name: StartRDSBeats
       definition:
         Comment: "Start the RDS instance of Beats"
@@ -279,9 +279,9 @@ stepFunctions:
     # for PST time, subtract 8 hours (-8) from schedule time
     #
     StopRDSBeats:
-      events:
-        - schedule: cron(0 14 * * ? *) # 6:00am
-        - schedule: cron(10 3 * * ? *) # 7:10pm
+      # events:
+      #   - schedule: cron(0 14 * * ? *) # 6:00am
+      #   - schedule: cron(10 3 * * ? *) # 7:10pm
       name: StopRDSBeats
       definition:
         Comment: "Stop the RDS instance of Beats"
@@ -419,6 +419,7 @@ stepFunctions:
         # it's running for the previous day)
         - schedule: cron(30 8 * * ? *)
         - schedule: cron(30 10 * * ? *)
+        - schedule: cron(30 2 * * ? *)
       definition:
         Comment: "Apple Music for Streaming Songs"
         StartAt: CleanInput
@@ -534,6 +535,7 @@ stepFunctions:
       events:
         - schedule: cron(0 9 * * ? *)
         - schedule: cron(50 10 * * ? *)
+        - schedule: cron(50 2 * * ? *)
       definition:
         Comment: "Apple iTunes Sales for Songs"
         StartAt: CleanInput
@@ -650,6 +652,7 @@ stepFunctions:
       events:
         - schedule: cron(30 9 * * ? *)
         - schedule: cron(10 11 * * ? *)
+        - schedule: cron(10 3 * * ? *)
       definition:
         Comment: "Apple iTunes Sales for Albums"
         StartAt: CleanInput
@@ -766,6 +769,7 @@ stepFunctions:
         # music videos are updated later in the day, so we set it to run later
         - schedule: cron(0 10 * * ? *)
         - schedule: cron(30 11 * * ? *)
+        - schedule: cron(30 3 * * ? *)
       definition:
         Comment: "Apple iTunes Sales for Music Videos"
         StartAt: CleanInput
