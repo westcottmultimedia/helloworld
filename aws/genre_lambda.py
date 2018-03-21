@@ -52,7 +52,6 @@ class TrackDatabase(object):
         try:
             self.c.execute(query, (service_id, territory_id, date_str, kind_db_table))
             ids = []
-
             for row in self.c.fetchall():
                 ids.append(row[0])
             return ids
@@ -186,6 +185,78 @@ class TrackDatabase(object):
             raise
             return None
 
+    # ---- PLAYLISTS ----
+    def get_latest_date_for_playlists(self):
+        query = """
+            SELECT max(date_str) FROM playlist_followers
+        """
+        try:
+            self.c.execute(query, [])
+            return self.c.fetchone()[0]
+        except Exception as e:
+            raise
+            return None
+
+    # "top" by follower count
+    def get_top_playlist_ids(self, date_str, limit):
+        query = """
+            SELECT playlist_id FROM playlist_followers
+            WHERE
+                date_str = %s
+            ORDER BY followers DESC
+            LIMIT %s
+        """
+
+        try:
+            self.c.execute(query, (date_str, limit))
+            ids = []
+            for row in self.c.fetchall():
+                ids.append(row[0])
+            return ids
+        except Exception as e:
+            print('failed getting collection ids:', e)
+            raise
+            return []
+
+    def get_top_playlist_info(self, playlist_db_ids):
+        query = """
+            SELECT * FROM (
+                SELECT DISTINCT ON (playlist.id)
+                    playlist.id,
+                    playlist.owner_id,
+                    playlist.name,
+                    po.alt_name,
+                    pf.followers
+                FROM playlist
+                INNER JOIN playlist_owner po
+                    ON po.id = playlist.owner_id
+                INNER JOIN playlist_followers pf
+                    ON pf.playlist_id = playlist.id
+                WHERE playlist.id IN %s
+            ) q
+            ORDER BY followers DESC
+        """
+
+        try:
+            self.c.execute(query, [tuple(playlist_db_ids)])
+            infos = []
+            for row in self.c.fetchall():
+                info = {}
+                info['playlist_db_id'] = row[0]
+                info['owner_db_id'] = row[1]
+                info['playlist_name'] = row[2]
+                info['owner_name'] = row[3]
+                info['followers'] = row[4]
+                infos.append(info)
+
+            print('get_playlist_ids info', infos)
+            return infos
+        except Exception as e:
+            print('failed getting playlist info:', e)
+            raise
+            return []
+
+
 class GenreRanks:
     def __init__(self, service, territory, kind, collection_type, playlist_id = None, date_str = 'latest'):
         self.db = TrackDatabase()
@@ -294,6 +365,30 @@ class GenreRanks:
         self.top_genres = sorted(self.genre_counts, reverse = True, key = self.genre_counts.__getitem__)[0:ranks]
         return self.top_genres
 
+class Playlists:
+    def __init__(self):
+        self.db = TrackDatabase()
+        self.top_playlists_ids = []
+        self.top_playlist_infos = []
+        self.latest_date_playlists = ''
+
+        self.get_latest_date_playlists()
+        self.get_playlist_ids()
+        self.get_playlist_info()
+        self.introspect_attrs()
+
+    def introspect_attrs(self):
+        print('introspecting', self.top_playlists_ids, self.top_playlist_infos, self.latest_date_playlists)
+
+    def get_latest_date_playlists(self):
+        self.latest_date_playlists = self.db.get_latest_date_for_playlists()
+
+    def get_playlist_ids(self, limit = 50):
+        self.top_playlists_ids = self.db.get_top_playlist_ids(self.latest_date_playlists, limit)
+
+    def get_playlist_info(self):
+        self.top_playlist_infos = self.db.get_top_playlist_info(self.top_playlists_ids)
+
 def test_handler(event, context):
         global db
 
@@ -369,10 +464,21 @@ def genre_api_playlists(playlist_id = 2795):
         'genre_percentages': gr_playlist.genre_percentages
     }
 
+def fetch_top_playlists(limit = 50):
+    global db
+    db = TrackDatabase()
+
+    playlists = Playlists()
+
+    db.close_database()
+    return {
+        'playlists': playlists.top_playlist_infos
+    }
+
 # ---- AWS LAMBDA, API GATEWAY ----
 # How to structure json response
 # https://goonan.io/a-simple-python3-lambda-function-on-aws-with-an-api-gateway/
-def genre_api_response(message, status_code):
+def api_response(message, status_code):
     return {
         "statusCode": str(status_code),
         'headers': {
@@ -398,12 +504,12 @@ def genre_api_handler(event, context):
         collection_type = event['pathParameters']['collection_type']
         kind = event['pathParameters']['kind']
         # https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-        return genre_api_response({
+        return api_response({
             'collection_type': collection_type,
             'kind': kind
         }, 200)
     except Exception as e:
-        return genre_api_response({'message': e.message}, 400)
+        return api_response({'message': e.message}, 400)
 
 # path: /genre/chart/{collection_type}/{kind}/{service}/{territory}
 #
@@ -414,13 +520,13 @@ def genre_api_charts_handler(event, context):
         kind = event['pathParameters']['kind']
         collection_type = event['pathParameters']['collection_type']
 
-        return genre_api_response(
+        return api_response(
             genre_api_charts(service, territory, kind, collection_type),
             200
         )
     except Exception as e:
         print(e)
-        return genre_api_response({
+        return api_response({
             'genres': [],
             'genre_percentages': {}
         }, 400)
@@ -429,14 +535,32 @@ def genre_api_charts_handler(event, context):
 def genre_api_playlists_handler(event, context):
     try:
         playlist_id = event['pathParameters']['playlist_id']
-        return genre_api_response(
+        return api_response(
             genre_api_playlists(playlist_id),
             200
         )
     except Exception as e:
         print(e)
-        return genre_api_response({
+        return api_response({
             'message': e,
             'genres': [],
             'genre_percentages': {}
         }, 400)
+
+def fetch_top_playlists_handler(event, context):
+    try:
+        params = event['pathParameters']
+        return api_response(
+            fetch_top_playlists(),
+            200
+        )
+    except Exception as e:
+        print(e)
+        return api_response({
+            'playlists': []
+        }, 400)
+
+
+# ---- LOCAL TESTING -----
+if __name__ == '__main__':
+    fetch_top_playlists()

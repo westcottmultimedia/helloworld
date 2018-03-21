@@ -246,6 +246,13 @@ functions:
           path: /genre/playlist/{playlist_id}
           method: GET
 
+  FetchTopPlaylistsHandler:
+    handler: genre_lambda.fetch_top_playlists_handler
+    timeout: 60
+    events:
+      - http:
+          path: /playlists
+          method: GET
 # step functions definitions
 # https://github.com/horike37/serverless-step-functions
 stepFunctions:
