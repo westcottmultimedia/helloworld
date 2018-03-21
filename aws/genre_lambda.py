@@ -383,7 +383,7 @@ class Playlists:
     def get_latest_date_playlists(self):
         self.latest_date_playlists = self.db.get_latest_date_for_playlists()
 
-    def get_playlist_ids(self, limit = 50):
+    def get_playlist_ids(self, limit = 250):
         self.top_playlists_ids = self.db.get_top_playlist_ids(self.latest_date_playlists, limit)
 
     def get_playlist_info(self):
