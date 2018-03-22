@@ -1070,6 +1070,37 @@ class TrackDatabase(object):
             print('adding track popularity to db... error: ', e)
             return False
 
+    def get_playlists_without_images(self):
+        query = """
+            SELECT playlist.id, playlist.service_playlist_id, po.service_owner_id FROM playlist
+            INNER JOIN playlist_owner po ON
+                po.id = playlist.owner_id
+            WHERE playlist.images IS NULL
+        """
+
+        playlist_list = []
+        self.c.execute(query)
+        for row in self.c.fetchall():
+            playlist = {}
+            playlist['db_playlist_id'] = row[0]
+            playlist['spotify_playlist_id'] = row[1]
+            playlist['service_owner_id'] = row[2]
+            playlist_list.append(playlist)
+        return playlist_list
+
+    def insert_image_for_playlist(self, db_playlist_id, image_urls):
+        query = """
+            UPDATE playlist
+                SET images = %s
+                WHERE id = %s
+        """
+
+        try:
+            self.c.execute(query, (image_urls, db_playlist_id))
+        except Exception as e:
+            raise e
+        return True
+
     def get_isrc_from_db(self, track_id):
         # RETRIEVE ISRC
         query = """
@@ -2104,6 +2135,22 @@ def fetch_playlist_popularities(playlists_list):
 
     return 'popularity fetching complete'
 
+# Fetches one playlist image from API
+# each playlist is anobject has spotify user id and spotify_playlist id
+# which are needed to query API for images
+#
+def fetch_image_urls_for_playlist(user_id, playlist_id):
+    query_params = 'fields=images'
+    endpoint = '{}/users/{}/playlists/{}?{}'.format(SPOTIFY_API, user_id, playlist_id, query_params)
+
+    r = spotify.request(endpoint)
+
+    if r and r['images']:
+        return r['images']
+
+    return []
+
+
 ### AWS LAMBDA HANDLERS
 #
 #
@@ -2438,3 +2485,26 @@ def fetch_playlist_popularities_handler(event, context):
 
     db.close_database()
     return 'finished popularity'
+
+def fetch_all_playlist_images_handler(event, context):
+    global spotify
+    global db
+    db = TrackDatabase()
+    spotify = Spotify(CLIENT_ID, CLIENT_SECRET)
+
+    # playlists have spotify user name, spotify playlist id, and db playlist id
+    playlists = db.get_playlists_without_images()
+
+    # image urls are list of urls, as from API
+    for playlist in playlists:
+        image_urls = fetch_image_urls_for_playlist(playlist['service_owner_id'], playlist['spotify_playlist_id'])
+        urls = []
+        for image in image_urls:
+            url = image['url']
+            urls.append(url)
+        db.insert_image_for_playlist(playlist['db_playlist_id'], urls)
+
+    db.close_database()
+
+if __name__ == '__main__':
+    fetch_all_playlist_images_handler({}, {})

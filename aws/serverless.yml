@@ -167,6 +167,11 @@ functions:
     handler: playlist_lambda.fetch_playlist_popularities_handler
     timeout: 300
 
+  # ----- PLAYLIST IMAGES -----
+  FetchAllPlaylistImages:
+    handler: playlist_lambda.fetch_all_playlist_images_handler
+    timeout: 300
+
   # ---- ADMIN / SEED DATA
 
   # Refresh all playlists' info of selected users
@@ -175,6 +180,7 @@ functions:
   RefreshPlaylistsOfUsers:
     handler: playlist_lambda.refresh_playlists_of_users_handler
     timeout: 300
+
 
 
 
@@ -196,6 +202,8 @@ functions:
   GenerateReportingForStreaming:
     handler: generate_reporting_for_sales_and_streaming.generate_reporting_for_streaming_handler
     timeout: 300
+
+
 
 
   # ----- HELPERS -----

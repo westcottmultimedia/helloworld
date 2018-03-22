@@ -191,7 +191,7 @@ class TrackDatabase(object):
             SELECT max(date_str) FROM playlist_followers
         """
         try:
-            self.c.execute(query, [])
+            self.c.execute(query)
             return self.c.fetchone()[0]
         except Exception as e:
             raise
@@ -226,7 +226,10 @@ class TrackDatabase(object):
                     playlist.owner_id,
                     playlist.name,
                     po.alt_name,
-                    pf.followers
+                    pf.followers,
+                    playlist.images,
+                    playlist.service_playlist_id,
+                    po.service_owner_id
                 FROM playlist
                 INNER JOIN playlist_owner po
                     ON po.id = playlist.owner_id
@@ -247,6 +250,9 @@ class TrackDatabase(object):
                 info['playlist_name'] = row[2]
                 info['owner_name'] = row[3]
                 info['followers'] = row[4]
+                info['images'] = row[5]
+                info['playlist_spotify_id'] = row[6]
+                info['owner_id'] = row[7]
                 infos.append(info)
 
             print('get_playlist_ids info', infos)
