@@ -454,10 +454,11 @@ def genre_api_charts(service, territory_code, kind, collection_type):
     #
     # gr_chart.inspect_attrs() # test
     gr_chart.load_chart_collection_ids()
-    print(gr_chart.collection_ids)
+    print('collection ids', gr_chart.collection_ids)
     gr_chart.load_artist_ids()
-    print(gr_chart.artist_ids)
+    print('artist ids', gr_chart.artist_ids)
     gr_chart.load_genres_ids()
+    print('genre ids', gr_chart.genres)
     gr_chart.calculate_genre_counts()
     gr_chart.calculate_genre_percentage()
 
