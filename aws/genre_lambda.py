@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, './aws_packages') # local relative path of aws lambda packages for zipping
+# sys.path.insert(0, './aws_packages') # local relative path of aws lambda packages for zipping
 
 import csv, codecs, re, json, os, base64, time, hashlib, ssl, datetime, logging, errno, random
 from pprint import pprint as pprint
@@ -106,16 +106,18 @@ class TrackDatabase(object):
             raise
             return []
 
-    def get_latest_date_for_chart_collection(self, service_id, territory_id, kind_db_table, collection_db_table):
+    def get_latest_date_for_chart_collection(self, service_id, territory_id, kind, collection_db_table):
         query = """
             SELECT max(date_str) FROM {}
             WHERE
                 service_id = %s
                 AND
                 territory_id = %s
+                AND
+                media_type = %s
         """.format(collection_db_table)
 
-        self.c.execute(query, (service_id, territory_id))
+        self.c.execute(query, (service_id, territory_id, kind))
 
         row = self.c.fetchone()
         if row:
@@ -317,7 +319,8 @@ class GenreRanks:
 
     # For everything NOT a playlist
     def load_chart_collection_ids(self):
-        latest_date = self.db.get_latest_date_for_chart_collection(self._service, self._territory, self._kind_db_table, self._collection_db_table)
+        latest_date = self.db.get_latest_date_for_chart_collection(self._service, self._territory, self._kind, self._collection_db_table)
+        print('latest date', latest_date)
         if self._collection_type == 'streaming':
             self.collection_ids = self.db.get_chart_collection_ids(self._service, self._territory, self._kind_db_table, self._collection_db_table, latest_date)
         elif self._collection_type == 'sales':
@@ -439,8 +442,11 @@ def genre_api_charts(service, territory_code, kind, collection_type):
 
     # get genres for charts - Spotify streaming, Apple Streaming, iTunes Sales charts
     #
+    # gr_chart.inspect_attrs() # test
     gr_chart.load_chart_collection_ids()
+    print(gr_chart.collection_ids)
     gr_chart.load_artist_ids()
+    print(gr_chart.artist_ids)
     gr_chart.load_genres_ids()
     gr_chart.calculate_genre_counts()
     gr_chart.calculate_genre_percentage()
@@ -569,4 +575,13 @@ def fetch_top_playlists_handler(event, context):
 
 # ---- LOCAL TESTING -----
 if __name__ == '__main__':
-    fetch_top_playlists()
+    # fetch_top_playlists()
+    print(genre_api_charts_handler(
+        {
+          "pathParameters": {
+            "service": "apple",
+            "territory": "us",
+            "kind": "album",
+            "collection_type": "sales"
+          }
+        }, {}))
