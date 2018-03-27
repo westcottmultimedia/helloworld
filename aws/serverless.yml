@@ -62,6 +62,7 @@ package:
     - playlist_lambda.py
     - genre_lambda.py
     - generate_reporting_for_sales_and_streaming.py
+    - status_lambda.py
     - helpers.py
     - aws_packages/**
     # - aws/common/** # this works, but common_copy see
@@ -188,12 +189,6 @@ functions:
   # This will catch and release playlists that hit or fall below the 1000 (?) follower count threshold
   # !!! IMPORTANT: to update the DATE_STR of getting the minimum follower count from the db function once this function is re-run.
 
-
-  # ----- GENRE -----
-  TestGenre:
-    handler: genre_lambda.test_handler
-    timeout: 60
-
   # ----- REPORTING -----
   GenerateReportingForSales:
     handler: generate_reporting_for_sales_and_streaming.generate_reporting_for_sales_handler
@@ -202,8 +197,6 @@ functions:
   GenerateReportingForStreaming:
     handler: generate_reporting_for_sales_and_streaming.generate_reporting_for_streaming_handler
     timeout: 300
-
-
 
 
   # ----- HELPERS -----
@@ -218,20 +211,6 @@ functions:
 
   # ------ API GATEWAY ----
   # ------ GENRE
-  # original simple example: https://goonan.io/a-simple-python3-lambda-function-on-aws-with-an-api-gateway/
-  # parameters and querystrings: https://serverless.com/blog/serverless-v1.18.0/
-  GenreApiHandler:
-    handler: genre_lambda.genre_api_handler
-    timeout: 60
-    events:
-      # Options for path parameters:
-      # {collection_type} = stream,sales
-      # {kind} = track, album, music video
-      # {service} = spotify, apple
-      # {territory} = two letter character code... 'na', 'gb', etc... # maybe map ids to the database ids for territory
-      - http:
-          path: /genre/test/{collection_type}/{kind}
-          method: GET
 
   GenreApiChartsHandler:
     handler: genre_lambda.genre_api_charts_handler
@@ -261,6 +240,15 @@ functions:
       - http:
           path: /playlists
           method: GET
+
+  StatusHandler:
+    handler: status_lambda.chart_status_handler
+    timeout: 60
+    events:
+      - http:
+          path: /status/charts
+          method: GET
+
 # step functions definitions
 # https://github.com/horike37/serverless-step-functions
 stepFunctions:

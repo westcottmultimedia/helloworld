@@ -275,7 +275,6 @@ class TrackDatabase(object):
             raise
             return []
 
-
 class GenreRanks:
     def __init__(self, service, territory, kind, collection_type, playlist_id = None, date_str = 'latest'):
         self.db = TrackDatabase()
@@ -318,6 +317,8 @@ class GenreRanks:
                 self._kind_db_table = 'album'
             elif self._kind == 'music_video':
                 self._kind_db_table = 'music_video'
+            else:
+                self._kind_db_table = None
 
         elif self._collection_type == 'playlist':
             self._kind_db_table = 'track'
@@ -407,34 +408,6 @@ class Playlists:
 
     def get_playlist_info(self):
         self.top_playlist_infos = self.db.get_top_playlist_info(self.top_playlists_ids)
-
-def test_handler(event, context):
-        global db
-
-        db = TrackDatabase()
-        gr_chart = GenreRanks('spotify', 'us', 'track', 'streaming')
-
-        # get genres for charts - Spotify streaming, Apple Streaming, iTunes Sales charts
-        #
-        # TODO: change for sALES and STREAMING...
-        gr_chart.load_chart_collection_ids()
-        gr_chart.load_artist_ids()
-        gr_chart.load_genres_ids()
-        gr_chart.calculate_genre_counts()
-        gr_chart.calculate_genre_percentage()
-        gr_chart.get_top_genres()
-
-        # get genres for playlists
-        gr_playlist = GenreRanks('spotify', 'us', 'track', 'playlist', playlist_id = 2795)
-        gr_playlist.load_playlist_collection_ids()
-        gr_playlist.load_artist_ids()
-        gr_playlist.load_genres_ids()
-        gr_playlist.calculate_genre_counts()
-        gr_playlist.calculate_genre_percentage()
-        gr_playlist.get_top_genres()
-
-        db.close_database()
-        print('closed database connection')
 
 def service_mapping(service_name):
     if service_name == 'spotify':
