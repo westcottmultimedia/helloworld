@@ -246,7 +246,7 @@ functions:
     timeout: 60
     events:
       - http:
-          path: /status/charts
+          path: /status/charts/{date}
           method: GET
 
 # step functions definitions
