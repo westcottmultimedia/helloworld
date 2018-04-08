@@ -1,0 +1,1526 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: beats
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# lock us to a pre-2.0 (not yet released) version of the serverless framework to protect us from breaking changes
+frameworkVersion: ">=1.16.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: us-west-2
+  profile: serverless-admin
+  memorySize: 128
+# you can overwrite defaults here
+# stage: dev
+
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+#
+# Guide: https://forum.serverless.com/t/how-to-ignore-directories-and-files-for-a-deployment/2624/3
+#
+package:
+  exclude:
+    - ".*/**"
+  include:
+    - spotify_streaming_lambda.py
+    - apple_api_ec.config
+    - apple_streaming_sales_lambda.py
+    - playlist_lambda.py
+    - genre_lambda.py
+    - generate_reporting_for_sales_and_streaming.py
+    - status_lambda.py
+    - helpers.py
+    - aws_packages/**
+    # - aws/common/** # this works, but common_copy see
+
+# plugins for serverless
+plugins:
+  - serverless-pseudo-parameters
+  - serverless-step-functions
+
+# define your functions and handlers here
+functions:
+  # -------------------
+  # ---- STREAMING AND ITUNES SALES ----
+  # -------------------
+
+  # -------------------
+  # ---- SPOTIFY ----
+  # -------------------
+  spotify_streaming:
+    handler: spotify_streaming_lambda.handler
+    timeout: 300
+
+  GetUnprocessedSpotifyRegions:
+    handler: spotify_streaming_lambda.get_unprocessed_spotify_regions_handler
+    timeout: 30
+
+  # -------------------
+  #  ---- APPLE & ITUNES ----
+  #  songs, albums and music videos
+  # -------------------
+  GetUnprocessedAppleRegions:
+    handler: apple_streaming_sales_lambda.get_unprocessed_apple_regions
+    timeout: 30
+
+  apple_streaming_sales:
+    handler: apple_streaming_sales_lambda.handler
+    timeout: 300
+
+
+
+  # -------------------
+  # ---- PLAYLISTS ----
+  # -------------------
+  CreatePlaylistProcessedEntry:
+    handler: playlist_lambda.create_playlist_processed_entry_handler
+    timeout: 200
+
+  # ----  VERSIONS ----
+  GetDailyUnprocessedPlaylistsVersions:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_versions_handler
+    timeout: 30
+
+  GetDailyUnprocessedPlaylistsVersionsLength:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_versions_length_handler
+    timeout: 30
+
+  FetchPlaylistVersions:
+    handler: playlist_lambda.fetch_playlist_versions_handler
+    timeout: 300
+
+
+  # ---- FOLLOWERS ----
+  GetDailyUnprocessedPlaylistsFollowers:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_followers_handler
+    timeout: 30
+
+  GetDailyUnprocessedPlaylistsFollowersLength:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_followers_length_handler
+    timeout: 30
+
+  FetchPlaylistFollowers:
+    handler: playlist_lambda.fetch_playlist_followers_handler
+    timeout: 300
+
+  # ---- POSITION ----
+  GetDailyUnprocessedPlaylistsPositions:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_positions_handler
+    timeout: 30
+
+  GetDailyUnprocessedPlaylistsPositionsLength:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_positions_length_handler
+    timeout: 30
+
+  FetchPlaylistPositions:
+    handler: playlist_lambda.fetch_playlist_positions_handler
+    timeout: 300
+
+  FetchAllPlaylistPositions:
+    handler: playlist_lambda.fetch_all_playlist_positions_handler
+    timeout: 300
+
+  # ---- POPULARITY ----
+  GetDailyUnprocessedPlaylistsPopularities:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_popularities_handler
+    timeout: 30
+
+  # TODO: implement
+  GetDailyUnprocessedPlaylistsPopularitiesLength:
+    handler: playlist_lambda.get_daily_unprocessed_playlists_popularities_length_handler
+    timeout: 30
+
+  FetchPlaylistPopularities:
+    handler: playlist_lambda.fetch_playlist_popularities_handler
+    timeout: 300
+
+  # ----- PLAYLIST IMAGES -----
+  FetchAllPlaylistImages:
+    handler: playlist_lambda.fetch_all_playlist_images_handler
+    timeout: 300
+
+  # ---- ADMIN / SEED DATA
+
+  # Refresh all playlists' info of selected users
+  # This function retrieves new playlists from our user list from the Spotify API.
+  # Periodically run this to update the list of playlists
+  RefreshPlaylistsOfUsers:
+    handler: playlist_lambda.refresh_playlists_of_users_handler
+    timeout: 300
+
+
+
+
+  # Recommended to update followers for ALL playlists, once a week or once a month
+  # This will catch and release playlists that hit or fall below the 1000 (?) follower count threshold
+  # !!! IMPORTANT: to update the DATE_STR of getting the minimum follower count from the db function once this function is re-run.
+
+  # ----- REPORTING -----
+  GenerateReportingForSales:
+    handler: generate_reporting_for_sales_and_streaming.generate_reporting_for_sales_handler
+    timeout: 300
+
+  GenerateReportingForStreaming:
+    handler: generate_reporting_for_sales_and_streaming.generate_reporting_for_streaming_handler
+    timeout: 300
+
+
+  # ----- HELPERS -----
+  get_array_length:
+    handler: helpers.get_array_length
+    timeout: 5
+
+  test_length_equality:
+    handler: helpers.test_length_equality
+    timeout: 10
+
+
+  # ------ API GATEWAY ----
+  # ------ GENRE
+
+  GenreApiChartsHandler:
+    handler: genre_lambda.genre_api_charts_handler
+    timeout: 60
+    events:
+      # Options for path parameters:
+      # {collection_type} = stream,sales
+      # {kind} = track, album, music video
+      # {service} = spotify, apple
+      # {territory} = two letter character code... 'na', 'gb', etc... # maybe map ids to the database ids for territory
+      - http:
+          path: /genre/chart/{collection_type}/{kind}/{service}/{territory}
+          method: GET
+
+  GenreApiPlaylistsHandler:
+    handler: genre_lambda.genre_api_playlists_handler
+    timeout: 60
+    events:
+      - http:
+          path: /genre/playlist/{playlist_id}
+          method: GET
+
+  FetchTopPlaylistsHandler:
+    handler: genre_lambda.fetch_top_playlists_handler
+    timeout: 60
+    events:
+      - http:
+          path: /playlists
+          method: GET
+
+  StatusHandler:
+    handler: status_lambda.chart_status_handler
+    timeout: 60
+    events:
+      - http:
+          path: /status/charts/{date}
+          method: GET
+
+# step functions definitions
+# https://github.com/horike37/serverless-step-functions
+stepFunctions:
+  # Running from 4:00pm onwards, daily.
+  #
+  stateMachines:
+    # start the RDS instance
+    # for PST time, subtract 8 hours (-8) from schedule time
+    StartRDSBeats:
+      # events:
+      #   - schedule: cron(0 8 * * ? *) # midnight, 12:00am
+      #   - schedule: cron(10 4 * * ? *) # 5:10pm
+      name: StartRDSBeats
+      definition:
+        Comment: "Start the RDS instance of Beats"
+        StartAt: action
+        States:
+          action:
+            Type: Pass
+            Result:
+              instances:
+                - "beats"
+              action: "start"
+            Next: execute
+          execute:
+            Type: Task
+            Resource: "arn:aws:lambda:us-west-2:903653902323:function:RDS-Start-Stop"
+            End: true
+
+    # stop the RDS instance
+    # for PST time, subtract 8 hours (-8) from schedule time
+    #
+    StopRDSBeats:
+      # events:
+      #   - schedule: cron(0 14 * * ? *) # 6:00am
+      #   - schedule: cron(10 3 * * ? *) # 7:10pm
+      name: StopRDSBeats
+      definition:
+        Comment: "Stop the RDS instance of Beats"
+        StartAt: action
+        States:
+          action:
+            Type: Pass
+            Result:
+              instances:
+                - "beats"
+              action: "stop"
+            Next: execute
+          execute:
+            Type: Task
+            Resource: "arn:aws:lambda:us-west-2:903653902323:function:RDS-Start-Stop"
+            End: true
+
+    spotify_streaming_songs:
+      events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        - schedule: cron(0 12 * * ? *)
+      name: SpotifyStreamingSongs
+      definition:
+        Comment: "Spotify - Streaming - Spotify Top Songs."
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result:
+              # You can input the date_str variable to process an user-defined day
+              # date_str: '2018-02-08'
+              done: False
+            Next: GetUnprocessedRegionsPre
+          GetUnprocessedRegionsPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetUnprocessedSpotifyRegions"
+            ResultPath: "$.regions"
+            OutputPath: "$"
+            Next: GetArrayLengthPre
+          GetArrayLengthPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.regions"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
+                Next: Spotify ABC
+          Spotify ABC:
+            Type: Parallel
+            Next: GetUnprocessedRegionsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
+            Branches:
+              - StartAt: Regions A
+                States:
+                  Regions A:
+                    Type: Pass
+                    InputPath: "$.regions[0:10]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Spotify A
+                  Spotify A:
+                      Type: Task
+                      Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-spotify_streaming"
+                      End: true
+              - StartAt: Regions B
+                States:
+                  Regions B:
+                    Type: Pass
+                    InputPath: "$.regions[10:20]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Spotify B
+                  Spotify B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-spotify_streaming"
+                    End: true
+              - StartAt: Regions C
+                States:
+                  Regions C:
+                    Type: Pass
+                    InputPath: "$.regions[20:30]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Spotify C
+                  Spotify C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-spotify_streaming"
+                    End: true
+          GetUnprocessedRegionsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetUnprocessedSpotifyRegions"
+            ResultPath: "$.regions"
+            OutputPath: "$"
+            Next: GetArrayLengthPost
+          GetArrayLengthPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.regions"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            InputPath: "$"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          Done:
+            Type: Pass
+            End: true
+
+    apple_streaming_songs:
+      name: AppleStreamingSongs
+      events:
+        # we run these for the previous day (so, 8:30 UTC is 12:30AM PST, so
+        # it's running for the previous day)
+        - schedule: cron(30 8 * * ? *)
+        - schedule: cron(30 10 * * ? *)
+        - schedule: cron(30 2 * * ? *)
+      definition:
+        Comment: "Apple Music for Streaming Songs"
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result:
+              # date_str: '2018-02-06'
+              chartIndex: 0
+              chart_service: 'apple-music'
+              kind: 'top-songs'
+              length_post: 0
+              done: False
+            Next: GetUnprocessedRegionsPre
+          GetUnprocessedRegionsPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetUnprocessedAppleRegions"
+            ResultPath: "$.regions"
+            OutputPath: "$"
+            Next: GetArrayLengthPre
+          GetArrayLengthPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.regions"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
+                Next: Apple ABC
+          Apple ABC:
+            Type: Parallel
+            Next: GetUnprocessedRegionsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
+            Branches:
+              - StartAt: Regions A
+                States:
+                  Regions A:
+                    Type: Pass
+                    InputPath: "$.regions[0:5]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple A
+                  Apple A:
+                      Type: Task
+                      Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-apple_streaming_sales"
+                      End: true
+              - StartAt: Regions B
+                States:
+                  Regions B:
+                    Type: Pass
+                    InputPath: "$.regions[5:10]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple B
+                  Apple B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-apple_streaming_sales"
+                    End: true
+              - StartAt: Regions C
+                States:
+                  Regions C:
+                    Type: Pass
+                    InputPath: "$.regions[10:15]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple C
+                  Apple C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-apple_streaming_sales"
+                    End: true
+          GetUnprocessedRegionsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetUnprocessedAppleRegions"
+            ResultPath: "$.regions"
+            OutputPath: "$"
+            Next: GetArrayLengthPost
+          GetArrayLengthPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.regions"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          Done:
+            Type: Pass
+            End: true
+
+    apple_sales_songs:
+      name: AppleSalesSongs
+      events:
+        - schedule: cron(0 9 * * ? *)
+        - schedule: cron(50 10 * * ? *)
+        - schedule: cron(50 2 * * ? *)
+      definition:
+        Comment: "Apple iTunes Sales for Songs"
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result:
+              # date_str: '2018-02-14' #for user-defined processing of a specific date... shouldn't have to be used, however.
+              chartIndex: 1
+              chart_service: 'itunes-music'
+              kind: 'top-songs'
+              length_post: 0
+              done: False
+            Next: GetUnprocessedRegionsPre
+          GetUnprocessedRegionsPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetUnprocessedAppleRegions"
+            ResultPath: "$.regions"
+            OutputPath: "$"
+            Next: GetArrayLengthPre
+          GetArrayLengthPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.regions"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
+                Next: Apple ABC
+          Apple ABC:
+            Type: Parallel
+            Next: GetUnprocessedRegionsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
+            Branches:
+              - StartAt: Regions A
+                States:
+                  Regions A:
+                    Type: Pass
+                    InputPath: "$.regions[0:5]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple A
+                  Apple A:
+                      Type: Task
+                      Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-apple_streaming_sales"
+                      End: true
+              - StartAt: Regions B
+                States:
+                  Regions B:
+                    Type: Pass
+                    InputPath: "$.regions[5:10]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple B
+                  Apple B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-apple_streaming_sales"
+                    End: true
+              - StartAt: Regions C
+                States:
+                  Regions C:
+                    Type: Pass
+                    InputPath: "$.regions[10:15]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple C
+                  Apple C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-apple_streaming_sales"
+                    End: true
+          GetUnprocessedRegionsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetUnprocessedAppleRegions"
+            ResultPath: "$.regions"
+            OutputPath: "$"
+            Next: GetArrayLengthPost
+          GetArrayLengthPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.regions"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            InputPath: "$"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          Done:
+            Type: Pass
+            End: true
+
+    apple_sales_albums:
+      name: AppleSalesAlbums
+      events:
+        - schedule: cron(30 9 * * ? *)
+        - schedule: cron(10 11 * * ? *)
+        - schedule: cron(10 3 * * ? *)
+      definition:
+        Comment: "Apple iTunes Sales for Albums"
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result:
+              # date_str: '2018-02-14'
+              chartIndex: 2
+              chart_service: 'itunes-music'
+              kind: 'top-albums'
+              length_post: 0
+              done: False
+            Next: GetUnprocessedRegionsPre
+          GetUnprocessedRegionsPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetUnprocessedAppleRegions"
+            ResultPath: "$.regions"
+            OutputPath: "$"
+            Next: GetArrayLengthPre
+          GetArrayLengthPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.regions"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
+                Next: Apple ABC
+          Apple ABC:
+            Type: Parallel
+            Next: GetUnprocessedRegionsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
+            Branches:
+              - StartAt: Regions A
+                States:
+                  Regions A:
+                    Type: Pass
+                    InputPath: "$.regions[0:5]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple A
+                  Apple A:
+                      Type: Task
+                      Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-apple_streaming_sales"
+                      End: true
+              - StartAt: Regions B
+                States:
+                  Regions B:
+                    Type: Pass
+                    InputPath: "$.regions[5:10]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple B
+                  Apple B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-apple_streaming_sales"
+                    End: true
+              - StartAt: Regions C
+                States:
+                  Regions C:
+                    Type: Pass
+                    InputPath: "$.regions[10:15]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple C
+                  Apple C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-apple_streaming_sales"
+                    End: true
+          GetUnprocessedRegionsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetUnprocessedAppleRegions"
+            ResultPath: "$.regions"
+            OutputPath: "$"
+            Next: GetArrayLengthPost
+          GetArrayLengthPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.regions"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          Done:
+            Type: Pass
+            End: true
+
+    apple_sales_music_videos:
+      name: AppleSalesMusicVideos
+      events:
+        # music videos are updated later in the day, so we set it to run later
+        - schedule: cron(0 10 * * ? *)
+        - schedule: cron(30 11 * * ? *)
+        - schedule: cron(30 3 * * ? *)
+      definition:
+        Comment: "Apple iTunes Sales for Music Videos"
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result:
+              # You can input the date_str variable to process an individual date
+              # date_str: '2018-02-14'
+              chartIndex: 3
+              chart_service: 'music-videos'
+              kind: 'top-music-videos'
+              length_post: 0
+              done: False
+            Next: GetUnprocessedRegionsPre
+          GetUnprocessedRegionsPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetUnprocessedAppleRegions"
+            ResultPath: "$.regions"
+            OutputPath: "$"
+            Next: GetArrayLengthPre
+          GetArrayLengthPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.regions"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
+                Next: Apple ABC
+          Apple ABC:
+            Type: Parallel
+            Next: GetUnprocessedRegionsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
+            Branches:
+              - StartAt: Regions A
+                States:
+                  Regions A:
+                    Type: Pass
+                    InputPath: "$.regions[0:5]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple A
+                  Apple A:
+                      Type: Task
+                      Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-apple_streaming_sales"
+                      End: true
+              - StartAt: Regions B
+                States:
+                  Regions B:
+                    Type: Pass
+                    InputPath: "$.regions[5:10]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple B
+                  Apple B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-apple_streaming_sales"
+                    End: true
+              - StartAt: Regions C
+                States:
+                  Regions C:
+                    Type: Pass
+                    InputPath: "$.regions[10:15]"
+                    ResultPath: "$.regions"
+                    OutputPath: "$"
+                    Next: Apple C
+                  Apple C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-apple_streaming_sales"
+                    End: true
+          GetUnprocessedRegionsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetUnprocessedAppleRegions"
+            ResultPath: "$.regions"
+            OutputPath: "$"
+            Next: GetArrayLengthPost
+          GetArrayLengthPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.regions"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          Done:
+            Type: Pass
+            End: true
+
+    # NOTE: TODO: implement similar playlist length in ResultPath, OutputPath to do a ProcessingCHoice check that's smarter than =0 and >0 (leads to endless loop)
+    CreatePlaylistProcessedEntry:
+      name: CreatePlaylistProcessedEntry
+      events:
+        - schedule: cron(25 1 * * ? *)
+      definition:
+        Comment: "Playlist - create daily entry in the playlist processed table."
+        StartAt: CreatePlaylistProcessedEntry
+        States:
+          CreatePlaylistProcessedEntry:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-CreatePlaylistProcessedEntry"
+            End: True
+
+    FetchPlaylistVersions:
+      name: FetchPlaylistVersions
+      events:
+        - schedule: cron(30 1 * * ? *)
+      definition:
+        Comment: "Playlist - Daily Version data for all playlists."
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result:
+              length_post: 0
+              done: False
+            Next: GetUnprocessedPlaylistsPre
+          GetUnprocessedPlaylistsPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsVersions"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPre
+          GetUnprocessedTotalPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsVersionsLength"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
+                Next: Playlist Versions ABC
+          Playlist Versions ABC:
+            Type: Parallel
+            Next: GetUnprocessedPlaylistsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
+            Branches:
+              - StartAt: Playlist Versions A
+                States:
+                  # input is 250 playlist objects
+                  Playlist Versions A:
+                    InputPath: "$.playlists[0:50]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-FetchPlaylistVersions"
+                    Retry:
+                      - ErrorEquals:
+                        - "States.Timeout"
+                        IntervalSeconds: 3
+                        MaxAttempts: 4
+                        BackoffRate: 1.5
+                    End: true
+              - StartAt: Playlist Versions B
+                States:
+                  Playlist Versions B:
+                    InputPath: "$.playlists[50:100]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-FetchPlaylistVersions"
+                    Retry:
+                      - ErrorEquals:
+                        - "States.Timeout"
+                        IntervalSeconds: 3
+                        MaxAttempts: 4
+                        BackoffRate: 1.5
+                    End: true
+              - StartAt: Playlist Versions C
+                States:
+                  Playlist Versions C:
+                    InputPath: "$.playlists[100:150]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-FetchPlaylistVersions"
+                    Retry:
+                      - ErrorEquals:
+                        - "States.Timeout"
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+                    End: true
+          GetUnprocessedPlaylistsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsVersions"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPost
+          GetUnprocessedTotalPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsVersionsLength"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          Done:
+            Type: Pass
+            End: true
+
+    FetchPlaylistFollowers:
+      name: FetchPlaylistFollowers
+      events:
+        - schedule: cron(30 1 * * ? *)
+      definition:
+        Comment: "Playlist - Daily Follower data for all playlists."
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result:
+              length_post: 0
+              done: False
+            Next: GetUnprocessedPlaylistsPre
+          GetUnprocessedPlaylistsPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsFollowers"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPre
+          GetUnprocessedTotalPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsFollowersLength"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
+                Next: Playlist Followers ABC
+          Playlist Followers ABC:
+            Type: Parallel
+            Next: GetUnprocessedPlaylistsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
+            Branches:
+              - StartAt: Playlist Followers A
+                States:
+                  Playlist Followers A:
+                    InputPath: "$.playlists[0:50]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-FetchPlaylistFollowers"
+                    Retry:
+                      - ErrorEquals:
+                        - "States.Timeout"
+                        IntervalSeconds: 3
+                        MaxAttempts: 4
+                        BackoffRate: 1.5
+                    End: true
+              - StartAt: Playlist Followers B
+                States:
+                  Playlist Followers B:
+                    InputPath: "$.playlists[50:100]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-FetchPlaylistFollowers"
+                    Retry:
+                      - ErrorEquals:
+                        - "States.Timeout"
+                        IntervalSeconds: 3
+                        MaxAttempts: 4
+                        BackoffRate: 1.5
+                    End: true
+              - StartAt: Playlist Followers C
+                States:
+                  Playlist Followers C:
+                    InputPath: "$.playlists[100:150]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-FetchPlaylistFollowers"
+                    Retry:
+                      - ErrorEquals:
+                        - "States.Timeout"
+                        IntervalSeconds: 3
+                        MaxAttempts: 10
+                        BackoffRate: 1.5
+                    End: true
+          GetUnprocessedPlaylistsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsFollowers"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPost
+          GetUnprocessedTotalPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsFollowersLength"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          Done:
+            Type: Pass
+            End: true
+
+    FetchPlaylistPositions:
+      name: FetchPlaylistPositions
+      events:
+        - schedule: cron(0 2 * * ? *)
+      definition:
+        Comment: "Get playlists from the db to process track positions, with 15 playlists at a time"
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result:
+              length_post: 0
+              done: False
+            Next: GetUnprocessedPlaylistsPre
+          GetUnprocessedPlaylistsPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPositions"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPre
+          GetUnprocessedTotalPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPositionsLength"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
+                Next: Playlist Positions ABC
+          Playlist Positions ABC:
+            Type: Parallel
+            Next: GetUnprocessedPlaylistsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
+            Branches:
+              - StartAt: Process Playlists A
+                States:
+                  Process Playlists A:
+                    InputPath: "$.playlists[0:5]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
+                    End: true
+              - StartAt: Process Playlists B
+                States:
+                  Process Playlists B:
+                    InputPath: "$.playlists[5:10]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
+                    End: true
+              - StartAt: Process Playlists C
+                States:
+                  Process Playlists C:
+                    InputPath: "$.playlists[10:15]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPositions"
+                    End: true
+          GetUnprocessedPlaylistsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPositions"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPost
+          GetUnprocessedTotalPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPositionsLength"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          Done:
+            Type: Pass
+            End: true
+
+    # NOTE: CURRENTLY UNDER CONSTRUCTION...
+    # NOTE: MUST rework the GetUnprocessedPlaylists state.
+    FetchAllPlaylistPositions:
+      name: FetchAllPlaylistPositions
+      definition:
+        Comment: "Get all playlists from the db to process track positions"
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result: {}
+            ResultPath: "$"
+            Next: GetUnprocessedPlaylists
+          GetUnprocessedPlaylists:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-DOESNOTEXIST"
+            InputPath: "$"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetArrayLength
+          GetArrayLength:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-get_array_length"
+            InputPath: "$.playlists"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Default: Process Playlists ABC
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              # - Variable: "$.length"
+              #   NumericLessThan: 15
+              #   Next: Process Playlists ABC
+          Process Playlists ABC:
+            Type: Parallel
+            Branches:
+              - StartAt: Process Playlists A
+                States:
+                  Process Playlists A:
+                    InputPath: "$.playlists[0:5]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchAllPlaylistPositions"
+                    End: true
+              - StartAt: Process Playlists B
+                States:
+                  Process Playlists B:
+                    InputPath: "$.playlists[5:10]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchAllPlaylistPositions"
+                    End: true
+              - StartAt: Process Playlists C
+                States:
+                  Process Playlists C:
+                    InputPath: "$.playlists[10:15]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchAllPlaylistPositions"
+                    End: true
+            Next: CleanInput
+          Done:
+            Type: Pass
+            End: true
+
+    FetchPlaylistPopularities:
+      name: FetchPlaylistPopularities
+      definition:
+        Comment: "Playlist - Daily Popularity data for all playlists."
+        StartAt: CleanInput
+        States:
+          CleanInput:
+            Type: Pass
+            Result:
+              length_post: 0
+              done: False
+            Next: GetUnprocessedPlaylistsPre
+          GetUnprocessedPlaylistsPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPopularities"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPre
+          GetUnprocessedTotalPre:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPopularitiesLength"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          ProcessingChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.length"
+                NumericEquals: 0
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: True
+                Next: Done
+              - Variable: "$.done"
+                BooleanEquals: False
+                Next: Playlist Popularities ABC
+          Playlist Popularities ABC:
+            Type: Parallel
+            Next: GetUnprocessedPlaylistsPost
+            ResultPath: "$.job_status"
+            OutputPath: "$"
+            Branches:
+              - StartAt: Playlist Popularities A
+                States:
+                  Playlist Popularities A:
+                    InputPath: "$.playlists[0:20]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPopularities"
+                    End: true
+              - StartAt: Playlist Popularities B
+                States:
+                  Playlist Popularities B:
+                    InputPath: "$.playlists[20:40]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPopularities"
+                    End: true
+              - StartAt: Playlist Popularities C
+                States:
+                  Playlist Popularities C:
+                    InputPath: "$.playlists[40:60]"
+                    Type: Task
+                    Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-FetchPlaylistPopularities"
+                    End: true
+          GetUnprocessedPlaylistsPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPopularities"
+            ResultPath: "$.playlists"
+            OutputPath: "$"
+            Next: GetUnprocessedTotalPost
+          GetUnprocessedTotalPost:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GetDailyUnprocessedPlaylistsPopularitiesLength"
+            ResultPath: "$.length_post"
+            OutputPath: "$"
+            Next: TestLengthEquality
+          TestLengthEquality:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-test_length_equality"
+            ResultPath: "$.done"
+            OutputPath: "$"
+            Next: SaveLength
+          SaveLength:
+            Type: Pass
+            InputPath: "$.length_post"
+            ResultPath: "$.length"
+            OutputPath: "$"
+            Next: ProcessingChoice
+          Done:
+            Type: Pass
+            End: true
+
+    # NOTE: re-work RefreshPlaylistsOfUsers, as it still uses refresh_playlists_of_users(),
+    # which still uses deprecated append_playlist_followers_and_update_version()
+    #
+    RefreshPlaylistsOfUsers:
+      events:
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+        # - schedule: cron(45 3 * * ? *)
+      name: RefreshPlaylistsOfUsers
+      definition:
+        Comment: "Playlist - Update all playlists by users. Once a week or month update. Input can be a 'user' key with an array of spotify users, or defaults to all users in the db"
+        StartAt: "Playlist Update All ABCD"
+        States:
+          Playlist Update All ABCD:
+            Type: Parallel
+            Branches:
+              - StartAt: Playlist Users A
+                States:
+                  Playlist Users A:
+                    Type: Pass
+                    Result:
+                      users: ['spotify']
+                    Next: Playlist Update All A
+                  Playlist Update All A:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-RefreshPlaylistsOfUsers"
+                    End: true
+              - StartAt: Playlist Users B
+                States:
+                  Playlist Users B:
+                    Type: Pass
+                    Result:
+                      users: ["digster.fr", "universalmusicse", "udiscovermusic", "digster.fm", "thecompletecollection", 'topsify', 'filtr', 'radioactivehits', 'digster.ee']
+                    Next: Playlist Update All B
+                  Playlist Update All B:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-RefreshPlaylistsOfUsers"
+                    End: true
+              - StartAt: Playlist Users C
+                States:
+                  Playlist Users C:
+                    Type: Pass
+                    Result:
+                      users: [ 'digster.dk',  'digster.co.uk', 'hhheroes',
+                      'digster.lt', 'capitolchristianmusicgroup', 'capitolrecords', 'digsterca', '11145233736', '12150271040',
+                      'digsterdeutschland', 'digstercz', 'digster.lv', 'hollywdrecrds', 'record_club_umc',
+                      'sozoofficial', '116734391', 'digsterhu', 'getmusicasia', 'disney_pixar_', 'digstersk', 'deutschegrammophon', '11152361853',
+                      '100keepit', 'universal.fm', 'digsternl', '12150809594', 'thisisofficial', 'universalmusicargentina',
+                      'udiscover', 'umusicnz', 'universalmusicitalia', 'progrocksmusic']
+                    Next: Playlist Update All C
+                  Playlist Update All C:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-RefreshPlaylistsOfUsers"
+                    End: true
+              - StartAt: Playlist Users D
+                States:
+                  Playlist Users D:
+                    Type: Pass
+                    Result:
+                      users: ['digsterargentina', 'abbaspotify',
+                      'defjamrecordings', 'digsterno', 'digster.au', '100yearsoftheblues', 'universal.pictures.de', 'o.owner_id', '128899670',
+                      'digstergreece', 'universalmusica', 'digster.fi', 'digster.se', 'universalmusictaiwan', 'classicmotownrecords',
+                      'digster_italy', 'digster_brasil', 'thejazzlabels', 'universalmusicireland', 'wowilovechristianmusic',
+                      'digsterchile', 'disney_music_uk', 'universal_music_rock_legends', 'digster.pt']
+                    Next: Playlist Update All D
+                  Playlist Update All D:
+                    Type: Task
+                    Resource: "arn:aws:lambda:us-west-2:903653902323:function:${self:service}-${opt:stage}-RefreshPlaylistsOfUsers"
+                    End: true
+            Retry:
+              - ErrorEquals:
+                - "States.Timeout"
+                IntervalSeconds: 3
+                MaxAttempts: 10
+                BackoffRate: 1.5
+            End: true
+
+    # -------- REPORTING ------
+    generate_reporting_for_sales:
+      name: GenerateReportingForSales
+      definition:
+        Comment: ""
+        StartAt: input
+        States:
+          input:
+            Type: Pass
+            Result:
+              # date_str: '2018-02-08'
+            Next: generate_reporting
+          generate_reporting:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GenerateReportingForSales"
+            End: true
+
+    generate_reporting_for_streaming:
+      name: GenerateReportingForStreaming
+      definition:
+        Comment: ""
+        StartAt: input
+        States:
+          input:
+            Type: Pass
+            Result:
+              # date_str: '2018-01-28'
+            Next: generate_reporting
+          generate_reporting:
+            Type: Task
+            Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-GenerateReportingForStreaming"
+            End: true
+
+#    The following are a few example events you can configure
+#    NOTE: Please make sure to change your handler code to work with those events
+#    Check the event documentation for details
+#    events:
+#      - http:
+#          path: users/create
+#          method: get
+#      - s3: ${env:BUCKET}
+#      - schedule: rate(10 minutes)
+#      - sns: greeter-topic
+#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
+#      - alexaSkill
+#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
+#      - iot:
+#          sql: "SELECT * FROM 'some_topic'"
+#      - cloudwatchEvent:
+#          event:
+#            source:
+#              - "aws.ec2"
+#            detail-type:
+#              - "EC2 Instance State-change Notification"
+#            detail:
+#              state:
+#                - pending
+#      - cloudwatchLog: '/aws/lambda/hello'
+#      - cognitoUserPool:
+#          pool: MyUserPool
+#          trigger: PreSignUp
+
+#    Define function environment variables here
+#    environment:
+#      variable2: value2
+
+# you can add CloudFormation resource templates here
+#resources:
+#  Resources:
+#    NewResource:
+#      Type: AWS::S3::Bucket
+#      Properties:
+#        BucketName: my-new-bucket
+#  Outputs:
+#     NewOutput:
+#       Description: "Description for the output"
+#       Value: "Some output value"
