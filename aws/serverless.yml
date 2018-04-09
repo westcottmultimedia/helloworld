@@ -71,8 +71,6 @@ package:
 plugins:
   - serverless-pseudo-parameters
   - serverless-step-functions
-
-# define your functions and handlers here
 functions:
   # -------------------
   # ---- STREAMING AND ITUNES SALES ----
@@ -240,6 +238,10 @@ functions:
       - http:
           path: /playlists
           method: GET
+          request:
+            parameters:
+              querystrings:
+                url: true
 
   StatusHandler:
     handler: status_lambda.chart_status_handler
@@ -252,8 +254,6 @@ functions:
 # step functions definitions
 # https://github.com/horike37/serverless-step-functions
 stepFunctions:
-  # Running from 4:00pm onwards, daily.
-  #
   stateMachines:
     # start the RDS instance
     # for PST time, subtract 8 hours (-8) from schedule time

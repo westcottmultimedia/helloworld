@@ -231,8 +231,8 @@ class TrackDatabase(object):
             raise
             return []
 
-    def get_top_playlist_info(self, playlist_db_ids):
-        query = """
+    def get_top_playlist_info(self, playlist_db_ids, lookback_window = 7):
+        query_original = """
             SELECT * FROM (
                 SELECT DISTINCT ON (playlist.id)
                     playlist.id,
@@ -253,8 +253,38 @@ class TrackDatabase(object):
             ORDER BY followers DESC
         """
 
+        # follower_change_thousandth_percent is so that json doesn't have an error in decimals
+        query = """
+            SELECT * FROM (
+                SELECT
+                    p.id,
+                    p.owner_id,
+                    p.name,
+                    po.alt_name,
+                    pf1.followers,
+                    p.images,
+                    p.service_playlist_id,
+                    po.service_owner_id,
+                    pf1.followers - pf2.followers AS follower_change,
+                    CAST ((((pf1.followers::DECIMAL - pf2.followers) * 100 * 1000)/pf1.followers) AS INTEGER) AS follower_change_thousandth_percent
+                FROM playlist_followers pf1
+                INNER JOIN playlist_followers pf2
+                    ON pf1.playlist_id = pf2.playlist_id
+                INNER JOIN playlist p
+                    ON p.id = pf1.playlist_id
+                INNER JOIN playlist_owner po
+                    ON po.id = p.owner_id
+                AND pf1.date_str::DATE - pf2.date_str::DATE = %s
+                WHERE
+                    pf1.date_str = (SELECT max(date_str) FROM playlist_followers)
+                    AND
+                    p.id IN %s
+            ) q
+            ORDER BY follower_change_thousandth_percent DESC
+        """
+
         try:
-            self.c.execute(query, [tuple(playlist_db_ids)])
+            self.c.execute(query, [lookback_window, tuple(playlist_db_ids)])
             infos = []
             for row in self.c.fetchall():
                 info = {}
@@ -266,6 +296,8 @@ class TrackDatabase(object):
                 info['images'] = row[5]
                 info['playlist_spotify_id'] = row[6]
                 info['owner_id'] = row[7]
+                info['follower_change'] = row[8]
+                info['follower_change_thousandth_percent'] = row[9]
                 infos.append(info)
 
             print('get_playlist_ids info', infos)
@@ -386,11 +418,12 @@ class GenreRanks:
         return self.top_genres
 
 class Playlists:
-    def __init__(self):
+    def __init__(self, lookback_window = 7):
         self.db = TrackDatabase()
         self.top_playlists_ids = []
         self.top_playlist_infos = []
         self.latest_date_playlists = ''
+        self.lookback_window = lookback_window
 
         self.get_latest_date_playlists()
         self.get_playlist_ids()
@@ -403,11 +436,11 @@ class Playlists:
     def get_latest_date_playlists(self):
         self.latest_date_playlists = self.db.get_latest_date_for_playlists()
 
-    def get_playlist_ids(self, limit = 250):
+    def get_playlist_ids(self, limit = 2500):
         self.top_playlists_ids = self.db.get_top_playlist_ids(self.latest_date_playlists, limit)
 
     def get_playlist_info(self):
-        self.top_playlist_infos = self.db.get_top_playlist_info(self.top_playlists_ids)
+        self.top_playlist_infos = self.db.get_top_playlist_info(self.top_playlists_ids, self.lookback_window)
 
 def service_mapping(service_name):
     if service_name == 'spotify':
@@ -427,11 +460,8 @@ def genre_api_charts(service, territory_code, kind, collection_type):
     #
     # gr_chart.inspect_attrs() # test
     gr_chart.load_chart_collection_ids()
-    print('collection ids', gr_chart.collection_ids)
     gr_chart.load_artist_ids()
-    print('artist ids', gr_chart.artist_ids)
     gr_chart.load_genres_ids()
-    print('genre ids', gr_chart.genres)
     gr_chart.calculate_genre_counts()
     gr_chart.calculate_genre_percentage()
 
@@ -460,11 +490,11 @@ def genre_api_playlists(playlist_id = 2795):
         'genre_percentages': gr_playlist.genre_percentages
     }
 
-def fetch_top_playlists(limit = 50):
+def fetch_top_playlists(lookback_window = 7):
     global db
     db = TrackDatabase()
 
-    playlists = Playlists()
+    playlists = Playlists(lookback_window)
 
     db.close_database()
     return {
@@ -546,8 +576,9 @@ def genre_api_playlists_handler(event, context):
 def fetch_top_playlists_handler(event, context):
     try:
         params = event['pathParameters']
+        lookback_window = event['queryStringParameters'].setdefault('lookback_window', 7)
         return api_response(
-            fetch_top_playlists(),
+            fetch_top_playlists(lookback_window = lookback_window),
             200
         )
     except Exception as e:
