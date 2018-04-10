@@ -185,6 +185,29 @@ class TrackDatabase(object):
 
         return []
 
+    def get_all_genres(self):
+        query = """
+            SELECT super_genre, genre, sub_genre FROM genre
+        """
+
+        try:
+            self.c.execute(query)
+
+            genres = []
+            for row in self.c.fetchall():
+                genre = {}
+                genre['super_genre'] = row[0]
+                genre['genre'] = row[1]
+                genre['sub_genre'] = row[2]
+                genres.append(genre)
+            return genres
+
+        except Exception as e:
+            print('fetching all genres error', e)
+            raise
+
+        return []
+
     def territory_mapping_code_to_db_id(self, territory_code):
         query = """
             SELECT id FROM territory
@@ -417,6 +440,18 @@ class GenreRanks:
         self.top_genres = sorted(self.genre_counts, reverse = True, key = self.genre_counts.__getitem__)[0:ranks]
         return self.top_genres
 
+class Genres:
+    def __init__(self):
+        self.db = TrackDatabase()
+
+        # set attributes
+        self.genres = []
+
+        self.get_genres()
+
+    def get_genres(self):
+        self.genres = self.db.get_all_genres()
+
 class Playlists:
     def __init__(self, lookback_window = 7):
         self.db = TrackDatabase()
@@ -500,6 +535,16 @@ def fetch_top_playlists(lookback_window = 7):
     return {
         'playlists': playlists.top_playlist_infos
     }
+
+def fetch_all_genres():
+    global db
+    db = TrackDatabase()
+    genres = Genres()
+    db.close_database()
+    return {
+        'genres': genres.genres
+    }
+
 
 # ---- AWS LAMBDA, API GATEWAY ----
 # How to structure json response
@@ -587,6 +632,17 @@ def fetch_top_playlists_handler(event, context):
             'playlists': []
         }, 400)
 
+def fetch_all_genres_handler(event, context):
+    try:
+        return api_response(
+            fetch_all_genres(),
+            200
+        )
+    except Exception as e:
+        print(e)
+        return api_response({
+            'genres': []
+        }, 400)
 
 # ---- LOCAL TESTING -----
 if __name__ == '__main__':

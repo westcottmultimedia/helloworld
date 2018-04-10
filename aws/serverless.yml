@@ -212,7 +212,7 @@ functions:
 
   GenreApiChartsHandler:
     handler: genre_lambda.genre_api_charts_handler
-    timeout: 60
+    timeout: 30
     events:
       # Options for path parameters:
       # {collection_type} = stream,sales
@@ -225,7 +225,7 @@ functions:
 
   GenreApiPlaylistsHandler:
     handler: genre_lambda.genre_api_playlists_handler
-    timeout: 60
+    timeout: 30
     events:
       - http:
           path: /genre/playlist/{playlist_id}
@@ -233,7 +233,7 @@ functions:
 
   FetchTopPlaylistsHandler:
     handler: genre_lambda.fetch_top_playlists_handler
-    timeout: 60
+    timeout: 30
     events:
       - http:
           path: /playlists
@@ -242,6 +242,14 @@ functions:
             parameters:
               querystrings:
                 url: true
+
+  FetchAllGenresHandler:
+      handler: genre_lambda.fetch_all_genres_handler
+      timeout: 30
+      events:
+        - http:
+            path: /genres/all
+            method: GET
 
   StatusHandler:
     handler: status_lambda.chart_status_handler
