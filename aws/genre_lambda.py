@@ -187,7 +187,7 @@ class TrackDatabase(object):
 
     def get_all_genres(self):
         query = """
-            SELECT super_genre, genre, sub_genre FROM genre
+            SELECT id, super_genre, genre, sub_genre FROM genre
         """
 
         try:
@@ -196,9 +196,10 @@ class TrackDatabase(object):
             genres = []
             for row in self.c.fetchall():
                 genre = {}
-                genre['super_genre'] = row[0]
-                genre['genre'] = row[1]
-                genre['sub_genre'] = row[2]
+                genre['genre_db_id'] = row[0]
+                genre['super_genre'] = row[1]
+                genre['genre'] = row[2]
+                genre['sub_genre'] = row[3]
                 genres.append(genre)
             return genres
 
@@ -207,6 +208,20 @@ class TrackDatabase(object):
             raise
 
         return []
+
+    def update_genre_label_for_id(self, genre_db_id, super_genre, genre):
+        query = """
+            UPDATE genre
+            SET
+                super_genre = %s,
+                genre = %s
+            WHERE id = %s
+        """
+
+        try:
+            self.c.execute(query, (super_genre, genre, genre_db_id))
+        except:
+            print('cannot update genre label')
 
     def territory_mapping_code_to_db_id(self, territory_code):
         query = """
@@ -545,6 +560,11 @@ def fetch_all_genres():
         'genres': genres.genres
     }
 
+def update_genre_label(genre_db_id, super_genre, genre):
+    global db
+    db = TrackDatabase()
+    db.update_genre_label_for_id(genre_db_id, super_genre, genre)
+    db.close_database()
 
 # ---- AWS LAMBDA, API GATEWAY ----
 # How to structure json response
@@ -643,6 +663,18 @@ def fetch_all_genres_handler(event, context):
         return api_response({
             'genres': []
         }, 400)
+
+def update_genre_label_handler(event, context):
+    try:
+        params = event['pathParameters']
+        genre_db_id = int(params['genre_db_id'])
+        super_genre = params['super_genre']
+        genre = params['genre']
+        update_genre_label(genre_db_id, super_genre, genre)
+    except Exception as e:
+        print('updating genre label error', e)
+        raise
+    return 'update successful'
 
 # ---- LOCAL TESTING -----
 if __name__ == '__main__':

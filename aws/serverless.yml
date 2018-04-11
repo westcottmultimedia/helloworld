@@ -244,12 +244,25 @@ functions:
                 url: true
 
   FetchAllGenresHandler:
-      handler: genre_lambda.fetch_all_genres_handler
-      timeout: 30
-      events:
-        - http:
-            path: /genres/all
-            method: GET
+    handler: genre_lambda.fetch_all_genres_handler
+    timeout: 30
+    events:
+      - http:
+          path: /genres/all
+          method: GET
+
+  UpdateGenreLabelsHandler:
+    handler: genre_lambda.update_genre_label_handler
+    timeout: 30
+    events:
+      - http:
+          path: /genres/edit/{genre_id}/{super_genre}/{genre}
+          method: PUT
+          request:
+            paths:
+              todo_id: true
+              super_genre: true
+              genre: true
 
   StatusHandler:
     handler: status_lambda.chart_status_handler
