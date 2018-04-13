@@ -256,13 +256,25 @@ functions:
     timeout: 30
     events:
       - http:
-          path: /genres/edit/{genre_id}/{super_genre}/{genre}
+          path: /genres/edit/{genre_db_id}/{super_genre}/{genre}
           method: PUT
           request:
             paths:
-              todo_id: true
+              genre_db_id: true
               super_genre: true
               genre: true
+          cors:
+                origin: '*'
+                headers:
+                  - Content-Type
+                  - X-Amz-Date
+                  - Authorization
+                  - X-Api-Key
+                  - X-Amz-Security-Token
+                  - X-Amz-User-Agent
+                  - Access-Control-Allow-Headers
+                  - Access-Control-Allow-Origin
+                allowCredentials: false
 
   StatusHandler:
     handler: status_lambda.chart_status_handler

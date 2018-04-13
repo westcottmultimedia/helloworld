@@ -579,6 +579,19 @@ def api_response(message, status_code):
         "body": json.dumps(message)
      }
 
+def api_cors_response(message, status_code):
+    return {
+        "statusCode": str(status_code),
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            "Access-Control-Allow-Headers": "content-type,origin,text,startlower",
+            "Access-Control-Allow-Methods": "PUT, OPTIONS",
+            "Access-Control-Allow-Credentials": True
+        },
+        "body": json.dumps(message)
+     }
+
 # ----- AWS SERVERLESS HANDLERS -----
 #
 # serverless:
@@ -671,10 +684,16 @@ def update_genre_label_handler(event, context):
         super_genre = params['super_genre']
         genre = params['genre']
         update_genre_label(genre_db_id, super_genre, genre)
+        return api_cors_response(
+            { 'success': True},
+            200
+        )
     except Exception as e:
         print('updating genre label error', e)
-        raise
-    return 'update successful'
+        return api_cors_response(
+            { 'success': False},
+            200
+        )
 
 # ---- LOCAL TESTING -----
 if __name__ == '__main__':
