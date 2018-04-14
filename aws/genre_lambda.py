@@ -216,6 +216,7 @@ class TrackDatabase(object):
                 super_genre = %s,
                 genre = %s
             WHERE id = %s
+            ORDER BY id ASC
         """
 
         try:
@@ -681,18 +682,17 @@ def update_genre_label_handler(event, context):
     try:
         params = event['pathParameters']
         genre_db_id = int(params['genre_db_id'])
-        super_genre = params['super_genre']
-        genre = params['genre']
-        update_genre_label(genre_db_id, super_genre, genre)
+        data = json.loads(event['body'])
+        update_genre_label(data['genre_db_id'], data['selected_super_genre'], data['selected_genre'])
         return api_cors_response(
-            { 'success': True},
+            { 'success': True },
             200
         )
     except Exception as e:
         print('updating genre label error', e)
         return api_cors_response(
-            { 'success': False},
-            200
+            { 'success': False },
+            400
         )
 
 # ---- LOCAL TESTING -----

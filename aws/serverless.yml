@@ -238,6 +238,7 @@ functions:
       - http:
           path: /playlists
           method: GET
+          cors: true
           request:
             parameters:
               querystrings:
@@ -250,19 +251,18 @@ functions:
       - http:
           path: /genres/all
           method: GET
+          cors: true
 
   UpdateGenreLabelsHandler:
     handler: genre_lambda.update_genre_label_handler
     timeout: 30
     events:
       - http:
-          path: /genres/edit/{genre_db_id}/{super_genre}/{genre}
+          path: /genres/edit/{genre_db_id}
           method: PUT
           request:
             paths:
               genre_db_id: true
-              super_genre: true
-              genre: true
           cors:
                 origin: '*'
                 headers:
@@ -278,7 +278,7 @@ functions:
 
   StatusHandler:
     handler: status_lambda.chart_status_handler
-    timeout: 60
+    timeout: 30
     events:
       - http:
           path: /status/charts/{date}
