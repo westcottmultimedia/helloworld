@@ -187,7 +187,9 @@ class TrackDatabase(object):
 
     def get_all_genres(self):
         query = """
-            SELECT id, super_genre, genre, sub_genre FROM genre
+            SELECT id, super_genre, genre, sub_genre
+            FROM genre
+            ORDER BY id ASC
         """
 
         try:
@@ -216,7 +218,6 @@ class TrackDatabase(object):
                 super_genre = %s,
                 genre = %s
             WHERE id = %s
-            ORDER BY id ASC
         """
 
         try:
