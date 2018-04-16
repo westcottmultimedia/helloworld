@@ -221,7 +221,9 @@ class TrackDatabase(object):
         """
 
         try:
+            print('going, updating genre label')
             self.c.execute(query, (super_genre, genre, genre_db_id))
+            print('success')
         except:
             print('cannot update genre label')
 
