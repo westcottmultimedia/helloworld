@@ -95,7 +95,7 @@ class TrackDatabase(object):
 
         try:
             self.c.execute(query, (playlist_id, version))
-
+            print('in  getting playlist colletion ids', playlist_id, playlist_db_table, version)
             ids = []
             for row in self.c.fetchall():
                 ids.append(row[0])
@@ -144,7 +144,8 @@ class TrackDatabase(object):
 
         try:
             self.c.execute(query, [playlist_id])
-            return self.c.fetchone()[0]
+            row = self.c.fetchone()
+            return row
         except Exception as e:
             raise
             return None
@@ -185,11 +186,30 @@ class TrackDatabase(object):
 
         return []
 
+    def get_genre_categories(self, sub_genre):
+        query = """
+            SELECT super_genre, genre, sub_genre
+            FROM genre
+            WHERE sub_genre = %s
+        """
+
+        try:
+            self.c.execute(query, [sub_genre])
+            row = self.c.fetchone()
+            return row
+
+        except Exception as e:
+            print('getting genre from get_super_genre_for_sub_genre error', e)
+            raise
+
+        return 'uncategorized'
+
     def get_all_genres(self):
         query = """
-            SELECT id, super_genre, genre, sub_genre
+            SELECT distinct(genre.id), genre.super_genre, genre.genre, genre.sub_genre, count(artist_genre.genre) OVER (PARTITION by artist_genre.genre)
             FROM genre
-            ORDER BY id ASC
+            INNER JOIN artist_genre ON  artist_genre.genre = genre.sub_genre
+            ORDER BY COUNT DESC
         """
 
         try:
@@ -202,6 +222,7 @@ class TrackDatabase(object):
                 genre['super_genre'] = row[1]
                 genre['genre'] = row[2]
                 genre['sub_genre'] = row[3]
+                genre['count'] = row[4]
                 genres.append(genre)
             return genres
 
@@ -221,9 +242,7 @@ class TrackDatabase(object):
         """
 
         try:
-            print('going, updating genre label')
             self.c.execute(query, (super_genre, genre, genre_db_id))
-            print('success')
         except:
             print('cannot update genre label')
 
@@ -321,6 +340,8 @@ class TrackDatabase(object):
                     pf1.date_str = (SELECT max(date_str) FROM playlist_followers)
                     AND
                     p.id IN %s
+                    AND
+                    pf1.followers > 0
             ) q
             ORDER BY follower_change_thousandth_percent DESC
         """
@@ -342,7 +363,6 @@ class TrackDatabase(object):
                 info['follower_change_thousandth_percent'] = row[9]
                 infos.append(info)
 
-            print('get_playlist_ids info', infos)
             return infos
         except Exception as e:
             print('failed getting playlist info:', e)
@@ -362,10 +382,23 @@ class GenreRanks:
         self._collection_db_table = ''
         self.collection_ids = [] # db ids of collection items
         self.artist_ids = [] # list of ARTISTS in a collection of kinds (ie. stream list of songs, playlist of songs, sale list of music videos)
+
+        # ie. sub_genres from the Spotify API
         self.genres = [] # list of all genres for self.artists
         self.genre_counts = {} # {genre: count, 'pop-rock': 5, ...} - counts of all genres for the list of artists
         self.genre_percentages = {}
         self.top_genres = []
+
+        self.super_genres = []
+        self.super_genre_counts = {}
+        self.super_genre_percentages = {}
+        self.top_super_genres = []
+
+        self.mid_genres = []
+        self.mid_genre_counts = {}
+        self.mid_genre_percentages = {}
+        self.top_mid_genres = []
+
         self.date = date_str # can also be for a specific date
         if playlist_id:
             self.playlist_id = int(playlist_id)
@@ -425,39 +458,71 @@ class GenreRanks:
         self.artist_ids = artist_ids
         return True
 
+    # returns an nested array of genre names
     def load_genres_ids(self):
         genres = []
         for artist_id in self.artist_ids:
             genres.append(self.db.get_genres_from_artist_id(artist_id))
 
-        self.genres = genres
+        # flatten the nested array of genres
+        flat_genres = [genre for list_of_genres in genres for genre in list_of_genres]
+        self.genres = flat_genres
         return True
 
-    def calculate_genre_counts(self):
-        genre_counts = {}
-        for group_of_genres in self.genres:
-            for genre in group_of_genres:
-                genre_counts[genre] = genre_counts.setdefault(genre, 0) + 1
+    def fetch_categories_for_sub_genre_list(self):
+        super_genres = []
+        mid_genres = [] # NOTE: in the genre db table, this is "genre", but we are renaming it to differentiate it from the    sub-genre and not break all the code in between
 
-        self.genre_counts = genre_counts
-        return True
+        for genre in self.genres:
+            super_genre, mid_genre, sub_genre = self.db.get_genre_categories(genre)
+            super_genres.append(super_genre)
+            mid_genres.append(mid_genre)
+        self.super_genres = super_genres
+        self.mid_genres = mid_genres
 
-    def calculate_genre_percentage(self):
+        return
+
+    def calculate_genre_counts(self, genres):
+        genre_counts = {} # {genre_name: count_of_occurences, ...}
+        for genre in genres:
+            genre_counts[genre] = genre_counts.setdefault(genre, 0) + 1 # increment count
+        return genre_counts
+
+    def calculate_all_genre_counts(self):
+        self.super_genre_counts = self.calculate_genre_counts(self.super_genres)
+        self.mid_genre_counts = self.calculate_genre_counts(self.mid_genres)
+        self.genre_counts = self.calculate_genre_counts(self.genres)
+
+        print(self.super_genre_counts, self.mid_genre_counts, self.genre_counts)
+    def calculate_genre_percentage(self, genre_counts):
         total = 0
-        for genre, count in self.genre_counts.items():
+        for genre, count in genre_counts.items():
             total += count
 
         genre_percentages = {}
-        for genre, count in self.genre_counts.items():
+        for genre, count in genre_counts.items():
             genre_percentages[genre] = count/total
 
-        self.genre_percentages = genre_percentages
-        return True
+        return genre_percentages
+
+    def calculate_all_genre_percentages(self):
+        self.super_genre_percentages = self.calculate_genre_percentage(self.super_genre_counts)
+        self.mid_genre_percentages = self.calculate_genre_percentage(self.mid_genre_counts)
+        self.genre_percentages = self.calculate_genre_percentage(self.genre_counts)
+        return
 
     # ranks: how many ranks to return? ie. ranks = 3 returns top 3 ranked genres
-    def get_top_genres(self, ranks = 5):
+    def get_top_genres(self, ranks = 15):
         self.top_genres = sorted(self.genre_counts, reverse = True, key = self.genre_counts.__getitem__)[0:ranks]
         return self.top_genres
+
+    def get_top_super_genres(self):
+        self.top_super_genres = sorted(self.super_genre_counts, reverse = True, key = self.super_genre_counts.__getitem__)
+        return self.top_super_genres
+
+    def get_top_mid_genres(self, ranks = 10):
+        self.top_mid_genres = sorted(self.mid_genre_counts, reverse = True, key = self.mid_genre_counts.__getitem__)[0:ranks]
+        return self.top_mid_genres
 
 class Genres:
     def __init__(self):
@@ -516,14 +581,21 @@ def genre_api_charts(service, territory_code, kind, collection_type):
     gr_chart.load_chart_collection_ids()
     gr_chart.load_artist_ids()
     gr_chart.load_genres_ids()
-    gr_chart.calculate_genre_counts()
-    gr_chart.calculate_genre_percentage()
+
+    # sub-genres
+    gr_chart.fetch_categories_for_sub_genre_list()
+    gr_chart.calculate_all_genre_counts()
+    gr_chart.calculate_all_genre_percentages()
 
     db.close_database()
     # new format
     return {
         'genres': gr_chart.get_top_genres(),
-        'genre_percentages': gr_chart.genre_percentages
+        'mid_genres': gr_chart.get_top_mid_genres(),
+        'super_genres': gr_chart.get_top_super_genres(),
+        'genre_percentages': gr_chart.genre_percentages,
+        'mid_genre_percentages': gr_chart.mid_genre_percentages,
+        'super_genre_percentages': gr_chart.super_genre_percentages
     }
 
 def genre_api_playlists(playlist_id = 2795):
@@ -534,15 +606,22 @@ def genre_api_playlists(playlist_id = 2795):
     gr_playlist = GenreRanks(service_mapping('spotify'), 'us', 'track', 'playlist', playlist_id)
     gr_playlist.load_playlist_collection_ids()
     gr_playlist.load_artist_ids()
-    gr_playlist.load_genres_ids()
-    gr_playlist.calculate_genre_counts()
-    gr_playlist.calculate_genre_percentage()
-
+    gr_playlist.load_genres_ids() # NOTE: TODO: genres_ids ARE REALLY sub_genres. Transition state to clean up later
+    gr_playlist.fetch_categories_for_sub_genre_list()
+    gr_playlist.calculate_all_genre_counts()
+    gr_playlist.calculate_all_genre_percentages()
     db.close_database()
-    return {
+
+    payload = {
         'genres': gr_playlist.get_top_genres(),
-        'genre_percentages': gr_playlist.genre_percentages
+        'mid_genres': gr_playlist.get_top_mid_genres(),
+        'super_genres': gr_playlist.get_top_super_genres(),
+        'genre_percentages': gr_playlist.genre_percentages,
+        'mid_genre_percentages': gr_playlist.mid_genre_percentages,
+        'super_genre_percentages': gr_playlist.super_genre_percentages
     }
+
+    return payload
 
 def fetch_top_playlists(lookback_window = 7):
     global db
@@ -648,11 +727,14 @@ def genre_api_playlists_handler(event, context):
             200
         )
     except Exception as e:
-        print(e)
         return api_response({
             'message': e,
             'genres': [],
-            'genre_percentages': {}
+            'genre_percentages': {},
+            'mid_genres': [],
+            'mid_genre_percentages': {},
+            'super_genres': [],
+            'super_genre_percentages': {}
         }, 400)
 
 def fetch_top_playlists_handler(event, context):
@@ -664,7 +746,6 @@ def fetch_top_playlists_handler(event, context):
             200
         )
     except Exception as e:
-        print(e)
         return api_response({
             'playlists': []
         }, 400)
